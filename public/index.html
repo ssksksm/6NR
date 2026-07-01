@@ -251,41 +251,105 @@
         function showToast(msg, d=2500) { const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),d); }
         function avatarColor(n) { const c=['#4f6ef7','#e74c3c','#2ecc71','#f39c12','#9b59b6']; let h=0; for(let i=0;i<(n||'?').length;i++)h=n.charCodeAt(i)+((h<<5)-h); return c[Math.abs(h)%c.length]; }
         function formatTime(ts){ const d=new Date(ts),n=new Date(),df=n-d; if(df<6e4)return'刚刚'; if(df<36e5)return Math.floor(df/6e4)+'分钟前'; if(df<864e5)return Math.floor(df/36e5)+'小时前'; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
+
         const CryptoHelper = {
             async generateKeyPair(){ return await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey','deriveBits']); },
-            async exportPublicKey(k){ return await crypto.subtle.exportKey('jwk',k); },
-            async importPublicKey(jwk){ return await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,[]); },
+            async exportPublicKey(k){ const jwk = await crypto.subtle.exportKey('jwk',k); return { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y }; },
+            async importPublicKey(jwk){ return await crypto.subtle.importKey('jwk', { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y }, {name:'ECDH',namedCurve:'P-256'},true,[]); },
             async importPrivateKey(jwk){ return await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,['deriveKey','deriveBits']); },
             async deriveSharedKey(privKey, pubJwk){ const rKey=await this.importPublicKey(pubJwk); return await crypto.subtle.deriveKey({name:'ECDH',public:rKey},privKey,{name:'AES-GCM',length:256},true,['encrypt','decrypt']); },
             async encrypt(plain, key){ const iv=crypto.getRandomValues(new Uint8Array(12)); const enc=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(plain)); const c=new Uint8Array(iv.length+new Uint8Array(enc).length); c.set(iv); c.set(new Uint8Array(enc),iv.length); return btoa(String.fromCharCode(...c)); },
             async decrypt(cipher, key){ try{ const d=Uint8Array.from(atob(cipher),c=>c.charCodeAt(0)); const iv=d.slice(0,12),ct=d.slice(12); const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct); return new TextDecoder().decode(dec); }catch(e){return'[解密失败]';} }
         };
-        async function getOrGenerateKeyPair(){
-            const s=localStorage.getItem('ecdh_private_jwk'); if(s){ try{ const j=JSON.parse(s); const pk=await CryptoHelper.importPrivateKey(j); const pub=await crypto.subtle.exportKey('jwk',pk); return {privateKey:pk, publicKey:pub}; }catch(e){} }
-            const kp=await CryptoHelper.generateKeyPair(); const privJwk=await crypto.subtle.exportKey('jwk',kp.privateKey); localStorage.setItem('ecdh_private_jwk',JSON.stringify(privJwk)); const pubJwk=await crypto.subtle.exportKey('jwk',kp.publicKey); return {privateKey:kp.privateKey, publicKey:pubJwk};
+
+        async function getOrGenerateKeyPair(userId) {
+            const storageKey = `ecdh_private_jwk_${userId}`;
+            const stored = localStorage.getItem(storageKey);
+            if (stored) {
+                try {
+                    const privateJwk = JSON.parse(stored);
+                    const privateKey = await CryptoHelper.importPrivateKey(privateJwk);
+                    const pubJwk = await CryptoHelper.exportPublicKey(privateKey);
+                    return { privateKey, publicKey: pubJwk };
+                } catch(e) { /* 密钥损坏，重新生成 */ }
+            }
+            const kp = await CryptoHelper.generateKeyPair();
+            const privateJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
+            localStorage.setItem(storageKey, JSON.stringify(privateJwk));
+            const pubJwk = await CryptoHelper.exportPublicKey(kp.publicKey);
+            return { privateKey: kp.privateKey, publicKey: pubJwk };
         }
+
         async function apiFetch(path, opt={}){ const h={'Content-Type':'application/json'}; if(authToken)h['Authorization']='Bearer '+authToken; const r=await fetch(API_BASE+path,{...opt,headers:{...h,...opt.headers}}); const d=await r.json(); if(!r.ok)throw new Error(d.error||'请求失败'); return d; }
         function toggleAuthMode(){ isLoginMode=!isLoginMode; $('auth-title').textContent=isLoginMode?'登录':'注册'; $('auth-btn').textContent=isLoginMode?'登 录':'注 册'; $('auth-confirm-password').style.display=isLoginMode?'none':'block'; $('switch-text').innerHTML=isLoginMode?'还没有账号？<a onclick="toggleAuthMode()">立即注册</a>':'已有账号？<a onclick="toggleAuthMode()">去登录</a>'; }
+        
         async function handleAuth(){
             const u=$('auth-username').value.trim(),p=$('auth-password').value,cp=$('auth-confirm-password').value;
             if(!u||!p)return showToast('请填写完整'); if(!isLoginMode&&p!==cp)return showToast('密码不一致'); if(p.length<4)return showToast('密码至少4位');
             try{
-                if(isLoginMode){ const d=await apiFetch('/login',{method:'POST',body:JSON.stringify({username:u,password:p})}); authToken=d.token; currentUser=d.user; const kp=await getOrGenerateKeyPair(); userKeyPair=kp; await apiFetch('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:kp.publicKey})}); }
-                else { const kp=await getOrGenerateKeyPair(); userKeyPair=kp; const d=await apiFetch('/register',{method:'POST',body:JSON.stringify({username:u,password:p,public_key:kp.publicKey})}); authToken=d.token; currentUser=d.user; }
-                localStorage.setItem('securechat_token',authToken); localStorage.setItem('securechat_user',JSON.stringify(currentUser)); $('auth-page').style.display='none'; updateUIForUser(); connectWebSocket(); switchPage('messages'); loadAllData(); showToast('成功！');
+                if(isLoginMode){
+                    const data = await apiFetch('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});
+                    authToken = data.token;
+                    currentUser = data.user;
+                    const kp = await getOrGenerateKeyPair(currentUser.id);
+                    userKeyPair = kp;
+                    await apiFetch('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:kp.publicKey})});
+                } else {
+                    // 注册时先生成密钥对，再传公钥
+                    const tempId = 'temp_' + Date.now(); // 临时ID
+                    const kp = await getOrGenerateKeyPair(tempId);
+                    const data = await apiFetch('/register',{method:'POST',body:JSON.stringify({username:u,password:p,public_key:kp.publicKey})});
+                    authToken = data.token;
+                    currentUser = data.user;
+                    // 将临时密钥迁移到正式用户ID
+                    const tempStorageKey = `ecdh_private_jwk_${tempId}`;
+                    const newStorageKey = `ecdh_private_jwk_${currentUser.id}`;
+                    const stored = localStorage.getItem(tempStorageKey);
+                    if (stored) {
+                        localStorage.setItem(newStorageKey, stored);
+                        localStorage.removeItem(tempStorageKey);
+                    }
+                    userKeyPair = kp;
+                }
+                localStorage.setItem('securechat_token',authToken);
+                localStorage.setItem('securechat_user',JSON.stringify(currentUser));
+                $('auth-page').style.display='none';
+                updateUIForUser();
+                connectWebSocket();
+                switchPage('messages');
+                loadAllData();
+                showToast('成功！');
             }catch(e){ showToast(e.message); }
         }
-        function handleLogout(){ if(ws)ws.close(); authToken=null; currentUser=null; userKeyPair=null; localStorage.clear(); $('auth-page').style.display='flex'; updateUIForUser(); }
-        function connectWebSocket(){ if(!authToken)return; if(ws)ws.close(); ws=new WebSocket(WS_URL+'?token='+authToken); ws.onmessage=async(e)=>{ const m=JSON.parse(e.data); if(m.type==='new_message'&&currentUser){ const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id; if(currentChatFriend&&currentChatFriend.id===fid){ const sk=await getSharedKeyWithFriend(fid); const dc=await CryptoHelper.decrypt(m.message.content,sk); appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received'); scrollChatBottom(); } loadChatList(); } if(m.type==='new_moment')loadMoments(); }; ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000); }
+
+        function handleLogout(){ 
+            if(ws)ws.close(); 
+            // 不清除密钥，保留在本地
+            authToken=null; currentUser=null; userKeyPair=null; 
+            localStorage.removeItem('securechat_token');
+            localStorage.removeItem('securechat_user');
+            $('auth-page').style.display='flex'; 
+            updateUIForUser(); 
+        }
+
+        function connectWebSocket(){ if(!authToken)return; if(ws)ws.close(); ws=new WebSocket(WS_URL+'?token='+authToken); ws.onmessage=async(e)=>{ const m=JSON.parse(e.data); if(m.type==='new_message'&&currentUser&&userKeyPair){ const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id; if(currentChatFriend&&currentChatFriend.id===fid){ const sk=await getSharedKeyWithFriend(fid); const dc=await CryptoHelper.decrypt(m.message.content,sk); appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received'); scrollChatBottom(); } loadChatList(); } if(m.type==='new_moment')loadMoments(); }; ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000); }
         function sendWS(d){ if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(d)); }
         function updateUIForUser(){ if(currentUser){ $('sidebar-avatar').textContent=currentUser.username[0].toUpperCase(); $('sidebar-name').textContent=currentUser.username; $('sidebar').style.display=isMobile?'none':'flex'; $('mobile-nav').style.display=isMobile?'flex':'none'; $('auth-page').style.display='none'; } else { $('sidebar').style.display='none'; $('mobile-nav').style.display='none'; $('auth-page').style.display='flex'; } }
         function switchPage(p){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); const t=$('page-'+p); if(t)t.classList.add('active'); document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active')); const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`), mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`); if(sn)sn.classList.add('active'); if(mn)mn.classList.add('active'); if(p==='messages')loadChatList(); if(p==='moments')loadMoments(); if(p==='friends')loadFriendsData(); if(isMobile&&p!=='messages')$('chat-window').classList.remove('mobile-open'); }
-        async function getSharedKeyWithFriend(fid){ const d=await apiFetch(`/user/${fid}/public-key`); return await CryptoHelper.deriveSharedKey(userKeyPair.privateKey,d.public_key); }
+        
+        async function getSharedKeyWithFriend(fid){ 
+            const data = await apiFetch(`/user/${fid}/public-key`);
+            // 确保传入的公钥只有必要字段
+            const cleanPub = { kty: data.public_key.kty, crv: data.public_key.crv, x: data.public_key.x, y: data.public_key.y };
+            return await CryptoHelper.deriveSharedKey(userKeyPair.privateKey, cleanPub);
+        }
+
         async function loadChatList(){ if(!currentUser)return; try{ const d=await apiFetch('/chat-list'); chatListCache=d.chats||[]; renderChatList(); }catch(e){} }
         function renderChatList(){ const c=$('chat-list'),e=$('chat-empty'); if(chatListCache.length===0){ c.innerHTML=''; e.style.display='flex'; return; } e.style.display='none'; c.innerHTML=chatListCache.map(ch=>`<div class="chat-list-item ${currentChatFriend&&currentChatFriend.id===ch.friend_id?'active':''}" onclick="openChat(${ch.friend_id},'${ch.friend_name}')"><div class="chat-avatar" style="background:${avatarColor(ch.friend_name)}">${ch.friend_name[0].toUpperCase()}</div><div class="chat-info"><div class="chat-name">${ch.friend_name}</div><div class="chat-preview">🔒 加密消息</div></div><div class="chat-time">${formatTime(ch.last_time)}</div></div>`).join(''); }
         async function openChat(fid,fn){ currentChatFriend={id:fid,username:fn}; $('chat-window-title').textContent='🔒 '+fn; $('chat-input-area').style.display='flex'; if(isMobile)$('chat-window').classList.add('mobile-open'); renderChatList(); await loadMessages(fid); scrollChatBottom(); }
         function closeMobileChat(){ $('chat-window').classList.remove('mobile-open'); currentChatFriend=null; $('chat-input-area').style.display='none'; renderChatList(); }
-        async function loadMessages(fid){ if(!currentUser||!userKeyPair)return; try{ const d=await apiFetch('/messages/'+fid); const ms=d.messages||[]; const c=$('chat-messages'); if(ms.length===0){ c.innerHTML='<div class="empty-state">开始加密聊天</div>'; return; } const sk=await getSharedKeyWithFriend(fid); c.innerHTML=''; for(const m of ms){ const dc=await CryptoHelper.decrypt(m.content,sk); appendMessageBubble({...m,decrypted_content:dc},m.from_id===currentUser.id?'sent':'received'); } scrollChatBottom(); }catch(e){} }
+        async function loadMessages(fid){ if(!currentUser||!userKeyPair)return; try{ const d=await apiFetch('/messages/'+fid); const ms=d.messages||[]; const c=$('chat-messages'); if(ms.length===0){ c.innerHTML='<div class="empty-state">开始加密聊天</div>'; return; } const sk=await getSharedKeyWithFriend(fid); c.innerHTML=''; for(const m of ms){ const dc=await CryptoHelper.decrypt(m.content,sk); appendMessageBubble({...m,decrypted_content:dc},m.from_id===currentUser.id?'sent':'received'); } scrollChatBottom(); }catch(e){}
+        }
         function appendMessageBubble(m,t){ const c=$('chat-messages'); if(c.querySelector('.empty-state'))c.innerHTML=''; const b=document.createElement('div'); b.className='message-bubble '+t; b.innerHTML=`${m.decrypted_content||m.content}<div class="msg-time">${formatTime(m.created_at)}</div><div class="encrypted-badge">🔒 已加密</div>`; c.appendChild(b); }
         function scrollChatBottom(){ setTimeout(()=>{const c=$('chat-messages');c.scrollTop=c.scrollHeight;},100); }
         async function sendMessage(){ if(!currentUser||!currentChatFriend||!userKeyPair)return; const i=$('chat-input'),pt=i.value.trim(); if(!pt)return; i.value=''; const sk=await getSharedKeyWithFriend(currentChatFriend.id); const enc=await CryptoHelper.encrypt(pt,sk); try{ const d=await apiFetch('/messages',{method:'POST',body:JSON.stringify({to_id:currentChatFriend.id,content:enc})}); d.message.decrypted_content=pt; appendMessageBubble(d.message,'sent'); scrollChatBottom(); sendWS({type:'new_message',message:d.message}); loadChatList(); }catch(e){showToast(e.message);} }
@@ -301,14 +365,33 @@
         async function sendFriendRequest(tid){ try{ await apiFetch('/friend-request',{method:'POST',body:JSON.stringify({to_id:tid})}); showToast('请求已发送'); $('search-results').innerHTML=''; }catch(e){showToast(e.message);} }
         async function handleFriendRequest(fid,act){ try{ await apiFetch('/friend-request/'+fid,{method:'POST',body:JSON.stringify({action:act})}); showToast(act==='accept'?'已接受':'已拒绝'); loadFriendsData(); loadChatList(); }catch(e){showToast(e.message);} }
         async function loadAllData(){ await Promise.all([loadChatList(),loadFriendsData(),loadMoments()]); }
-        window.onload=function(){
-            const t=localStorage.getItem('securechat_token'),u=localStorage.getItem('securechat_user');
-            if(t&&u){ authToken=t; try{currentUser=JSON.parse(u);}catch(e){} }
+
+        // 初始化
+        window.onload = async function(){
+            const savedToken = localStorage.getItem('securechat_token');
+            const savedUser = localStorage.getItem('securechat_user');
+            if (savedToken && savedUser) {
+                authToken = savedToken;
+                try { currentUser = JSON.parse(savedUser); } catch(e) {}
+                if (currentUser) {
+                    const kp = await getOrGenerateKeyPair(currentUser.id);
+                    userKeyPair = kp;
+                    updateUIForUser();
+                    connectWebSocket();
+                    switchPage('messages');
+                    loadAllData();
+                    return;
+                }
+            }
+            // 未登录
+            $('auth-page').style.display = 'flex';
             updateUIForUser();
-            if(currentUser){ getOrGenerateKeyPair().then(kp=>{ userKeyPair=kp; connectWebSocket(); switchPage('messages'); loadAllData(); }); }
-            else $('auth-page').style.display='flex';
-            window.addEventListener('resize',()=>{ const w=isMobile; isMobile=window.innerWidth<=768; if(w!==isMobile)updateUIForUser(); });
-            setInterval(()=>{if(currentUser)loadChatList();},10000);
+            window.addEventListener('resize', ()=>{
+                const was = isMobile;
+                isMobile = window.innerWidth <= 768;
+                if (was !== isMobile) updateUIForUser();
+            });
+            setInterval(()=>{ if(currentUser) loadChatList(); }, 10000);
         };
     </script>
 </body>
