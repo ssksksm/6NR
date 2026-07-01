@@ -6,104 +6,311 @@
     <title>6nr - 加密聊天</title>
     <style>
         :root {
-            --primary: #4f6ef7; --primary-dark: #3b54d4; --bg: #f0f2f5; --white: #fff; --text: #1a1a2e;
-            --text-secondary: #65676b; --border: #e0e0e0; --hover: #f5f6f8; --danger: #e74c3c; --success: #2ecc71;
-            --shadow: 0 2px 12px rgba(0,0,0,0.08); --radius: 12px; --radius-sm: 8px;
-            --sidebar-width: 320px; --header-height: 60px; --nav-mobile-height: 60px;
-            --transition: 0.25s cubic-bezier(0.4,0,0.2,1);
+            --primary: #6c5ce7;
+            --primary-dark: #5a4bd1;
+            --primary-light: #a29bfe;
+            --bg: #f8f9fd;
+            --surface: #ffffff;
+            --surface-alt: #f1f3f9;
+            --text: #2d3436;
+            --text-secondary: #636e72;
+            --border: #e0e4f0;
+            --hover: #f0f2fa;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+            --warning: #fdcb6e;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
+            --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);
+            --radius: 16px;
+            --radius-sm: 10px;
+            --radius-xs: 8px;
+            --sidebar-width: 320px;
+            --header-height: 64px;
+            --nav-mobile-height: 64px;
+            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        *{margin:0;padding:0;box-sizing:border-box}
-        body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:var(--bg);color:var(--text);height:100vh;overflow:hidden}
-        #app{display:flex;height:100vh;width:100%}
-        .sidebar{width:var(--sidebar-width);min-width:var(--sidebar-width);background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10}
-        .sidebar-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;height:var(--header-height)}
-        .sidebar-header .logo{font-size:1.3rem;font-weight:700;color:var(--primary)}
-        .sidebar-nav{display:flex;flex-direction:column;padding:8px;gap:2px}
-        .sidebar-nav .nav-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-radius:var(--radius-sm);cursor:pointer;transition:var(--transition);font-weight:500;color:var(--text);font-size:0.95rem;border:none;background:none;width:100%;text-align:left}
-        .sidebar-nav .nav-item:hover{background:var(--hover)}
-        .sidebar-nav .nav-item.active{background:#eef1ff;color:var(--primary);font-weight:600}
-        .sidebar-footer{margin-top:auto;padding:12px 16px;border-top:1px solid var(--border);display:flex;align-items:center;gap:10px;cursor:pointer;transition:var(--transition);border-radius:var(--radius-sm);margin:8px}
-        .sidebar-footer:hover{background:var(--hover)}
-        .sidebar-footer .avatar{width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:1rem;flex-shrink:0;background-size:cover;background-position:center}
-        .sidebar-footer .user-info{flex:1;min-width:0}
-        .sidebar-footer .user-name{font-weight:600;font-size:0.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .sidebar-footer .user-status{font-size:0.75rem;color:var(--text-secondary)}
-        .logout-btn{background:none;border:none;color:#999;cursor:pointer;padding:6px;border-radius:50%}
-        .logout-btn:hover{color:var(--danger);background:#fef2f2}
-        .main-content{flex:1;display:flex;flex-direction:column;overflow:hidden}
-        .page{display:none;flex-direction:column;height:100%;overflow:hidden}
-        .page.active{display:flex}
-        .chat-list-page{display:flex;height:100%}
-        .chat-list-panel{width:340px;min-width:340px;background:var(--white);border-right:1px solid var(--border);display:flex;flex-direction:column}
-        .chat-list-panel .panel-header{padding:16px 20px;font-weight:700;font-size:1.1rem;border-bottom:1px solid var(--border);height:var(--header-height);display:flex;align-items:center}
-        .chat-list{flex:1;overflow-y:auto}
-        .chat-list-item{display:flex;align-items:center;gap:12px;padding:14px 20px;cursor:pointer;transition:var(--transition);border-bottom:1px solid #f5f5f5}
-        .chat-list-item:hover{background:var(--hover)}
-        .chat-list-item.active{background:#eef1ff;border-left:3px solid var(--primary)}
-        .chat-list-item .chat-avatar{width:46px;height:46px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-weight:700;color:#fff;font-size:1.1rem;background-size:cover}
-        .chat-list-item .chat-info{flex:1;min-width:0}
-        .chat-list-item .chat-name{font-weight:600;font-size:0.9rem}
-        .chat-list-item .chat-preview{font-size:0.78rem;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-        .chat-list-item .chat-time{font-size:0.7rem;color:#999;flex-shrink:0}
-        .chat-window{flex:1;display:flex;flex-direction:column;background:#fafbfc}
-        .chat-window .window-header{padding:14px 20px;border-bottom:1px solid var(--border);background:var(--white);display:flex;align-items:center;gap:12px;height:var(--header-height)}
-        .chat-window .window-header .back-btn{display:none;background:none;border:none;font-size:1.3rem;cursor:pointer}
-        .chat-messages{flex:1;overflow-y:auto;padding:20px;display:flex;flex-direction:column;gap:8px}
-        .message-bubble{max-width:65%;padding:10px 16px;border-radius:18px;font-size:0.9rem;line-height:1.5;word-break:break-word;animation:msgIn 0.3s ease}
-        @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
-        .message-bubble.sent{align-self:flex-end;background:var(--primary);color:#fff;border-bottom-right-radius:4px}
-        .message-bubble.received{align-self:flex-start;background:#fff;border:1px solid #e8e8e8;border-bottom-left-radius:4px}
-        .message-bubble .msg-time{font-size:0.65rem;margin-top:4px;opacity:0.7;text-align:right}
-        .message-bubble .encrypted-badge{font-size:0.6rem;opacity:0.6;display:flex;align-items:center;gap:4px;margin-top:2px}
-        .chat-input-area{padding:12px 20px;background:var(--white);border-top:1px solid var(--border);display:flex;gap:10px;align-items:center}
-        .chat-input-area input{flex:1;padding:12px 16px;border:1.5px solid var(--border);border-radius:24px;font-size:0.9rem;outline:none;background:#f5f6f8}
-        .chat-input-area input:focus{border-color:var(--primary);background:#fff}
-        .chat-input-area button{width:42px;height:42px;border-radius:50%;background:var(--primary);color:#fff;border:none;cursor:pointer;font-size:1.2rem}
-        .weibo-page,.friends-page,.settings-page{padding:0;overflow-y:auto;background:#fafbfc}
-        .weibo-header,.page-header{background:var(--white);padding:16px 20px;font-weight:700;border-bottom:1px solid var(--border);position:sticky;top:0;height:var(--header-height);display:flex;align-items:center;justify-content:space-between}
-        .weibo-post-box{background:var(--white);margin:16px 20px;padding:16px;border-radius:var(--radius);box-shadow:var(--shadow);display:flex;flex-direction:column;gap:10px}
-        .weibo-post-box textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;font-size:0.9rem;resize:none;font-family:inherit;outline:none;min-height:80px;background:#fafbfc}
-        .weibo-post-box .post-btn,.settings-page .btn-primary{padding:8px 20px;background:var(--primary);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600}
-        .weibo-card{background:var(--white);margin:10px 20px;padding:16px;border-radius:var(--radius);box-shadow:0 1px 4px rgba(0,0,0,0.04)}
-        .weibo-card .weibo-author{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-        .weibo-card .weibo-avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;background-size:cover}
-        .weibo-card .weibo-content{font-size:0.9rem;line-height:1.6;margin-bottom:10px}
-        .weibo-card .weibo-actions{display:flex;gap:20px;font-size:0.8rem;color:var(--text-secondary)}
-        .weibo-card .weibo-actions span{cursor:pointer;display:flex;align-items:center;gap:4px}
-        .weibo-card .weibo-actions span.liked{color:#e74c3c}
-        .weibo-comments{margin-top:10px;padding-top:10px;border-top:1px solid #f0f0f0;font-size:0.8rem}
-        .weibo-comment-input{display:flex;gap:8px;margin-top:6px}
-        .weibo-comment-input input{flex:1;padding:6px 10px;border:1px solid var(--border);border-radius:14px;font-size:0.78rem;outline:none}
-        .weibo-comment-input button{padding:6px 12px;background:var(--primary);color:#fff;border:none;border-radius:14px;cursor:pointer;font-weight:600}
-        .friend-item{display:flex;align-items:center;gap:12px;padding:14px 20px;background:var(--white);border-bottom:1px solid #f5f5f5}
-        .search-box{margin:12px 20px;display:flex;gap:8px}
-        .search-box input{flex:1;padding:10px 14px;border:1.5px solid var(--border);border-radius:20px;font-size:0.85rem;outline:none}
-        .search-box button{padding:10px 16px;background:var(--primary);color:#fff;border:none;border-radius:20px;cursor:pointer;font-weight:600}
-        .btn-accept,.btn-chat,.btn-block{padding:5px 12px;border:none;border-radius:14px;cursor:pointer;font-weight:600;font-size:0.75rem}
-        .btn-accept{background:var(--success);color:#fff}.btn-reject{background:#ddd;color:#666;padding:5px 12px;border:none;border-radius:14px;cursor:pointer}
-        .btn-chat{background:var(--primary);color:#fff;margin-left:auto}.btn-block{background:#ff9800;color:#fff;margin-left:5px}
-        .settings-page .setting-group{margin:16px 20px;background:var(--white);padding:16px;border-radius:var(--radius);box-shadow:var(--shadow)}
-        .settings-page input[type="text"],.settings-page input[type="password"]{width:100%;padding:10px;margin:8px 0;border:1px solid var(--border);border-radius:8px}
-        .avatar-upload{display:flex;align-items:center;gap:15px;margin:10px 0}
-        .avatar-preview{width:60px;height:60px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:1.5rem;background-size:cover;cursor:pointer}
-        .color-options{display:flex;gap:8px;flex-wrap:wrap}
-        .color-dot{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent}
-        .color-dot.selected{border-color:var(--primary)}
-        .auth-page{display:flex;align-items:center;justify-content:center;height:100vh;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);padding:20px}
-        .auth-card{background:var(--white);border-radius:var(--radius);padding:40px 32px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,0.2);text-align:center}
-        .auth-card h2{font-size:1.6rem;margin-bottom:6px}
-        .auth-card .subtitle{color:var(--text-secondary);font-size:0.85rem;margin-bottom:24px}
-        .auth-card input{width:100%;padding:12px 16px;border:1.5px solid var(--border);border-radius:var(--radius-sm);font-size:0.9rem;margin-bottom:12px;outline:none}
-        .auth-card .btn-primary{width:100%;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:var(--radius-sm);font-size:1rem;font-weight:600;cursor:pointer;margin-top:8px}
-        .auth-card .switch-text{margin-top:16px;font-size:0.85rem;color:var(--text-secondary)}
-        .auth-card .switch-text a{color:var(--primary);cursor:pointer;font-weight:600}
-        .toast{position:fixed;top:20px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:10px 20px;border-radius:20px;font-size:0.85rem;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none}
-        .toast.show{opacity:1}
-        .mobile-nav{display:none;position:fixed;bottom:0;left:0;right:0;background:var(--white);border-top:1px solid var(--border);height:var(--nav-mobile-height);z-index:100;justify-content:space-around;align-items:center;padding-bottom:env(safe-area-inset-bottom,0)}
-        .mobile-nav .nav-tab{display:flex;flex-direction:column;align-items:center;cursor:pointer;color:#999;font-size:0.65rem;border:none;background:none;padding:6px}
-        .mobile-nav .nav-tab.active{color:var(--primary)}
-        @media(max-width:768px){.sidebar{display:none}.mobile-nav{display:flex}.main-content{padding-bottom:var(--nav-mobile-height)}.chat-list-panel{width:100%;min-width:100%;border-right:none}.chat-window{position:fixed;top:0;left:0;right:0;bottom:var(--nav-mobile-height);z-index:50;display:none;background:#fafbfc}.chat-window.mobile-open{display:flex}.chat-window .window-header .back-btn{display:block}.message-bubble{max-width:80%}}
-        @media(min-width:769px){.mobile-nav{display:none}.chat-window .window-header .back-btn{display:none}.chat-window{display:flex!important}}
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: var(--bg); color: var(--text); height: 100vh; overflow: hidden;
+            -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none;
+        }
+        #app { display: flex; height: 100vh; width: 100%; }
+
+        /* 侧边栏 */
+        .sidebar {
+            width: var(--sidebar-width); min-width: var(--sidebar-width);
+            background: var(--surface); border-right: 1px solid var(--border);
+            display: flex; flex-direction: column; z-index: 10;
+            box-shadow: var(--shadow-sm);
+        }
+        .sidebar-header {
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; justify-content: space-between; height: var(--header-height);
+        }
+        .sidebar-header .logo {
+            font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), #a29bfe);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            letter-spacing: -0.5px;
+        }
+        .sidebar-nav { display: flex; flex-direction: column; padding: 12px 12px; gap: 4px; }
+        .sidebar-nav .nav-item {
+            display: flex; align-items: center; gap: 14px; padding: 14px 18px;
+            border-radius: var(--radius-xs); cursor: pointer; transition: var(--transition);
+            font-weight: 500; color: var(--text-secondary); font-size: 0.95rem;
+            border: none; background: none; width: 100%; text-align: left;
+        }
+        .sidebar-nav .nav-item:hover { background: var(--hover); color: var(--text); }
+        .sidebar-nav .nav-item.active {
+            background: linear-gradient(135deg, #f0eeff, #e8e4ff);
+            color: var(--primary); font-weight: 600;
+        }
+        .sidebar-footer {
+            margin-top: auto; padding: 16px; border-top: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px; cursor: pointer;
+            transition: var(--transition); border-radius: var(--radius-sm); margin: 8px;
+        }
+        .sidebar-footer:hover { background: var(--hover); }
+        .sidebar-footer .avatar {
+            width: 42px; height: 42px; border-radius: 50%; background: var(--primary);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 1rem; flex-shrink: 0;
+            background-size: cover; background-position: center;
+            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+        }
+        .sidebar-footer .user-info { flex: 1; min-width: 0; }
+        .sidebar-footer .user-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+        .sidebar-footer .user-status { font-size: 0.75rem; color: var(--success); display: flex; align-items: center; gap: 4px; }
+        .sidebar-footer .user-status::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; display: inline-block; }
+        .logout-btn { background: none; border: none; color: #b2bec3; cursor: pointer; padding: 6px; border-radius: 50%; transition: var(--transition); }
+        .logout-btn:hover { color: var(--danger); background: #fff5f5; }
+
+        /* 主内容区 */
+        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
+        .page { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+        .page.active { display: flex; }
+
+        /* 聊天 */
+        .chat-list-page { display: flex; height: 100%; }
+        .chat-list-panel {
+            width: 340px; min-width: 340px; background: var(--surface);
+            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+        }
+        .chat-list-panel .panel-header {
+            padding: 20px 24px; font-weight: 700; font-size: 1.1rem;
+            border-bottom: 1px solid var(--border); height: var(--header-height);
+            display: flex; align-items: center; color: var(--text);
+        }
+        .chat-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .chat-list-item {
+            display: flex; align-items: center; gap: 14px; padding: 14px 20px;
+            cursor: pointer; transition: var(--transition); margin: 0 8px; border-radius: var(--radius-xs);
+            border: 1px solid transparent;
+        }
+        .chat-list-item:hover { background: var(--hover); border-color: var(--border); }
+        .chat-list-item.active { background: #f0eeff; border-color: var(--primary-light); box-shadow: 0 2px 8px rgba(108,92,231,0.1); }
+        .chat-list-item .chat-avatar {
+            width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; color: #fff; font-size: 1.1rem;
+            background-size: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .chat-list-item .chat-info { flex: 1; min-width: 0; }
+        .chat-list-item .chat-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
+        .chat-list-item .chat-preview { font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
+        .chat-list-item .chat-time { font-size: 0.7rem; color: #b2bec3; flex-shrink: 0; }
+        .chat-window { flex: 1; display: flex; flex-direction: column; background: #fafbfd; }
+        .chat-window .window-header {
+            padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface);
+            display: flex; align-items: center; gap: 14px; height: var(--header-height);
+        }
+        .chat-window .window-header .back-btn { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text); }
+        .chat-messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+        .message-bubble {
+            max-width: 70%; padding: 12px 18px; border-radius: 20px; font-size: 0.92rem;
+            line-height: 1.5; word-break: break-word; animation: msgIn 0.25s ease;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+        }
+        @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        .message-bubble.sent {
+            align-self: flex-end; background: linear-gradient(135deg, var(--primary), #7c6ef0);
+            color: #fff; border-bottom-right-radius: 6px;
+        }
+        .message-bubble.received {
+            align-self: flex-start; background: #fff; border: 1px solid #edf0f5;
+            border-bottom-left-radius: 6px;
+        }
+        .message-bubble .msg-time { font-size: 0.65rem; margin-top: 4px; opacity: 0.7; text-align: right; }
+        .message-bubble .encrypted-badge { font-size: 0.6rem; opacity: 0.5; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+        .chat-input-area {
+            padding: 14px 20px; background: var(--surface); border-top: 1px solid var(--border);
+            display: flex; gap: 12px; align-items: center;
+        }
+        .chat-input-area input {
+            flex: 1; padding: 12px 18px; border: 1.5px solid var(--border);
+            border-radius: 24px; font-size: 0.9rem; outline: none; background: var(--surface-alt);
+            transition: var(--transition);
+        }
+        .chat-input-area input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(108,92,231,0.1); }
+        .chat-input-area button {
+            width: 44px; height: 44px; border-radius: 50%; background: var(--primary);
+            color: #fff; border: none; cursor: pointer; font-size: 1.2rem;
+            box-shadow: 0 4px 10px rgba(108,92,231,0.3); transition: var(--transition);
+        }
+        .chat-input-area button:hover { background: var(--primary-dark); transform: scale(1.05); }
+
+        /* 广场 */
+        .square-page, .friends-page, .settings-page { padding: 0; overflow-y: auto; background: var(--bg); }
+        .square-header, .page-header {
+            background: var(--surface); padding: 20px 24px; font-weight: 700; font-size: 1.1rem;
+            border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5;
+            height: var(--header-height); display: flex; align-items: center; justify-content: space-between;
+            backdrop-filter: blur(10px); background: rgba(255,255,255,0.85);
+        }
+        .square-post-box {
+            background: var(--surface); margin: 20px 24px; padding: 20px;
+            border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+        }
+        .square-post-box textarea {
+            width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
+            padding: 14px; font-size: 0.9rem; resize: none; font-family: inherit;
+            outline: none; min-height: 90px; background: var(--surface-alt); transition: var(--transition);
+        }
+        .square-post-box textarea:focus { border-color: var(--primary); background: #fff; }
+        .square-post-box .post-btn, .settings-page .btn-primary {
+            padding: 10px 24px; background: linear-gradient(135deg, var(--primary), #7c6ef0);
+            color: #fff; border: none; border-radius: 20px; cursor: pointer; font-weight: 600;
+            box-shadow: 0 4px 10px rgba(108,92,231,0.2); transition: var(--transition);
+        }
+        .square-post-box .post-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(108,92,231,0.3); }
+        .square-card {
+            background: var(--surface); margin: 12px 24px; padding: 18px;
+            border-radius: var(--radius); box-shadow: var(--shadow-sm);
+            transition: var(--transition); border: 1px solid transparent;
+        }
+        .square-card:hover { border-color: #e8ecf5; box-shadow: var(--shadow); }
+        .square-card .square-author { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .square-card .square-avatar {
+            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; background-size: cover;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        }
+        .square-card .square-author-name { font-weight: 600; font-size: 0.9rem; }
+        .square-card .square-time { font-size: 0.7rem; color: #b2bec3; }
+        .square-card .square-content { font-size: 0.92rem; line-height: 1.6; margin-bottom: 12px; color: var(--text); }
+        .square-card .square-actions { display: flex; gap: 24px; font-size: 0.8rem; color: var(--text-secondary); }
+        .square-card .square-actions span { cursor: pointer; display: flex; align-items: center; gap: 5px; transition: var(--transition); }
+        .square-card .square-actions span:hover { color: var(--primary); }
+        .square-card .square-actions span.liked { color: #e74c3c; }
+        .square-comments { margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f3f8; font-size: 0.82rem; }
+        .square-comment-input { display: flex; gap: 8px; margin-top: 10px; }
+        .square-comment-input input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 14px; font-size: 0.78rem; outline: none; background: var(--surface-alt); }
+        .square-comment-input button { padding: 8px 14px; background: var(--primary); color: #fff; border: none; border-radius: 14px; cursor: pointer; font-weight: 600; }
+
+        /* 好友 */
+        .friend-item {
+            display: flex; align-items: center; gap: 14px; padding: 14px 24px;
+            background: var(--surface); border-bottom: 1px solid #f5f6fa; cursor: pointer;
+            transition: var(--transition);
+        }
+        .friend-item:hover { background: var(--hover); }
+        .search-box { margin: 16px 24px; display: flex; gap: 10px; }
+        .search-box input {
+            flex: 1; padding: 12px 16px; border: 1.5px solid var(--border);
+            border-radius: 24px; font-size: 0.85rem; outline: none; background: var(--surface-alt);
+        }
+        .search-box button {
+            padding: 12px 20px; background: var(--primary); color: #fff; border: none;
+            border-radius: 24px; cursor: pointer; font-weight: 600;
+        }
+        .btn-accept, .btn-chat, .btn-block { padding: 6px 14px; border: none; border-radius: 14px; cursor: pointer; font-weight: 600; font-size: 0.75rem; }
+        .btn-accept { background: var(--success); color: #fff; }
+        .btn-reject { background: #eee; color: #666; padding: 6px 14px; border: none; border-radius: 14px; cursor: pointer; }
+        .btn-chat { background: var(--primary); color: #fff; margin-left: auto; }
+        .btn-block { background: #ffa502; color: #fff; margin-left: 8px; }
+
+        /* 设置 */
+        .settings-page .setting-group {
+            margin: 16px 24px; background: var(--surface); padding: 20px;
+            border-radius: var(--radius); box-shadow: var(--shadow-sm);
+        }
+        .settings-page input[type="text"], .settings-page input[type="password"] {
+            width: 100%; padding: 12px 14px; margin: 10px 0;
+            border: 1.5px solid var(--border); border-radius: var(--radius-xs); outline: none;
+            background: var(--surface-alt); transition: var(--transition);
+        }
+        .settings-page input:focus { border-color: var(--primary); background: #fff; }
+        .avatar-upload { display: flex; align-items: center; gap: 16px; margin: 12px 0; }
+        .avatar-preview {
+            width: 64px; height: 64px; border-radius: 50%; background: var(--primary);
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 1.6rem; background-size: cover; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
+        .color-dot { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: var(--transition); }
+        .color-dot.selected { border-color: var(--primary); transform: scale(1.1); }
+
+        /* 登录 */
+        .auth-page {
+            display: flex; align-items: center; justify-content: center; height: 100vh;
+            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); padding: 20px;
+        }
+        .auth-card {
+            background: #fff; border-radius: 24px; padding: 44px 36px;
+            width: 100%; max-width: 420px; box-shadow: 0 30px 60px rgba(0,0,0,0.15); text-align: center;
+        }
+        .auth-card h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; color: var(--text); }
+        .auth-card .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; }
+        .auth-card input {
+            width: 100%; padding: 14px 18px; border: 1.5px solid var(--border);
+            border-radius: 12px; font-size: 0.9rem; margin-bottom: 14px; outline: none;
+            background: #f9fafc; transition: var(--transition);
+        }
+        .auth-card input:focus { border-color: var(--primary); background: #fff; }
+        .auth-card .btn-primary {
+            width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #7c6ef0);
+            color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(108,92,231,0.25);
+        }
+        .auth-card .switch-text { margin-top: 18px; font-size: 0.85rem; color: var(--text-secondary); }
+        .auth-card .switch-text a { color: var(--primary); cursor: pointer; font-weight: 700; }
+
+        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: #2d3436; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 0.85rem; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .toast.show { opacity: 1; }
+
+        .mobile-nav {
+            display: none; position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--surface); border-top: 1px solid var(--border);
+            height: var(--nav-mobile-height); z-index: 100;
+            justify-content: space-around; align-items: center;
+            padding-bottom: env(safe-area-inset-bottom, 0);
+            backdrop-filter: blur(10px); background: rgba(255,255,255,0.9);
+        }
+        .mobile-nav .nav-tab {
+            display: flex; flex-direction: column; align-items: center; cursor: pointer;
+            color: #b2bec3; font-size: 0.7rem; border: none; background: none; padding: 8px;
+            transition: var(--transition);
+        }
+        .mobile-nav .nav-tab.active { color: var(--primary); font-weight: 600; }
+
+        @media (max-width: 768px) {
+            .sidebar { display: none; }
+            .mobile-nav { display: flex; }
+            .main-content { padding-bottom: var(--nav-mobile-height); }
+            .chat-list-panel { width: 100%; min-width: 100%; border-right: none; }
+            .chat-window {
+                position: fixed; top: 0; left: 0; right: 0; bottom: var(--nav-mobile-height);
+                z-index: 50; display: none; background: #fafbfd;
+            }
+            .chat-window.mobile-open { display: flex; }
+            .chat-window .window-header .back-btn { display: block; }
+            .message-bubble { max-width: 80%; }
+            .square-post-box, .square-card { margin-left: 12px; margin-right: 12px; }
+            .settings-page .setting-group { margin-left: 12px; margin-right: 12px; }
+        }
     </style>
 </head>
 <body>
@@ -113,7 +320,7 @@
             <div class="sidebar-header"><span class="logo">6nr</span></div>
             <nav class="sidebar-nav">
                 <button class="nav-item active" data-page="messages" onclick="switchPage('messages')">💬 消息</button>
-                <button class="nav-item" data-page="weibo" onclick="switchPage('weibo')">🌐 微博</button>
+                <button class="nav-item" data-page="square" onclick="switchPage('square')">✨ 广场</button>
                 <button class="nav-item" data-page="friends" onclick="switchPage('friends')">👥 好友</button>
                 <button class="nav-item" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</button>
             </nav>
@@ -127,79 +334,88 @@
             </div>
         </aside>
         <main class="main-content" id="main-content">
+            <!-- 消息页 -->
             <div class="page active" id="page-messages">
                 <div class="chat-list-page">
                     <div class="chat-list-panel">
-                        <div class="panel-header">💬 聊天列表</div>
+                        <div class="panel-header">💬 聊天</div>
                         <div class="chat-list" id="chat-list"></div>
-                        <div class="empty-state" id="chat-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#bbb;">还没有聊天，去添加好友吧</div>
+                        <div class="empty-state" id="chat-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#b2bec3;">还没有聊天，去添加好友吧</div>
                     </div>
                     <div class="chat-window" id="chat-window">
                         <div class="window-header"><button class="back-btn" onclick="closeMobileChat()">←</button><span id="chat-window-title">选择一个对话</span></div>
-                        <div class="chat-messages" id="chat-messages"><div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:#bbb;">👋 选择一个好友开始加密聊天</div></div>
-                        <div class="chat-input-area" id="chat-input-area" style="display:none"><input type="text" id="chat-input" placeholder="输入消息...(端到端加密)" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">➤</button></div>
+                        <div class="chat-messages" id="chat-messages"><div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:#b2bec3;">👋 选择一个好友开始加密聊天</div></div>
+                        <div class="chat-input-area" id="chat-input-area" style="display:none"><input type="text" id="chat-input" placeholder="输入消息...（端到端加密）" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">➤</button></div>
                     </div>
                 </div>
             </div>
-            <div class="page" id="page-weibo">
-                <div class="weibo-page" style="height:100%;">
-                    <div class="weibo-header"><span>🌐 微博广场</span></div>
-                    <div class="weibo-post-box"><textarea id="weibo-input" placeholder="有什么新鲜事想分享？"></textarea><button class="post-btn" onclick="postWeibo()">发布</button></div>
-                    <div id="weibo-list"></div>
+
+            <!-- 广场页 -->
+            <div class="page" id="page-square">
+                <div class="square-page" style="height:100%;">
+                    <div class="square-header"><span>✨ 广场</span></div>
+                    <div class="square-post-box"><textarea id="square-input" placeholder="分享新鲜事..."></textarea><button class="post-btn" onclick="postSquare()">发布</button></div>
+                    <div id="square-list"></div>
                 </div>
             </div>
+
+            <!-- 好友页 -->
             <div class="page" id="page-friends">
                 <div class="friends-page" style="height:100%;">
-                    <div class="page-header">👥 好友管理</div>
+                    <div class="page-header">👥 好友</div>
                     <div class="search-box"><input type="text" id="search-user-input" placeholder="搜索用户..."><button onclick="searchUser()">🔍 搜索</button></div>
                     <div id="search-results"></div>
-                    <div style="padding:8px 20px;font-weight:600;">我的好友</div>
+                    <div style="padding:8px 24px;font-weight:600;color:var(--text-secondary);">我的好友</div>
                     <div id="friends-list"></div>
-                    <div style="padding:8px 20px;font-weight:600;color:#856404;">好友请求</div>
+                    <div style="padding:8px 24px;font-weight:600;color:#856404;">好友请求</div>
                     <div id="requests-list"></div>
                 </div>
             </div>
+
+            <!-- 设置页 -->
             <div class="page" id="page-settings">
                 <div class="settings-page" style="height:100%;">
-                    <div class="page-header">⚙️ 个人设置</div>
+                    <div class="page-header">⚙️ 设置</div>
                     <div class="setting-group">
-                        <h3>修改昵称</h3>
+                        <h3 style="margin-bottom:8px;">昵称</h3>
                         <input type="text" id="nickname-input" placeholder="输入新昵称">
-                        <button class="btn-primary" onclick="updateNickname()">保存昵称</button>
+                        <button class="btn-primary" onclick="updateNickname()" style="margin-top:8px;">保存昵称</button>
                     </div>
                     <div class="setting-group">
-                        <h3>修改头像</h3>
+                        <h3 style="margin-bottom:8px;">头像</h3>
                         <div class="avatar-upload">
                             <div class="avatar-preview" id="avatar-preview">?</div>
                             <input type="file" id="avatar-file" accept="image/*" onchange="previewAvatar(event)" style="display:none">
-                            <button onclick="document.getElementById('avatar-file').click()">上传图片</button>
-                            <button onclick="resetAvatarColor()">重置为纯色</button>
+                            <button onclick="document.getElementById('avatar-file').click()" style="padding:8px 16px;">上传图片</button>
+                            <button onclick="resetAvatarColor()" style="padding:8px 16px;">重置纯色</button>
                         </div>
                         <div class="color-options" id="color-options"></div>
-                        <button class="btn-primary" onclick="saveAvatar()">保存头像</button>
+                        <button class="btn-primary" onclick="saveAvatar()" style="margin-top:8px;">保存头像</button>
                     </div>
                     <div class="setting-group">
-                        <h3>修改密码</h3>
+                        <h3 style="margin-bottom:8px;">密码</h3>
                         <input type="password" id="old-password" placeholder="旧密码">
                         <input type="password" id="new-password" placeholder="新密码">
-                        <button class="btn-primary" onclick="changePassword()">修改密码</button>
+                        <button class="btn-primary" onclick="changePassword()" style="margin-top:8px;">修改密码</button>
                     </div>
-                    <div style="padding:20px;text-align:center;">
-                        <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 30px;border-radius:20px;cursor:pointer;">退出登录</button>
+                    <div style="padding:24px;text-align:center;">
+                        <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 32px;border-radius:24px;cursor:pointer;font-weight:600;">退出登录</button>
                     </div>
                 </div>
             </div>
         </main>
+
         <nav class="mobile-nav" id="mobile-nav">
             <button class="nav-tab active" data-page="messages" onclick="switchPage('messages')">💬消息</button>
-            <button class="nav-tab" data-page="weibo" onclick="switchPage('weibo')">🌐微博</button>
+            <button class="nav-tab" data-page="square" onclick="switchPage('square')">✨广场</button>
             <button class="nav-tab" data-page="friends" onclick="switchPage('friends')">👥好友</button>
             <button class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️设置</button>
         </nav>
+
         <div class="auth-page" id="auth-page" style="display:none;">
             <div class="auth-card">
                 <h2 id="auth-title">🔐 登录 6nr</h2>
-                <p class="subtitle">端到端加密聊天，保护你的隐私</p>
+                <p class="subtitle">端到端加密，安全聊天</p>
                 <input type="text" id="auth-username" placeholder="用户名">
                 <input type="password" id="auth-password" placeholder="密码">
                 <input type="password" id="auth-confirm-password" placeholder="确认密码" style="display:none;">
@@ -208,17 +424,18 @@
             </div>
         </div>
     </div>
+
     <script>
         const API_BASE = '/api';
         const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
         let currentUser = null, authToken = null, currentChatFriend = null, ws = null;
         let isLoginMode = true, isMobile = window.innerWidth <= 768;
-        let friendsCache = [], chatListCache = [], weiboCache = [], userKeyPair = null;
+        let friendsCache = [], chatListCache = [], squareCache = [], userKeyPair = null;
         let currentProfile = { nickname: '', avatar: '' };
 
         function $(id) { return document.getElementById(id); }
         function showToast(msg, d=2500) { const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),d); }
-        function avatarColor(n) { const c=['#4f6ef7','#e74c3c','#2ecc71','#f39c12','#9b59b6']; let h=0; for(let i=0;i<(n||'?').length;i++)h=n.charCodeAt(i)+((h<<5)-h); return c[Math.abs(h)%c.length]; }
+        function avatarColor(n) { const c=['#6c5ce7','#e74c3c','#2ecc71','#f39c12','#9b59b6']; let h=0; for(let i=0;i<(n||'?').length;i++)h=n.charCodeAt(i)+((h<<5)-h); return c[Math.abs(h)%c.length]; }
         function formatTime(ts){ const d=new Date(ts),n=new Date(),df=n-d; if(df<6e4)return'刚刚'; if(df<36e5)return Math.floor(df/6e4)+'分钟前'; if(df<864e5)return Math.floor(df/36e5)+'小时前'; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
 
         const CryptoHelper = {
@@ -273,7 +490,7 @@
 
         function handleLogout(){ if(ws)ws.close(); authToken=null; currentUser=null; userKeyPair=null; localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('auth-page').style.display='flex'; updateUIForUser(); }
 
-        function connectWebSocket(){ if(!authToken)return; if(ws)ws.close(); ws=new WebSocket(WS_URL+'?token='+authToken); ws.onmessage=async(e)=>{ const m=JSON.parse(e.data); if(m.type==='new_message'&&currentUser&&userKeyPair){ const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id; if(currentChatFriend&&currentChatFriend.id===fid){ const sk=await getSharedKeyWithFriend(fid); const dc=await CryptoHelper.decrypt(m.message.content,sk); appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received'); scrollChatBottom(); } loadChatList(); } if(m.type==='new_moment') loadWeibo(); }; ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000); }
+        function connectWebSocket(){ if(!authToken)return; if(ws)ws.close(); ws=new WebSocket(WS_URL+'?token='+authToken); ws.onmessage=async(e)=>{ const m=JSON.parse(e.data); if(m.type==='new_message'&&currentUser&&userKeyPair){ const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id; if(currentChatFriend&&currentChatFriend.id===fid){ const sk=await getSharedKeyWithFriend(fid); const dc=await CryptoHelper.decrypt(m.message.content,sk); appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received'); scrollChatBottom(); } loadChatList(); } if(m.type==='new_moment') loadSquare(); }; ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000); }
         function sendWS(d){ if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(d)); }
 
         function updateUIForUser(){
@@ -295,7 +512,7 @@
             document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active'));
             const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`), mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);
             if(sn)sn.classList.add('active'); if(mn)mn.classList.add('active');
-            if(p==='messages')loadChatList(); if(p==='weibo')loadWeibo(); if(p==='friends')loadFriendsData();
+            if(p==='messages')loadChatList(); if(p==='square')loadSquare(); if(p==='friends')loadFriendsData();
             if(p==='settings') loadProfileSettings();
             if(isMobile&&p!=='messages')$('chat-window').classList.remove('mobile-open');
         }
@@ -325,7 +542,7 @@
         }
 
         function buildColorOptions() {
-            const colors = ['#4f6ef7','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#3498db','#2c3e50','#e91e63'];
+            const colors = ['#6c5ce7','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#3498db','#2c3e50','#e91e63'];
             const container = $('color-options');
             container.innerHTML = colors.map(c => `<div class="color-dot" style="background:${c}" onclick="setAvatarColor('${c}')"></div>`).join('');
         }
@@ -383,7 +600,7 @@
             } catch(e) { showToast(e.message); }
         }
 
-        // 聊天相关
+        // 聊天
         async function loadChatList(){ if(!currentUser)return; try{ const d=await apiFetch('/chat-list'); chatListCache=d.chats||[]; renderChatList(); }catch(e){} }
         function renderChatList(){ const c=$('chat-list'),e=$('chat-empty'); if(chatListCache.length===0){ c.innerHTML=''; e.style.display='flex'; return; } e.style.display='none'; c.innerHTML=chatListCache.map(ch=>`<div class="chat-list-item ${currentChatFriend&&currentChatFriend.id===ch.friend_id?'active':''}" onclick="openChat(${ch.friend_id},'${ch.friend_name}')"><div class="chat-avatar" style="background:${avatarColor(ch.friend_name)}">${ch.friend_name[0].toUpperCase()}</div><div class="chat-info"><div class="chat-name">${ch.friend_nickname||ch.friend_name}</div><div class="chat-preview">🔒 加密消息</div></div><div class="chat-time">${formatTime(ch.last_time)}</div></div>`).join(''); }
         async function openChat(fid,fn){ currentChatFriend={id:fid,username:fn}; $('chat-window-title').textContent='🔒 '+fn; $('chat-input-area').style.display='flex'; if(isMobile)$('chat-window').classList.add('mobile-open'); renderChatList(); await loadMessages(fid); scrollChatBottom(); }
@@ -393,17 +610,17 @@
         function scrollChatBottom(){ setTimeout(()=>{const c=$('chat-messages');c.scrollTop=c.scrollHeight;},100); }
         async function sendMessage(){ if(!currentUser||!currentChatFriend||!userKeyPair)return; const i=$('chat-input'),pt=i.value.trim(); if(!pt)return; i.value=''; const sk=await getSharedKeyWithFriend(currentChatFriend.id); const enc=await CryptoHelper.encrypt(pt,sk); try{ const d=await apiFetch('/messages',{method:'POST',body:JSON.stringify({to_id:currentChatFriend.id,content:enc})}); d.message.decrypted_content=pt; appendMessageBubble(d.message,'sent'); scrollChatBottom(); sendWS({type:'new_message',message:d.message}); loadChatList(); }catch(e){showToast(e.message);} }
 
-        // 微博
-        async function loadWeibo(){ if(!currentUser)return; try{ const d=await apiFetch('/moments'); weiboCache=d.moments||[]; renderWeibo(); }catch(e){} }
-        function renderWeibo(){ const c=$('weibo-list'); if(weiboCache.length===0){ c.innerHTML='<div style="text-align:center;padding:40px;color:#bbb;">暂无微博</div>'; return; } c.innerHTML=weiboCache.map(m=>{ const liked=m.likes&&m.likes.includes(currentUser.id); return `<div class="weibo-card"><div class="weibo-author"><div class="weibo-avatar" style="background:${avatarColor(m.nickname||m.username)}">${(m.nickname||m.username)[0].toUpperCase()}</div><div><div class="weibo-author-name">${m.nickname||m.username}</div><div class="weibo-time">${formatTime(m.created_at)}</div></div></div><div class="weibo-content">${m.content.replace(/</g,'&lt;')}</div><div class="weibo-actions"><span class="${liked?'liked':''}" onclick="toggleLike(${m.id},this)">${liked?'❤️':'🤍'} ${m.like_count||0}</span><span>💬 ${m.comments.length}</span></div><div class="weibo-comments">${m.comments.map(c=>`<div><strong>${c.nickname||c.username}:</strong> ${c.content.replace(/</g,'&lt;')}</div>`).join('')}</div><div class="weibo-comment-input"><input id="comment-input-${m.id}" placeholder="评论..."><button onclick="addComment(${m.id})">发送</button></div></div>`; }).join(''); }
-        async function postWeibo(){ const c=$('weibo-input').value.trim(); if(!c)return showToast('请输入内容'); try{ await apiFetch('/moments',{method:'POST',body:JSON.stringify({content:c})}); $('weibo-input').value=''; sendWS({type:'new_moment'}); loadWeibo(); }catch(e){showToast(e.message);} }
+        // 广场
+        async function loadSquare(){ if(!currentUser)return; try{ const d=await apiFetch('/moments'); squareCache=d.moments||[]; renderSquare(); }catch(e){} }
+        function renderSquare(){ const c=$('square-list'); if(squareCache.length===0){ c.innerHTML='<div style="text-align:center;padding:40px;color:#b2bec3;">暂无动态，快来发布第一条吧</div>'; return; } c.innerHTML=squareCache.map(m=>{ const liked=m.likes&&m.likes.includes(currentUser.id); return `<div class="square-card"><div class="square-author"><div class="square-avatar" style="background:${avatarColor(m.nickname||m.username)}">${(m.nickname||m.username)[0].toUpperCase()}</div><div><div class="square-author-name">${m.nickname||m.username}</div><div class="square-time">${formatTime(m.created_at)}</div></div></div><div class="square-content">${m.content.replace(/</g,'&lt;')}</div><div class="square-actions"><span class="${liked?'liked':''}" onclick="toggleLike(${m.id},this)">${liked?'❤️':'🤍'} ${m.like_count||0}</span><span>💬 ${m.comments.length}</span></div><div class="square-comments">${m.comments.map(c=>`<div><strong>${c.nickname||c.username}:</strong> ${c.content.replace(/</g,'&lt;')}</div>`).join('')}</div><div class="square-comment-input"><input id="comment-input-${m.id}" placeholder="评论..."><button onclick="addComment(${m.id})">发送</button></div></div>`; }).join(''); }
+        async function postSquare(){ const c=$('square-input').value.trim(); if(!c)return showToast('请输入内容'); try{ await apiFetch('/moments',{method:'POST',body:JSON.stringify({content:c})}); $('square-input').value=''; sendWS({type:'new_moment'}); loadSquare(); }catch(e){showToast(e.message);} }
         async function toggleLike(mid,el){ try{ const d=await apiFetch('/moments/'+mid+'/like',{method:'POST'}); el.classList.toggle('liked',d.liked); el.innerHTML=(d.liked?'❤️':'🤍')+' '+d.like_count; }catch(e){} }
-        async function addComment(mid){ const i=$('comment-input-'+mid),c=i.value.trim(); if(!c)return; try{ await apiFetch('/moments/'+mid+'/comment',{method:'POST',body:JSON.stringify({content:c})}); i.value=''; loadWeibo(); }catch(e){showToast(e.message);} }
+        async function addComment(mid){ const i=$('comment-input-'+mid),c=i.value.trim(); if(!c)return; try{ await apiFetch('/moments/'+mid+'/comment',{method:'POST',body:JSON.stringify({content:c})}); i.value=''; loadSquare(); }catch(e){showToast(e.message);} }
 
         // 好友与屏蔽
         async function loadFriendsData(){ if(!currentUser)return; try{ const d=await apiFetch('/friends'); friendsCache=d.friends||[]; renderFriendsList(); renderRequestsList(d.requests||[]); }catch(e){} }
         function renderFriendsList(){ const c=$('friends-list'); if(friendsCache.length===0){ c.innerHTML='<div style="padding:20px;text-align:center;">暂无好友</div>'; return; } c.innerHTML=friendsCache.map(f=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(f.nickname||f.username)};width:40px;height:40px;">${(f.nickname||f.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${f.nickname||f.username}</div></div><button class="btn-chat" onclick="openChat(${f.id},'${f.nickname||f.username}');switchPage('messages')">💬</button><button class="btn-block" onclick="toggleBlock(${f.id}, ${f.is_blocked})">${f.is_blocked ? '取消屏蔽' : '屏蔽'}</button></div>`).join(''); }
-        function renderRequestsList(reqs){ const c=$('requests-list'); if(!reqs||reqs.length===0){ c.innerHTML='<div style="padding:16px 20px;">无待处理请求</div>'; return; } c.innerHTML=reqs.map(r=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(r.nickname||r.username)};width:40px;height:40px;">${(r.nickname||r.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${r.nickname||r.username}</div></div><div class="request-actions"><button class="btn-accept" onclick="handleFriendRequest(${r.from_id},'accept')">接受</button><button class="btn-reject" onclick="handleFriendRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join(''); }
+        function renderRequestsList(reqs){ const c=$('requests-list'); if(!reqs||reqs.length===0){ c.innerHTML='<div style="padding:16px 24px;">无待处理请求</div>'; return; } c.innerHTML=reqs.map(r=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(r.nickname||r.username)};width:40px;height:40px;">${(r.nickname||r.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${r.nickname||r.username}</div></div><div class="request-actions"><button class="btn-accept" onclick="handleFriendRequest(${r.from_id},'accept')">接受</button><button class="btn-reject" onclick="handleFriendRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join(''); }
         async function toggleBlock(friendId, isBlocked) {
             try {
                 if (isBlocked) {
@@ -413,7 +630,7 @@
                 }
                 showToast(isBlocked ? '已取消屏蔽' : '已屏蔽');
                 loadFriendsData();
-                loadWeibo();
+                loadSquare();
             } catch(e) { showToast(e.message); }
         }
         async function searchUser(){ const q=$('search-user-input').value.trim(); if(!q)return; try{ const d=await apiFetch('/search-users?q='+encodeURIComponent(q)); const c=$('search-results'); if(d.users.length===0)c.innerHTML='<div style="padding:16px;">未找到</div>'; else c.innerHTML=d.users.map(u=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(u.nickname||u.username)};width:40px;height:40px;">${(u.nickname||u.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${u.nickname||u.username}</div></div><button class="btn-accept" onclick="sendFriendRequest(${u.id})">➕</button></div>`).join(''); }catch(e){showToast('搜索失败');} }
@@ -426,7 +643,7 @@
             return await CryptoHelper.deriveSharedKey(userKeyPair.privateKey, cleanPub);
         }
 
-        async function loadAllData(){ await Promise.all([loadChatList(),loadFriendsData(),loadWeibo()]); }
+        async function loadAllData(){ await Promise.all([loadChatList(),loadFriendsData(),loadSquare()]); }
 
         window.onload = async function(){
             const savedToken = localStorage.getItem('securechat_token');
