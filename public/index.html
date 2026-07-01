@@ -3,677 +3,530 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>6nr - 加密聊天</title>
+    <title>6nr · 加密聊天</title>
     <style>
         :root {
-            --primary: #6c5ce7;
-            --primary-dark: #5a4bd1;
-            --primary-light: #a29bfe;
-            --bg: #f8f9fd;
-            --surface: #ffffff;
-            --surface-alt: #f1f3f9;
-            --text: #2d3436;
-            --text-secondary: #636e72;
-            --border: #e0e4f0;
-            --hover: #f0f2fa;
-            --danger: #e74c3c;
-            --success: #2ecc71;
-            --warning: #fdcb6e;
-            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.04);
-            --shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.1);
-            --radius: 16px;
-            --radius-sm: 10px;
-            --radius-xs: 8px;
-            --sidebar-width: 320px;
-            --header-height: 64px;
-            --nav-mobile-height: 64px;
-            --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            --primary: #7c5cfc;
+            --primary-soft: #9b8afb;
+            --primary-light: #ede9fe;
+            --bg: #f5f3ff;
+            --surface: rgba(255,255,255,0.72);
+            --surface-solid: #ffffff;
+            --text: #1e1b2e;
+            --text-secondary: #6b6880;
+            --border: #e9e6f5;
+            --hover: #f4f2ff;
+            --danger: #f97066;
+            --success: #32d583;
+            --warning: #fec84b;
+            --shadow-xs: 0 1px 3px rgba(0,0,0,0.02);
+            --shadow-sm: 0 4px 12px rgba(0,0,0,0.04);
+            --shadow: 0 8px 24px rgba(0,0,0,0.06);
+            --shadow-lg: 0 16px 40px rgba(0,0,0,0.1);
+            --radius: 20px;
+            --radius-sm: 14px;
+            --radius-xs: 10px;
+            --sidebar-width: 340px;
+            --header-height: 66px;
+            --nav-mobile-height: 66px;
+            --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin:0; padding:0; box-sizing:border-box; }
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
-            background: var(--bg); color: var(--text); height: 100vh; overflow: hidden;
-            -webkit-font-smoothing: antialiased; user-select: none; -webkit-user-select: none;
+            background: var(--bg); color: var(--text); height:100vh; overflow:hidden;
+            -webkit-font-smoothing: antialiased; user-select:none;
+            background-image: radial-gradient(circle at 30% 20%, #e9e4ff 0%, transparent 60%),
+                              radial-gradient(circle at 80% 70%, #f0ecff 0%, transparent 50%);
         }
-        #app { display: flex; height: 100vh; width: 100%; }
+        #app { display:flex; height:100vh; width:100%; backdrop-filter: blur(2px); }
 
         /* 侧边栏 */
         .sidebar {
             width: var(--sidebar-width); min-width: var(--sidebar-width);
-            background: var(--surface); border-right: 1px solid var(--border);
-            display: flex; flex-direction: column; z-index: 10;
+            background: var(--surface); backdrop-filter: blur(20px);
+            border-right: 1px solid rgba(255,255,255,0.5);
+            display:flex; flex-direction:column; z-index:10;
             box-shadow: var(--shadow-sm);
         }
         .sidebar-header {
-            padding: 20px 24px; border-bottom: 1px solid var(--border);
-            display: flex; align-items: center; justify-content: space-between; height: var(--header-height);
+            padding: 20px 24px; border-bottom: 1px solid rgba(0,0,0,0.04);
+            display:flex; align-items:center; justify-content:space-between; height:var(--header-height);
         }
         .sidebar-header .logo {
-            font-size: 1.5rem; font-weight: 800; background: linear-gradient(135deg, var(--primary), #a29bfe);
+            font-size: 1.6rem; font-weight: 800;
+            background: linear-gradient(135deg, #7c5cfc, #b49fff);
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             letter-spacing: -0.5px;
         }
-        .sidebar-nav { display: flex; flex-direction: column; padding: 12px 12px; gap: 4px; }
+        .sidebar-nav { display:flex; flex-direction:column; padding: 10px 12px; gap: 4px; }
         .sidebar-nav .nav-item {
-            display: flex; align-items: center; gap: 14px; padding: 14px 18px;
-            border-radius: var(--radius-xs); cursor: pointer; transition: var(--transition);
-            font-weight: 500; color: var(--text-secondary); font-size: 0.95rem;
-            border: none; background: none; width: 100%; text-align: left;
+            display:flex; align-items:center; gap:14px; padding:14px 18px;
+            border-radius: var(--radius-xs); cursor:pointer; transition:var(--transition);
+            font-weight:500; color:var(--text-secondary); font-size:0.95rem;
+            border:none; background:none; width:100%; text-align:left;
         }
         .sidebar-nav .nav-item:hover { background: var(--hover); color: var(--text); }
         .sidebar-nav .nav-item.active {
-            background: linear-gradient(135deg, #f0eeff, #e8e4ff);
-            color: var(--primary); font-weight: 600;
+            background: var(--primary-light); color: var(--primary);
+            font-weight: 600; box-shadow: inset 0 0 0 1px rgba(124,92,252,0.1);
         }
         .sidebar-footer {
-            margin-top: auto; padding: 16px; border-top: 1px solid var(--border);
-            display: flex; align-items: center; gap: 12px; cursor: pointer;
-            transition: var(--transition); border-radius: var(--radius-sm); margin: 8px;
+            margin-top:auto; padding:14px 16px; border-top:1px solid rgba(0,0,0,0.04);
+            display:flex; align-items:center; gap:12px; cursor:pointer;
+            transition:var(--transition); border-radius:var(--radius-sm); margin:8px;
         }
         .sidebar-footer:hover { background: var(--hover); }
         .sidebar-footer .avatar {
             width: 42px; height: 42px; border-radius: 50%; background: var(--primary);
-            color: #fff; display: flex; align-items: center; justify-content: center;
-            font-weight: 700; font-size: 1rem; flex-shrink: 0;
-            background-size: cover; background-position: center;
-            box-shadow: 0 2px 8px rgba(108, 92, 231, 0.2);
+            color: #fff; display:flex; align-items:center; justify-content:center;
+            font-weight:700; font-size:1rem; flex-shrink:0;
+            background-size:cover; background-position:center;
+            box-shadow: 0 4px 10px rgba(124,92,252,0.25);
         }
-        .sidebar-footer .user-info { flex: 1; min-width: 0; }
-        .sidebar-footer .user-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-        .sidebar-footer .user-status { font-size: 0.75rem; color: var(--success); display: flex; align-items: center; gap: 4px; }
-        .sidebar-footer .user-status::before { content: ''; width: 6px; height: 6px; background: var(--success); border-radius: 50%; display: inline-block; }
-        .logout-btn { background: none; border: none; color: #b2bec3; cursor: pointer; padding: 6px; border-radius: 50%; transition: var(--transition); }
-        .logout-btn:hover { color: var(--danger); background: #fff5f5; }
+        .sidebar-footer .user-info { flex:1; min-width:0; }
+        .sidebar-footer .user-name { font-weight:600; font-size:0.9rem; color:var(--text); }
+        .sidebar-footer .user-status { font-size:0.75rem; color:var(--success); display:flex; align-items:center; gap:4px; }
+        .sidebar-footer .user-status::before { content:''; width:6px; height:6px; background:var(--success); border-radius:50%; }
+        .logout-btn { background:none; border:none; color:#c4bfd6; cursor:pointer; padding:6px; border-radius:50%; transition:var(--transition); }
+        .logout-btn:hover { color:var(--danger); background:#fff0f0; }
 
         /* 主内容区 */
-        .main-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--bg); }
-        .page { display: none; flex-direction: column; height: 100%; overflow: hidden; }
-        .page.active { display: flex; }
+        .main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .page { display:none; flex-direction:column; height:100%; overflow:hidden; }
+        .page.active { display:flex; }
 
-        /* 聊天 */
-        .chat-list-page { display: flex; height: 100%; }
+        /* 聊天列表 */
+        .chat-list-page { display:flex; height:100%; }
         .chat-list-panel {
-            width: 340px; min-width: 340px; background: var(--surface);
-            border-right: 1px solid var(--border); display: flex; flex-direction: column;
+            width: 350px; min-width:350px; background: var(--surface); backdrop-filter: blur(20px);
+            border-right:1px solid rgba(0,0,0,0.04); display:flex; flex-direction:column;
         }
         .chat-list-panel .panel-header {
-            padding: 20px 24px; font-weight: 700; font-size: 1.1rem;
-            border-bottom: 1px solid var(--border); height: var(--header-height);
-            display: flex; align-items: center; color: var(--text);
+            padding:20px 24px; font-weight:700; font-size:1.1rem;
+            border-bottom:1px solid rgba(0,0,0,0.04); height:var(--header-height);
+            display:flex; align-items:center; color:var(--text);
         }
-        .chat-list { flex: 1; overflow-y: auto; padding: 8px 0; }
+        .chat-list { flex:1; overflow-y:auto; padding:8px 10px; }
         .chat-list-item {
-            display: flex; align-items: center; gap: 14px; padding: 14px 20px;
-            cursor: pointer; transition: var(--transition); margin: 0 8px; border-radius: var(--radius-xs);
-            border: 1px solid transparent;
+            display:flex; align-items:center; gap:14px; padding:14px 16px;
+            cursor:pointer; transition:var(--transition); border-radius:var(--radius-xs);
+            margin-bottom:2px; border:1px solid transparent;
         }
-        .chat-list-item:hover { background: var(--hover); border-color: var(--border); }
-        .chat-list-item.active { background: #f0eeff; border-color: var(--primary-light); box-shadow: 0 2px 8px rgba(108,92,231,0.1); }
+        .chat-list-item:hover { background: var(--hover); border-color: #ede9fe; }
+        .chat-list-item.active {
+            background: var(--primary-light); border-color: #d9d0ff;
+            box-shadow: 0 2px 8px rgba(124,92,252,0.08);
+        }
         .chat-list-item .chat-avatar {
-            width: 48px; height: 48px; border-radius: 50%; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: 700; color: #fff; font-size: 1.1rem;
-            background-size: cover; box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            width:48px; height:48px; border-radius:50%; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:700; color:#fff; font-size:1.1rem;
+            background-size:cover; box-shadow:0 2px 6px rgba(0,0,0,0.06);
         }
-        .chat-list-item .chat-info { flex: 1; min-width: 0; }
-        .chat-list-item .chat-name { font-weight: 600; font-size: 0.9rem; color: var(--text); }
-        .chat-list-item .chat-preview { font-size: 0.78rem; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
-        .chat-list-item .chat-time { font-size: 0.7rem; color: #b2bec3; flex-shrink: 0; }
-        .chat-window { flex: 1; display: flex; flex-direction: column; background: #fafbfd; }
+        .chat-list-item .chat-info { flex:1; min-width:0; }
+        .chat-list-item .chat-name { font-weight:600; font-size:0.9rem; }
+        .chat-list-item .chat-preview { font-size:0.78rem; color:var(--text-secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+        .chat-list-item .chat-time { font-size:0.7rem; color:#bbb; flex-shrink:0; }
+        .chat-window { flex:1; display:flex; flex-direction:column; background:#faf9ff; }
         .chat-window .window-header {
-            padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--surface);
-            display: flex; align-items: center; gap: 14px; height: var(--header-height);
+            padding:16px 24px; border-bottom:1px solid rgba(0,0,0,0.04);
+            background: var(--surface); backdrop-filter:blur(20px);
+            display:flex; align-items:center; gap:14px; height:var(--header-height);
         }
-        .chat-window .window-header .back-btn { display: none; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text); }
-        .chat-messages { flex: 1; overflow-y: auto; padding: 24px; display: flex; flex-direction: column; gap: 12px; }
+        .chat-messages { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:12px; }
         .message-bubble {
-            max-width: 70%; padding: 12px 18px; border-radius: 20px; font-size: 0.92rem;
-            line-height: 1.5; word-break: break-word; animation: msgIn 0.25s ease;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            max-width:66%; padding:14px 20px; border-radius:22px; font-size:0.92rem;
+            line-height:1.5; word-break:break-word; animation: msgIn 0.25s ease;
+            box-shadow:0 2px 8px rgba(0,0,0,0.04);
         }
-        @keyframes msgIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes msgIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
         .message-bubble.sent {
-            align-self: flex-end; background: linear-gradient(135deg, var(--primary), #7c6ef0);
-            color: #fff; border-bottom-right-radius: 6px;
+            align-self:flex-end; background:linear-gradient(135deg, #7c5cfc, #9b8afb);
+            color:#fff; border-bottom-right-radius:8px;
         }
         .message-bubble.received {
-            align-self: flex-start; background: #fff; border: 1px solid #edf0f5;
-            border-bottom-left-radius: 6px;
+            align-self:flex-start; background:#fff; border:1px solid #efeafc;
+            border-bottom-left-radius:8px;
         }
-        .message-bubble .msg-time { font-size: 0.65rem; margin-top: 4px; opacity: 0.7; text-align: right; }
-        .message-bubble .encrypted-badge { font-size: 0.6rem; opacity: 0.5; display: flex; align-items: center; gap: 4px; margin-top: 4px; }
+        .message-bubble .msg-time { font-size:0.65rem; margin-top:6px; opacity:0.7; text-align:right; }
+        .message-bubble .encrypted-badge { font-size:0.6rem; opacity:0.5; display:flex; align-items:center; gap:4px; margin-top:4px; }
         .chat-input-area {
-            padding: 14px 20px; background: var(--surface); border-top: 1px solid var(--border);
-            display: flex; gap: 12px; align-items: center;
+            padding:14px 20px; background:var(--surface); backdrop-filter:blur(20px);
+            border-top:1px solid rgba(0,0,0,0.04); display:flex; gap:12px; align-items:center;
         }
         .chat-input-area input {
-            flex: 1; padding: 12px 18px; border: 1.5px solid var(--border);
-            border-radius: 24px; font-size: 0.9rem; outline: none; background: var(--surface-alt);
-            transition: var(--transition);
+            flex:1; padding:12px 18px; border:1.5px solid #e9e6f5;
+            border-radius:24px; font-size:0.9rem; outline:none; background:#fcfaff;
+            transition:var(--transition);
         }
-        .chat-input-area input:focus { border-color: var(--primary); background: #fff; box-shadow: 0 0 0 3px rgba(108,92,231,0.1); }
+        .chat-input-area input:focus { border-color:var(--primary); background:#fff; box-shadow:0 0 0 3px rgba(124,92,252,0.08); }
         .chat-input-area button {
-            width: 44px; height: 44px; border-radius: 50%; background: var(--primary);
-            color: #fff; border: none; cursor: pointer; font-size: 1.2rem;
-            box-shadow: 0 4px 10px rgba(108,92,231,0.3); transition: var(--transition);
+            width:44px; height:44px; border-radius:50%; background:var(--primary);
+            color:#fff; border:none; cursor:pointer; font-size:1.2rem;
+            box-shadow:0 6px 16px rgba(124,92,252,0.3); transition:var(--transition);
         }
-        .chat-input-area button:hover { background: var(--primary-dark); transform: scale(1.05); }
+        .chat-input-area button:hover { background:#6b4eeb; transform:scale(1.05); }
 
         /* 广场 */
-        .square-page, .friends-page, .settings-page { padding: 0; overflow-y: auto; background: var(--bg); }
+        .square-page, .friends-page, .settings-page { padding:0; overflow-y:auto; }
         .square-header, .page-header {
-            background: var(--surface); padding: 20px 24px; font-weight: 700; font-size: 1.1rem;
-            border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5;
-            height: var(--header-height); display: flex; align-items: center; justify-content: space-between;
-            backdrop-filter: blur(10px); background: rgba(255,255,255,0.85);
+            background: var(--surface); backdrop-filter:blur(20px);
+            padding:20px 24px; font-weight:700; font-size:1.1rem;
+            border-bottom:1px solid rgba(0,0,0,0.04); position:sticky; top:0; z-index:5;
+            height:var(--header-height); display:flex; align-items:center; justify-content:space-between;
         }
         .square-post-box {
-            background: var(--surface); margin: 20px 24px; padding: 20px;
-            border-radius: var(--radius); box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px;
+            background: var(--surface-solid); margin:20px 24px; padding:20px;
+            border-radius:var(--radius); box-shadow:var(--shadow); display:flex; flex-direction:column; gap:12px;
+            border:1px solid rgba(0,0,0,0.02);
         }
         .square-post-box textarea {
-            width: 100%; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
-            padding: 14px; font-size: 0.9rem; resize: none; font-family: inherit;
-            outline: none; min-height: 90px; background: var(--surface-alt); transition: var(--transition);
+            width:100%; border:1.5px solid #e9e6f5; border-radius:var(--radius-sm);
+            padding:14px; font-size:0.9rem; resize:none; font-family:inherit;
+            outline:none; min-height:90px; background:#fcfaff; transition:var(--transition);
         }
-        .square-post-box textarea:focus { border-color: var(--primary); background: #fff; }
+        .square-post-box textarea:focus { border-color:var(--primary); background:#fff; }
         .square-post-box .post-btn, .settings-page .btn-primary {
-            padding: 10px 24px; background: linear-gradient(135deg, var(--primary), #7c6ef0);
-            color: #fff; border: none; border-radius: 20px; cursor: pointer; font-weight: 600;
-            box-shadow: 0 4px 10px rgba(108,92,231,0.2); transition: var(--transition);
+            padding:10px 24px; background:linear-gradient(135deg, #7c5cfc, #9b8afb);
+            color:#fff; border:none; border-radius:24px; cursor:pointer; font-weight:600;
+            box-shadow:0 6px 14px rgba(124,92,252,0.2); transition:var(--transition);
         }
-        .square-post-box .post-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 14px rgba(108,92,231,0.3); }
+        .square-post-box .post-btn:hover, .settings-page .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(124,92,252,0.3); }
         .square-card {
-            background: var(--surface); margin: 12px 24px; padding: 18px;
-            border-radius: var(--radius); box-shadow: var(--shadow-sm);
-            transition: var(--transition); border: 1px solid transparent;
+            background: var(--surface-solid); margin:12px 24px; padding:20px;
+            border-radius:var(--radius); box-shadow:var(--shadow-xs); border:1px solid rgba(0,0,0,0.02);
+            transition:var(--transition);
         }
-        .square-card:hover { border-color: #e8ecf5; box-shadow: var(--shadow); }
-        .square-card .square-author { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+        .square-card:hover { box-shadow:var(--shadow); border-color:#ede9fe; }
+        .square-card .square-author { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
         .square-card .square-avatar {
-            width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
-            color: #fff; font-weight: 700; background-size: cover;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            width:42px; height:42px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+            color:#fff; font-weight:700; background-size:cover; box-shadow:0 2px 6px rgba(0,0,0,0.06);
         }
-        .square-card .square-author-name { font-weight: 600; font-size: 0.9rem; }
-        .square-card .square-time { font-size: 0.7rem; color: #b2bec3; }
-        .square-card .square-content { font-size: 0.92rem; line-height: 1.6; margin-bottom: 12px; color: var(--text); }
-        .square-card .square-actions { display: flex; gap: 24px; font-size: 0.8rem; color: var(--text-secondary); }
-        .square-card .square-actions span { cursor: pointer; display: flex; align-items: center; gap: 5px; transition: var(--transition); }
-        .square-card .square-actions span:hover { color: var(--primary); }
-        .square-card .square-actions span.liked { color: #e74c3c; }
-        .square-comments { margin-top: 14px; padding-top: 14px; border-top: 1px solid #f1f3f8; font-size: 0.82rem; }
-        .square-comment-input { display: flex; gap: 8px; margin-top: 10px; }
-        .square-comment-input input { flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 14px; font-size: 0.78rem; outline: none; background: var(--surface-alt); }
-        .square-comment-input button { padding: 8px 14px; background: var(--primary); color: #fff; border: none; border-radius: 14px; cursor: pointer; font-weight: 600; }
+        .square-card .square-author-name { font-weight:600; font-size:0.9rem; }
+        .square-card .square-time { font-size:0.7rem; color:#bbb; }
+        .square-card .square-content { font-size:0.92rem; line-height:1.6; margin-bottom:14px; }
+        .square-card .square-actions { display:flex; gap:24px; font-size:0.8rem; color:var(--text-secondary); }
+        .square-card .square-actions span { cursor:pointer; display:flex; align-items:center; gap:5px; transition:var(--transition); }
+        .square-card .square-actions span:hover { color:var(--primary); }
+        .square-card .square-actions span.liked { color:#f97066; }
+        .square-comments { margin-top:14px; padding-top:14px; border-top:1px solid #f3efff; font-size:0.82rem; }
+        .square-comment-input { display:flex; gap:8px; margin-top:10px; }
+        .square-comment-input input { flex:1; padding:8px 14px; border:1px solid #e9e6f5; border-radius:14px; font-size:0.78rem; outline:none; background:#fcfaff; }
+        .square-comment-input button { padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:14px; cursor:pointer; font-weight:600; }
 
         /* 好友 */
         .friend-item {
-            display: flex; align-items: center; gap: 14px; padding: 14px 24px;
-            background: var(--surface); border-bottom: 1px solid #f5f6fa; cursor: pointer;
-            transition: var(--transition);
+            display:flex; align-items:center; gap:14px; padding:14px 24px;
+            background: var(--surface-solid); border-bottom:1px solid #f5f3ff;
+            cursor:pointer; transition:var(--transition);
         }
-        .friend-item:hover { background: var(--hover); }
-        .search-box { margin: 16px 24px; display: flex; gap: 10px; }
+        .friend-item:hover { background: #faf8ff; }
+        .search-box { margin:16px 24px; display:flex; gap:10px; }
         .search-box input {
-            flex: 1; padding: 12px 16px; border: 1.5px solid var(--border);
-            border-radius: 24px; font-size: 0.85rem; outline: none; background: var(--surface-alt);
+            flex:1; padding:12px 16px; border:1.5px solid #e9e6f5;
+            border-radius:24px; font-size:0.85rem; outline:none; background:#fcfaff;
         }
         .search-box button {
-            padding: 12px 20px; background: var(--primary); color: #fff; border: none;
-            border-radius: 24px; cursor: pointer; font-weight: 600;
+            padding:12px 20px; background:var(--primary); color:#fff; border:none;
+            border-radius:24px; cursor:pointer; font-weight:600;
         }
-        .btn-accept, .btn-chat, .btn-block { padding: 6px 14px; border: none; border-radius: 14px; cursor: pointer; font-weight: 600; font-size: 0.75rem; }
-        .btn-accept { background: var(--success); color: #fff; }
-        .btn-reject { background: #eee; color: #666; padding: 6px 14px; border: none; border-radius: 14px; cursor: pointer; }
-        .btn-chat { background: var(--primary); color: #fff; margin-left: auto; }
-        .btn-block { background: #ffa502; color: #fff; margin-left: 8px; }
+        .btn-accept, .btn-chat, .btn-block { padding:6px 14px; border:none; border-radius:14px; cursor:pointer; font-weight:600; font-size:0.75rem; }
+        .btn-accept { background:var(--success); color:#fff; }
+        .btn-reject { background:#eee; color:#666; padding:6px 14px; border:none; border-radius:14px; cursor:pointer; }
+        .btn-chat { background:var(--primary); color:#fff; margin-left:auto; }
+        .btn-block { background:#fdb44b; color:#fff; margin-left:8px; }
 
         /* 设置 */
         .settings-page .setting-group {
-            margin: 16px 24px; background: var(--surface); padding: 20px;
-            border-radius: var(--radius); box-shadow: var(--shadow-sm);
+            margin:16px 24px; background:var(--surface-solid); padding:20px;
+            border-radius:var(--radius); box-shadow:var(--shadow-xs);
+            border:1px solid rgba(0,0,0,0.02);
         }
         .settings-page input[type="text"], .settings-page input[type="password"] {
-            width: 100%; padding: 12px 14px; margin: 10px 0;
-            border: 1.5px solid var(--border); border-radius: var(--radius-xs); outline: none;
-            background: var(--surface-alt); transition: var(--transition);
+            width:100%; padding:12px 14px; margin:10px 0;
+            border:1.5px solid #e9e6f5; border-radius:var(--radius-xs); outline:none;
+            background:#fcfaff; transition:var(--transition);
         }
-        .settings-page input:focus { border-color: var(--primary); background: #fff; }
-        .avatar-upload { display: flex; align-items: center; gap: 16px; margin: 12px 0; }
+        .settings-page input:focus { border-color:var(--primary); background:#fff; }
+        .avatar-upload { display:flex; align-items:center; gap:16px; margin:12px 0; }
         .avatar-preview {
-            width: 64px; height: 64px; border-radius: 50%; background: var(--primary);
-            color: #fff; display: flex; align-items: center; justify-content: center;
-            font-size: 1.6rem; background-size: cover; cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width:64px; height:64px; border-radius:50%; background:var(--primary);
+            color:#fff; display:flex; align-items:center; justify-content:center;
+            font-size:1.6rem; background-size:cover; cursor:pointer;
+            box-shadow:0 4px 12px rgba(0,0,0,0.06);
         }
-        .color-options { display: flex; gap: 10px; flex-wrap: wrap; }
-        .color-dot { width: 32px; height: 32px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: var(--transition); }
-        .color-dot.selected { border-color: var(--primary); transform: scale(1.1); }
+        .color-options { display:flex; gap:10px; flex-wrap:wrap; }
+        .color-dot { width:30px; height:30px; border-radius:50%; cursor:pointer; border:2px solid transparent; transition:var(--transition); }
+        .color-dot.selected { border-color:var(--primary); transform:scale(1.1); }
 
         /* 登录 */
         .auth-page {
-            display: flex; align-items: center; justify-content: center; height: 100vh;
-            background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%); padding: 20px;
+            display:flex; align-items:center; justify-content:center; height:100vh;
+            background:linear-gradient(135deg, #e9e4ff 0%, #f0ecff 100%);
+            backdrop-filter:blur(10px);
         }
         .auth-card {
-            background: #fff; border-radius: 24px; padding: 44px 36px;
-            width: 100%; max-width: 420px; box-shadow: 0 30px 60px rgba(0,0,0,0.15); text-align: center;
+            background:rgba(255,255,255,0.8); backdrop-filter:blur(24px);
+            border-radius:28px; padding:44px 36px;
+            width:100%; max-width:420px; box-shadow:0 30px 60px rgba(0,0,0,0.1);
+            border:1px solid rgba(255,255,255,0.5); text-align:center;
         }
-        .auth-card h2 { font-size: 1.8rem; font-weight: 800; margin-bottom: 4px; color: var(--text); }
-        .auth-card .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; }
+        .auth-card h2 { font-size:1.8rem; font-weight:800; margin-bottom:4px; color:var(--text); }
+        .auth-card .subtitle { color:var(--text-secondary); font-size:0.9rem; margin-bottom:28px; }
         .auth-card input {
-            width: 100%; padding: 14px 18px; border: 1.5px solid var(--border);
-            border-radius: 12px; font-size: 0.9rem; margin-bottom: 14px; outline: none;
-            background: #f9fafc; transition: var(--transition);
+            width:100%; padding:14px 18px; border:1.5px solid #e9e6f5;
+            border-radius:14px; font-size:0.9rem; margin-bottom:14px; outline:none;
+            background:rgba(255,255,255,0.7); transition:var(--transition);
         }
-        .auth-card input:focus { border-color: var(--primary); background: #fff; }
+        .auth-card input:focus { border-color:var(--primary); background:#fff; }
         .auth-card .btn-primary {
-            width: 100%; padding: 14px; background: linear-gradient(135deg, var(--primary), #7c6ef0);
-            color: #fff; border: none; border-radius: 12px; font-size: 1rem; font-weight: 700;
-            cursor: pointer; margin-top: 10px; box-shadow: 0 8px 20px rgba(108,92,231,0.25);
+            width:100%; padding:14px; background:linear-gradient(135deg, #7c5cfc, #9b8afb);
+            color:#fff; border:none; border-radius:14px; font-size:1rem; font-weight:700;
+            cursor:pointer; margin-top:10px; box-shadow:0 8px 24px rgba(124,92,252,0.3);
         }
-        .auth-card .switch-text { margin-top: 18px; font-size: 0.85rem; color: var(--text-secondary); }
-        .auth-card .switch-text a { color: var(--primary); cursor: pointer; font-weight: 700; }
+        .auth-card .switch-text { margin-top:18px; font-size:0.85rem; color:var(--text-secondary); }
+        .auth-card .switch-text a { color:var(--primary); cursor:pointer; font-weight:700; }
 
-        .toast { position: fixed; top: 24px; left: 50%; transform: translateX(-50%); background: #2d3436; color: #fff; padding: 12px 24px; border-radius: 24px; font-size: 0.85rem; z-index: 9999; opacity: 0; transition: opacity 0.3s; pointer-events: none; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .toast.show { opacity: 1; }
+        .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:#2d2a3e; color:#fff; padding:12px 24px; border-radius:24px; font-size:0.85rem; z-index:9999; opacity:0; transition:opacity 0.3s; pointer-events:none; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
+        .toast.show { opacity:1; }
 
         .mobile-nav {
-            display: none; position: fixed; bottom: 0; left: 0; right: 0;
-            background: var(--surface); border-top: 1px solid var(--border);
-            height: var(--nav-mobile-height); z-index: 100;
-            justify-content: space-around; align-items: center;
-            padding-bottom: env(safe-area-inset-bottom, 0);
-            backdrop-filter: blur(10px); background: rgba(255,255,255,0.9);
+            display:none; position:fixed; bottom:0; left:0; right:0;
+            background:rgba(255,255,255,0.8); backdrop-filter:blur(20px);
+            border-top:1px solid rgba(0,0,0,0.04); height:var(--nav-mobile-height); z-index:100;
+            justify-content:space-around; align-items:center; padding-bottom:env(safe-area-inset-bottom,0);
         }
         .mobile-nav .nav-tab {
-            display: flex; flex-direction: column; align-items: center; cursor: pointer;
-            color: #b2bec3; font-size: 0.7rem; border: none; background: none; padding: 8px;
-            transition: var(--transition);
+            display:flex; flex-direction:column; align-items:center; cursor:pointer;
+            color:#bfb8d9; font-size:0.7rem; border:none; background:none; padding:8px;
         }
-        .mobile-nav .nav-tab.active { color: var(--primary); font-weight: 600; }
+        .mobile-nav .nav-tab.active { color:var(--primary); font-weight:600; }
 
-        @media (max-width: 768px) {
-            .sidebar { display: none; }
-            .mobile-nav { display: flex; }
-            .main-content { padding-bottom: var(--nav-mobile-height); }
-            .chat-list-panel { width: 100%; min-width: 100%; border-right: none; }
-            .chat-window {
-                position: fixed; top: 0; left: 0; right: 0; bottom: var(--nav-mobile-height);
-                z-index: 50; display: none; background: #fafbfd;
-            }
-            .chat-window.mobile-open { display: flex; }
-            .chat-window .window-header .back-btn { display: block; }
-            .message-bubble { max-width: 80%; }
-            .square-post-box, .square-card { margin-left: 12px; margin-right: 12px; }
-            .settings-page .setting-group { margin-left: 12px; margin-right: 12px; }
+        @media (max-width:768px) {
+            .sidebar { display:none; }
+            .mobile-nav { display:flex; }
+            .main-content { padding-bottom:var(--nav-mobile-height); }
+            .chat-list-panel { width:100%; min-width:100%; border-right:none; }
+            .chat-window { position:fixed; top:0; left:0; right:0; bottom:var(--nav-mobile-height); z-index:50; display:none; }
+            .chat-window.mobile-open { display:flex; }
+            .chat-window .window-header .back-btn { display:block; }
+            .message-bubble { max-width:80%; }
+            .square-post-box, .square-card { margin-left:12px; margin-right:12px; }
+            .settings-page .setting-group { margin-left:12px; margin-right:12px; }
         }
     </style>
 </head>
 <body>
-    <div id="app">
-        <div class="toast" id="toast"></div>
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header"><span class="logo">6nr</span></div>
-            <nav class="sidebar-nav">
-                <button class="nav-item active" data-page="messages" onclick="switchPage('messages')">💬 消息</button>
-                <button class="nav-item" data-page="square" onclick="switchPage('square')">✨ 广场</button>
-                <button class="nav-item" data-page="friends" onclick="switchPage('friends')">👥 好友</button>
-                <button class="nav-item" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</button>
-            </nav>
-            <div class="sidebar-footer" onclick="switchPage('settings')">
-                <div class="avatar" id="sidebar-avatar">?</div>
-                <div class="user-info">
-                    <div class="user-name" id="sidebar-name">未登录</div>
-                    <div class="user-status">在线</div>
-                </div>
-                <button class="logout-btn" onclick="event.stopPropagation(); handleLogout()">⏻</button>
-            </div>
-        </aside>
-        <main class="main-content" id="main-content">
-            <!-- 消息页 -->
-            <div class="page active" id="page-messages">
-                <div class="chat-list-page">
-                    <div class="chat-list-panel">
-                        <div class="panel-header">💬 聊天</div>
-                        <div class="chat-list" id="chat-list"></div>
-                        <div class="empty-state" id="chat-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#b2bec3;">还没有聊天，去添加好友吧</div>
-                    </div>
-                    <div class="chat-window" id="chat-window">
-                        <div class="window-header"><button class="back-btn" onclick="closeMobileChat()">←</button><span id="chat-window-title">选择一个对话</span></div>
-                        <div class="chat-messages" id="chat-messages"><div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:#b2bec3;">👋 选择一个好友开始加密聊天</div></div>
-                        <div class="chat-input-area" id="chat-input-area" style="display:none"><input type="text" id="chat-input" placeholder="输入消息...（端到端加密）" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">➤</button></div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 广场页 -->
-            <div class="page" id="page-square">
-                <div class="square-page" style="height:100%;">
-                    <div class="square-header"><span>✨ 广场</span></div>
-                    <div class="square-post-box"><textarea id="square-input" placeholder="分享新鲜事..."></textarea><button class="post-btn" onclick="postSquare()">发布</button></div>
-                    <div id="square-list"></div>
-                </div>
-            </div>
-
-            <!-- 好友页 -->
-            <div class="page" id="page-friends">
-                <div class="friends-page" style="height:100%;">
-                    <div class="page-header">👥 好友</div>
-                    <div class="search-box"><input type="text" id="search-user-input" placeholder="搜索用户..."><button onclick="searchUser()">🔍 搜索</button></div>
-                    <div id="search-results"></div>
-                    <div style="padding:8px 24px;font-weight:600;color:var(--text-secondary);">我的好友</div>
-                    <div id="friends-list"></div>
-                    <div style="padding:8px 24px;font-weight:600;color:#856404;">好友请求</div>
-                    <div id="requests-list"></div>
-                </div>
-            </div>
-
-            <!-- 设置页 -->
-            <div class="page" id="page-settings">
-                <div class="settings-page" style="height:100%;">
-                    <div class="page-header">⚙️ 设置</div>
-                    <div class="setting-group">
-                        <h3 style="margin-bottom:8px;">昵称</h3>
-                        <input type="text" id="nickname-input" placeholder="输入新昵称">
-                        <button class="btn-primary" onclick="updateNickname()" style="margin-top:8px;">保存昵称</button>
-                    </div>
-                    <div class="setting-group">
-                        <h3 style="margin-bottom:8px;">头像</h3>
-                        <div class="avatar-upload">
-                            <div class="avatar-preview" id="avatar-preview">?</div>
-                            <input type="file" id="avatar-file" accept="image/*" onchange="previewAvatar(event)" style="display:none">
-                            <button onclick="document.getElementById('avatar-file').click()" style="padding:8px 16px;">上传图片</button>
-                            <button onclick="resetAvatarColor()" style="padding:8px 16px;">重置纯色</button>
-                        </div>
-                        <div class="color-options" id="color-options"></div>
-                        <button class="btn-primary" onclick="saveAvatar()" style="margin-top:8px;">保存头像</button>
-                    </div>
-                    <div class="setting-group">
-                        <h3 style="margin-bottom:8px;">密码</h3>
-                        <input type="password" id="old-password" placeholder="旧密码">
-                        <input type="password" id="new-password" placeholder="新密码">
-                        <button class="btn-primary" onclick="changePassword()" style="margin-top:8px;">修改密码</button>
-                    </div>
-                    <div style="padding:24px;text-align:center;">
-                        <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 32px;border-radius:24px;cursor:pointer;font-weight:600;">退出登录</button>
-                    </div>
-                </div>
-            </div>
-        </main>
-
-        <nav class="mobile-nav" id="mobile-nav">
-            <button class="nav-tab active" data-page="messages" onclick="switchPage('messages')">💬消息</button>
-            <button class="nav-tab" data-page="square" onclick="switchPage('square')">✨广场</button>
-            <button class="nav-tab" data-page="friends" onclick="switchPage('friends')">👥好友</button>
-            <button class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️设置</button>
+<div id="app">
+    <div class="toast" id="toast"></div>
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header"><span class="logo">6nr</span></div>
+        <nav class="sidebar-nav">
+            <button class="nav-item active" data-page="messages" onclick="switchPage('messages')">💬 消息</button>
+            <button class="nav-item" data-page="square" onclick="switchPage('square')">✨ 广场</button>
+            <button class="nav-item" data-page="friends" onclick="switchPage('friends')">👥 好友</button>
+            <button class="nav-item" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</button>
         </nav>
-
-        <div class="auth-page" id="auth-page" style="display:none;">
-            <div class="auth-card">
-                <h2 id="auth-title">🔐 登录 6nr</h2>
-                <p class="subtitle">端到端加密，安全聊天</p>
-                <input type="text" id="auth-username" placeholder="用户名">
-                <input type="password" id="auth-password" placeholder="密码">
-                <input type="password" id="auth-confirm-password" placeholder="确认密码" style="display:none;">
-                <button class="btn-primary" id="auth-btn" onclick="handleAuth()">登 录</button>
-                <p class="switch-text" id="switch-text">还没有账号？<a onclick="toggleAuthMode()">立即注册</a></p>
+        <div class="sidebar-footer" onclick="switchPage('settings')">
+            <div class="avatar" id="sidebar-avatar">?</div>
+            <div class="user-info">
+                <div class="user-name" id="sidebar-name">未登录</div>
+                <div class="user-status">在线</div>
+            </div>
+            <button class="logout-btn" onclick="event.stopPropagation(); handleLogout()">⏻</button>
+        </div>
+    </aside>
+    <main class="main-content" id="main-content">
+        <div class="page active" id="page-messages">
+            <div class="chat-list-page">
+                <div class="chat-list-panel">
+                    <div class="panel-header">💬 聊天</div>
+                    <div class="chat-list" id="chat-list"></div>
+                    <div class="empty-state" id="chat-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#c4bfd6;">还没有聊天，去添加好友吧</div>
+                </div>
+                <div class="chat-window" id="chat-window">
+                    <div class="window-header"><button class="back-btn" onclick="closeMobileChat()">←</button><span id="chat-window-title">选择一个对话</span></div>
+                    <div class="chat-messages" id="chat-messages"><div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:#c4bfd6;">👋 选择一个好友开始加密聊天</div></div>
+                    <div class="chat-input-area" id="chat-input-area" style="display:none"><input type="text" id="chat-input" placeholder="输入消息...（端到端加密）" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">➤</button></div>
+                </div>
             </div>
         </div>
+        <div class="page" id="page-square">
+            <div class="square-page" style="height:100%;">
+                <div class="square-header"><span>✨ 广场</span></div>
+                <div class="square-post-box"><textarea id="square-input" placeholder="分享新鲜事..."></textarea><button class="post-btn" onclick="postSquare()">发布</button></div>
+                <div id="square-list"></div>
+            </div>
+        </div>
+        <div class="page" id="page-friends">
+            <div class="friends-page" style="height:100%;">
+                <div class="page-header">👥 好友</div>
+                <div class="search-box"><input type="text" id="search-user-input" placeholder="搜索用户..."><button onclick="searchUser()">🔍 搜索</button></div>
+                <div id="search-results"></div>
+                <div style="padding:8px 24px;font-weight:600;color:var(--text-secondary);">我的好友</div>
+                <div id="friends-list"></div>
+                <div style="padding:8px 24px;font-weight:600;color:#856404;">好友请求</div>
+                <div id="requests-list"></div>
+            </div>
+        </div>
+        <div class="page" id="page-settings">
+            <div class="settings-page" style="height:100%;">
+                <div class="page-header">⚙️ 设置</div>
+                <div class="setting-group">
+                    <h3 style="margin-bottom:8px;">昵称</h3>
+                    <input type="text" id="nickname-input" placeholder="输入新昵称">
+                    <button class="btn-primary" onclick="updateNickname()" style="margin-top:8px;">保存昵称</button>
+                </div>
+                <div class="setting-group">
+                    <h3 style="margin-bottom:8px;">头像</h3>
+                    <div class="avatar-upload">
+                        <div class="avatar-preview" id="avatar-preview">?</div>
+                        <input type="file" id="avatar-file" accept="image/*" onchange="previewAvatar(event)" style="display:none">
+                        <button onclick="document.getElementById('avatar-file').click()" style="padding:8px 16px;">上传图片</button>
+                        <button onclick="resetAvatarColor()" style="padding:8px 16px;">重置纯色</button>
+                    </div>
+                    <div class="color-options" id="color-options"></div>
+                    <button class="btn-primary" onclick="saveAvatar()" style="margin-top:8px;">保存头像</button>
+                </div>
+                <div class="setting-group">
+                    <h3 style="margin-bottom:8px;">密码</h3>
+                    <input type="password" id="old-password" placeholder="旧密码">
+                    <input type="password" id="new-password" placeholder="新密码">
+                    <button class="btn-primary" onclick="changePassword()" style="margin-top:8px;">修改密码</button>
+                </div>
+                <div style="padding:24px;text-align:center;">
+                    <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 32px;border-radius:24px;cursor:pointer;font-weight:600;">退出登录</button>
+                </div>
+            </div>
+        </div>
+    </main>
+    <nav class="mobile-nav" id="mobile-nav">
+        <button class="nav-tab active" data-page="messages" onclick="switchPage('messages')">💬消息</button>
+        <button class="nav-tab" data-page="square" onclick="switchPage('square')">✨广场</button>
+        <button class="nav-tab" data-page="friends" onclick="switchPage('friends')">👥好友</button>
+        <button class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️设置</button>
+    </nav>
+    <div class="auth-page" id="auth-page" style="display:none;">
+        <div class="auth-card">
+            <h2 id="auth-title">🔐 登录 6nr</h2>
+            <p class="subtitle">端到端加密，安全聊天</p>
+            <input type="text" id="auth-username" placeholder="用户名">
+            <input type="password" id="auth-password" placeholder="密码">
+            <input type="password" id="auth-confirm-password" placeholder="确认密码" style="display:none;">
+            <button class="btn-primary" id="auth-btn" onclick="handleAuth()">登 录</button>
+            <p class="switch-text" id="switch-text">还没有账号？<a onclick="toggleAuthMode()">立即注册</a></p>
+        </div>
     </div>
+</div>
 
-    <script>
-        const API_BASE = '/api';
-        const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
-        let currentUser = null, authToken = null, currentChatFriend = null, ws = null;
-        let isLoginMode = true, isMobile = window.innerWidth <= 768;
-        let friendsCache = [], chatListCache = [], squareCache = [], userKeyPair = null;
-        let currentProfile = { nickname: '', avatar: '' };
+<script>
+    const API_BASE = '/api';
+    const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
+    let currentUser = null, authToken = null, currentChatFriend = null, ws = null;
+    let isLoginMode = true, isMobile = window.innerWidth <= 768;
+    let friendsCache = [], chatListCache = [], squareCache = [], userKeyPair = null;
+    let currentProfile = { nickname: '', avatar: '' };
 
-        function $(id) { return document.getElementById(id); }
-        function showToast(msg, d=2500) { const t=$('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),d); }
-        function avatarColor(n) { const c=['#6c5ce7','#e74c3c','#2ecc71','#f39c12','#9b59b6']; let h=0; for(let i=0;i<(n||'?').length;i++)h=n.charCodeAt(i)+((h<<5)-h); return c[Math.abs(h)%c.length]; }
-        function formatTime(ts){ const d=new Date(ts),n=new Date(),df=n-d; if(df<6e4)return'刚刚'; if(df<36e5)return Math.floor(df/6e4)+'分钟前'; if(df<864e5)return Math.floor(df/36e5)+'小时前'; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
+    function $(id){return document.getElementById(id);}
+    function showToast(msg,d=2500){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),d);}
+    function avatarColor(n){const c=['#7c5cfc','#f97066','#32d583','#fdb44b','#9b8afb'];let h=0;for(let i=0;i<(n||'?').length;i++)h=n.charCodeAt(i)+((h<<5)-h);return c[Math.abs(h)%c.length];}
+    function formatTime(ts){const d=new Date(ts),n=new Date(),df=n-d;if(df<6e4)return'刚刚';if(df<36e5)return Math.floor(df/6e4)+'分钟前';if(df<864e5)return Math.floor(df/36e5)+'小时前';return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'});}
 
-        const CryptoHelper = {
-            async generateKeyPair(){ return await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey','deriveBits']); },
-            async exportPublicKey(k){ const jwk = await crypto.subtle.exportKey('jwk',k); return { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y }; },
-            async importPublicKey(jwk){ return await crypto.subtle.importKey('jwk', { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y }, {name:'ECDH',namedCurve:'P-256'},true,[]); },
-            async importPrivateKey(jwk){ return await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,['deriveKey','deriveBits']); },
-            async deriveSharedKey(privKey, pubJwk){ const rKey=await this.importPublicKey(pubJwk); return await crypto.subtle.deriveKey({name:'ECDH',public:rKey},privKey,{name:'AES-GCM',length:256},true,['encrypt','decrypt']); },
-            async encrypt(plain, key){ const iv=crypto.getRandomValues(new Uint8Array(12)); const enc=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(plain)); const c=new Uint8Array(iv.length+new Uint8Array(enc).length); c.set(iv); c.set(new Uint8Array(enc),iv.length); return btoa(String.fromCharCode(...c)); },
-            async decrypt(cipher, key){ try{ const d=Uint8Array.from(atob(cipher),c=>c.charCodeAt(0)); const iv=d.slice(0,12),ct=d.slice(12); const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct); return new TextDecoder().decode(dec); }catch(e){return'[解密失败]';} }
-        };
+    const CryptoHelper = {
+        async generateKeyPair(){return await crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'},true,['deriveKey','deriveBits']);},
+        async exportPublicKey(k){const jwk=await crypto.subtle.exportKey('jwk',k);return{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y};},
+        async importPublicKey(jwk){return await crypto.subtle.importKey('jwk',{kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y},{name:'ECDH',namedCurve:'P-256'},true,[]);},
+        async importPrivateKey(jwk){return await crypto.subtle.importKey('jwk',jwk,{name:'ECDH',namedCurve:'P-256'},true,['deriveKey','deriveBits']);},
+        async deriveSharedKey(privKey,pubJwk){const rKey=await this.importPublicKey(pubJwk);return await crypto.subtle.deriveKey({name:'ECDH',public:rKey},privKey,{name:'AES-GCM',length:256},true,['encrypt','decrypt']);},
+        async encrypt(plain,key){const iv=crypto.getRandomValues(new Uint8Array(12));const enc=await crypto.subtle.encrypt({name:'AES-GCM',iv},key,new TextEncoder().encode(plain));const c=new Uint8Array(iv.length+new Uint8Array(enc).length);c.set(iv);c.set(new Uint8Array(enc),iv.length);return btoa(String.fromCharCode(...c));},
+        async decrypt(cipher,key){try{const d=Uint8Array.from(atob(cipher),c=>c.charCodeAt(0));const iv=d.slice(0,12),ct=d.slice(12);const dec=await crypto.subtle.decrypt({name:'AES-GCM',iv},key,ct);return new TextDecoder().decode(dec);}catch(e){return'[解密失败]';}}
+    };
 
-        async function getOrGenerateKeyPair(userId) {
-            const storageKey = `ecdh_private_jwk_${userId}`;
-            const stored = localStorage.getItem(storageKey);
-            if (stored) {
-                try { const pk = await CryptoHelper.importPrivateKey(JSON.parse(stored)); const pub = await CryptoHelper.exportPublicKey(pk); return { privateKey: pk, publicKey: pub }; } catch(e) {}
+    async function getOrGenerateKeyPair(userId){
+        const storageKey=`ecdh_private_jwk_${userId}`;const stored=localStorage.getItem(storageKey);
+        if(stored){try{const pk=await CryptoHelper.importPrivateKey(JSON.parse(stored));const pub=await CryptoHelper.exportPublicKey(pk);return{privateKey:pk,publicKey:pub};}catch(e){}}
+        const kp=await CryptoHelper.generateKeyPair();const privJwk=await crypto.subtle.exportKey('jwk',kp.privateKey);localStorage.setItem(storageKey,JSON.stringify(privJwk));const pubJwk=await CryptoHelper.exportPublicKey(kp.publicKey);return{privateKey:kp.privateKey,publicKey:pubJwk};
+    }
+
+    async function apiFetch(path,opt={}){const h={'Content-Type':'application/json'};if(authToken)h['Authorization']='Bearer '+authToken;const r=await fetch(API_BASE+path,{...opt,headers:{...h,...opt.headers}});const d=await r.json();if(!r.ok)throw new Error(d.error||'请求失败');return d;}
+    function toggleAuthMode(){isLoginMode=!isLoginMode;$('auth-title').textContent=isLoginMode?'登录 6nr':'注册 6nr';$('auth-btn').textContent=isLoginMode?'登 录':'注 册';$('auth-confirm-password').style.display=isLoginMode?'none':'block';$('switch-text').innerHTML=isLoginMode?'还没有账号？<a onclick="toggleAuthMode()">立即注册</a>':'已有账号？<a onclick="toggleAuthMode()">去登录</a>';}
+
+    async function handleAuth(){
+        const u=$('auth-username').value.trim(),p=$('auth-password').value,cp=$('auth-confirm-password').value;
+        if(!u||!p)return showToast('请填写完整');if(!isLoginMode&&p!==cp)return showToast('密码不一致');if(p.length<4)return showToast('密码至少4位');
+        try{
+            if(isLoginMode){
+                const data=await apiFetch('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});authToken=data.token;currentUser=data.user;currentProfile={nickname:data.user.nickname||data.user.username,avatar:data.user.avatar||''};
+                const kp=await getOrGenerateKeyPair(currentUser.id);userKeyPair=kp;await apiFetch('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:kp.publicKey})});
+            }else{
+                const tempId='temp_'+Date.now();const kp=await getOrGenerateKeyPair(tempId);const data=await apiFetch('/register',{method:'POST',body:JSON.stringify({username:u,password:p,public_key:kp.publicKey})});authToken=data.token;currentUser=data.user;currentProfile={nickname:data.user.nickname,avatar:''};
+                const tempKey=`ecdh_private_jwk_${tempId}`,newKey=`ecdh_private_jwk_${currentUser.id}`;if(localStorage.getItem(tempKey)){localStorage.setItem(newKey,localStorage.getItem(tempKey));localStorage.removeItem(tempKey);}userKeyPair=kp;
             }
-            const kp = await CryptoHelper.generateKeyPair();
-            const privJwk = await crypto.subtle.exportKey('jwk', kp.privateKey);
-            localStorage.setItem(storageKey, JSON.stringify(privJwk));
-            const pubJwk = await CryptoHelper.exportPublicKey(kp.publicKey);
-            return { privateKey: kp.privateKey, publicKey: pubJwk };
-        }
+            localStorage.setItem('securechat_token',authToken);localStorage.setItem('securechat_user',JSON.stringify(currentUser));$('auth-page').style.display='none';updateUIForUser();connectWebSocket();switchPage('messages');loadAllData();showToast('成功！');
+        }catch(e){showToast(e.message);}
+    }
 
-        async function apiFetch(path, opt={}){ const h={'Content-Type':'application/json'}; if(authToken)h['Authorization']='Bearer '+authToken; const r=await fetch(API_BASE+path,{...opt,headers:{...h,...opt.headers}}); const d=await r.json(); if(!r.ok)throw new Error(d.error||'请求失败'); return d; }
-        function toggleAuthMode(){ isLoginMode=!isLoginMode; $('auth-title').textContent=isLoginMode?'登录 6nr':'注册 6nr'; $('auth-btn').textContent=isLoginMode?'登 录':'注 册'; $('auth-confirm-password').style.display=isLoginMode?'none':'block'; $('switch-text').innerHTML=isLoginMode?'还没有账号？<a onclick="toggleAuthMode()">立即注册</a>':'已有账号？<a onclick="toggleAuthMode()">去登录</a>'; }
+    function handleLogout(){if(ws)ws.close();authToken=null;currentUser=null;userKeyPair=null;localStorage.removeItem('securechat_token');localStorage.removeItem('securechat_user');$('auth-page').style.display='flex';updateUIForUser();}
+    function connectWebSocket(){if(!authToken)return;if(ws)ws.close();ws=new WebSocket(WS_URL+'?token='+authToken);ws.onmessage=async(e)=>{const m=JSON.parse(e.data);if(m.type==='new_message'&&currentUser&&userKeyPair){const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id;if(currentChatFriend&&currentChatFriend.id===fid){const sk=await getSharedKeyWithFriend(fid);const dc=await CryptoHelper.decrypt(m.message.content,sk);appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received');scrollChatBottom();}loadChatList();}if(m.type==='new_moment')loadSquare();};ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000);}
+    function sendWS(d){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(d));}
 
-        async function handleAuth(){
-            const u=$('auth-username').value.trim(),p=$('auth-password').value,cp=$('auth-confirm-password').value;
-            if(!u||!p)return showToast('请填写完整'); if(!isLoginMode&&p!==cp)return showToast('密码不一致'); if(p.length<4)return showToast('密码至少4位');
-            try{
-                if(isLoginMode){
-                    const data = await apiFetch('/login',{method:'POST',body:JSON.stringify({username:u,password:p})});
-                    authToken = data.token; currentUser = data.user;
-                    currentProfile = { nickname: data.user.nickname || data.user.username, avatar: data.user.avatar || '' };
-                    const kp = await getOrGenerateKeyPair(currentUser.id); userKeyPair = kp;
-                    await apiFetch('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:kp.publicKey})});
-                } else {
-                    const tempId = 'temp_' + Date.now(); const kp = await getOrGenerateKeyPair(tempId);
-                    const data = await apiFetch('/register',{method:'POST',body:JSON.stringify({username:u,password:p,public_key:kp.publicKey})});
-                    authToken = data.token; currentUser = data.user;
-                    currentProfile = { nickname: data.user.nickname, avatar: '' };
-                    const tempKey = `ecdh_private_jwk_${tempId}`, newKey = `ecdh_private_jwk_${currentUser.id}`;
-                    if(localStorage.getItem(tempKey)) { localStorage.setItem(newKey, localStorage.getItem(tempKey)); localStorage.removeItem(tempKey); }
-                    userKeyPair = kp;
-                }
-                localStorage.setItem('securechat_token',authToken); localStorage.setItem('securechat_user',JSON.stringify(currentUser));
-                $('auth-page').style.display='none'; updateUIForUser(); connectWebSocket(); switchPage('messages'); loadAllData(); showToast('成功！');
-            }catch(e){ showToast(e.message); }
-        }
+    function updateUIForUser(){
+        if(currentUser){
+            const displayName=currentProfile.nickname||currentUser.username;$('sidebar-name').textContent=displayName;$('sidebar-avatar').textContent=displayName[0].toUpperCase();$('sidebar-avatar').style.backgroundImage=currentProfile.avatar?`url(${currentProfile.avatar})`:'none';$('sidebar-avatar').style.backgroundColor=currentProfile.avatar?'transparent':avatarColor(displayName);$('sidebar').style.display=isMobile?'none':'flex';$('mobile-nav').style.display=isMobile?'flex':'none';$('auth-page').style.display='none';
+        }else{$('sidebar').style.display='none';$('mobile-nav').style.display='none';$('auth-page').style.display='flex';}
+    }
 
-        function handleLogout(){ if(ws)ws.close(); authToken=null; currentUser=null; userKeyPair=null; localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('auth-page').style.display='flex'; updateUIForUser(); }
+    function switchPage(p){
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const t=$('page-'+p);if(t)t.classList.add('active');document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active'));const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`),mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);if(sn)sn.classList.add('active');if(mn)mn.classList.add('active');if(p==='messages')loadChatList();if(p==='square')loadSquare();if(p==='friends')loadFriendsData();if(p==='settings')loadProfileSettings();if(isMobile&&p!=='messages')$('chat-window').classList.remove('mobile-open');
+    }
 
-        function connectWebSocket(){ if(!authToken)return; if(ws)ws.close(); ws=new WebSocket(WS_URL+'?token='+authToken); ws.onmessage=async(e)=>{ const m=JSON.parse(e.data); if(m.type==='new_message'&&currentUser&&userKeyPair){ const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id; if(currentChatFriend&&currentChatFriend.id===fid){ const sk=await getSharedKeyWithFriend(fid); const dc=await CryptoHelper.decrypt(m.message.content,sk); appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received'); scrollChatBottom(); } loadChatList(); } if(m.type==='new_moment') loadSquare(); }; ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000); }
-        function sendWS(d){ if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(d)); }
+    async function loadProfileSettings(){if(!currentUser)return;try{const data=await apiFetch('/user/profile');currentProfile={nickname:data.user.nickname||data.user.username,avatar:data.user.avatar||''};$('nickname-input').value=currentProfile.nickname;updateAvatarPreview();buildColorOptions();}catch(e){showToast('加载设置失败');}}
+    function updateAvatarPreview(){const preview=$('avatar-preview');if(currentProfile.avatar){preview.style.backgroundImage=`url(${currentProfile.avatar})`;preview.style.backgroundColor='transparent';preview.textContent='';}else{preview.style.backgroundImage='none';preview.style.backgroundColor=avatarColor(currentProfile.nickname||currentUser.username);preview.textContent=(currentProfile.nickname||currentUser.username)[0].toUpperCase();}}
+    function buildColorOptions(){const colors=['#7c5cfc','#f97066','#32d583','#fdb44b','#9b8afb','#1abc9c','#e67e22','#3498db','#2c3e50','#e91e63'];const container=$('color-options');container.innerHTML=colors.map(c=>`<div class="color-dot" style="background:${c}" onclick="setAvatarColor('${c}')"></div>`).join('');}
+    function setAvatarColor(color){currentProfile.avatar='';$('avatar-preview').style.backgroundImage='none';$('avatar-preview').style.backgroundColor=color;$('avatar-preview').textContent=(currentProfile.nickname||currentUser.username)[0].toUpperCase();}
+    function previewAvatar(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){currentProfile.avatar=e.target.result;updateAvatarPreview();};reader.readAsDataURL(file);}
+    async function updateNickname(){const newNick=$('nickname-input').value.trim();if(!newNick)return showToast('昵称不能为空');try{await apiFetch('/user/profile',{method:'PUT',body:JSON.stringify({nickname:newNick})});currentProfile.nickname=newNick;updateUIForUser();showToast('昵称已更新');}catch(e){showToast(e.message);}}
+    async function saveAvatar(){try{await apiFetch('/user/profile',{method:'PUT',body:JSON.stringify({avatar:currentProfile.avatar||''})});updateUIForUser();showToast('头像已更新');}catch(e){showToast(e.message);}}
+    async function resetAvatarColor(){currentProfile.avatar='';updateAvatarPreview();await saveAvatar();}
+    async function changePassword(){const oldP=$('old-password').value,newP=$('new-password').value;if(!oldP||!newP)return showToast('请填写完整');try{await apiFetch('/user/password',{method:'PUT',body:JSON.stringify({oldPassword:oldP,newPassword:newP})});$('old-password').value='';$('new-password').value='';showToast('密码修改成功');}catch(e){showToast(e.message);}}
 
-        function updateUIForUser(){
-            if(currentUser){
-                const displayName = currentProfile.nickname || currentUser.username;
-                $('sidebar-name').textContent = displayName;
-                $('sidebar-avatar').textContent = displayName[0].toUpperCase();
-                $('sidebar-avatar').style.backgroundImage = currentProfile.avatar ? `url(${currentProfile.avatar})` : 'none';
-                $('sidebar-avatar').style.backgroundColor = currentProfile.avatar ? 'transparent' : avatarColor(displayName);
-                $('sidebar').style.display=isMobile?'none':'flex'; $('mobile-nav').style.display=isMobile?'flex':'none'; $('auth-page').style.display='none';
-            } else {
-                $('sidebar').style.display='none'; $('mobile-nav').style.display='none'; $('auth-page').style.display='flex';
-            }
-        }
+    // 聊天逻辑
+    async function loadChatList(){if(!currentUser)return;try{const d=await apiFetch('/chat-list');chatListCache=d.chats||[];renderChatList();}catch(e){}}
+    function renderChatList(){const c=$('chat-list'),e=$('chat-empty');if(chatListCache.length===0){c.innerHTML='';e.style.display='flex';return;}e.style.display='none';c.innerHTML=chatListCache.map(ch=>`<div class="chat-list-item ${currentChatFriend&&currentChatFriend.id===ch.friend_id?'active':''}" onclick="openChat(${ch.friend_id},'${ch.friend_name}')"><div class="chat-avatar" style="background:${avatarColor(ch.friend_name)}">${ch.friend_name[0].toUpperCase()}</div><div class="chat-info"><div class="chat-name">${ch.friend_nickname||ch.friend_name}</div><div class="chat-preview">🔒 加密消息</div></div><div class="chat-time">${formatTime(ch.last_time)}</div></div>`).join('');}
+    async function openChat(fid,fn){currentChatFriend={id:fid,username:fn};$('chat-window-title').textContent='🔒 '+fn;$('chat-input-area').style.display='flex';if(isMobile)$('chat-window').classList.add('mobile-open');renderChatList();await loadMessages(fid);scrollChatBottom();}
+    function closeMobileChat(){$('chat-window').classList.remove('mobile-open');currentChatFriend=null;$('chat-input-area').style.display='none';renderChatList();}
+    async function loadMessages(fid){if(!currentUser||!userKeyPair)return;try{const d=await apiFetch('/messages/'+fid);const ms=d.messages||[];const c=$('chat-messages');if(ms.length===0){c.innerHTML='<div class="empty-state">开始加密聊天</div>';return;}const sk=await getSharedKeyWithFriend(fid);c.innerHTML='';for(const m of ms){const dc=await CryptoHelper.decrypt(m.content,sk);appendMessageBubble({...m,decrypted_content:dc},m.from_id===currentUser.id?'sent':'received');}scrollChatBottom();}catch(e){}}
+    function appendMessageBubble(m,t){const c=$('chat-messages');if(c.querySelector('.empty-state'))c.innerHTML='';const b=document.createElement('div');b.className='message-bubble '+t;b.innerHTML=`${m.decrypted_content||m.content}<div class="msg-time">${formatTime(m.created_at)}</div><div class="encrypted-badge">🔒 已加密</div>`;c.appendChild(b);}
+    function scrollChatBottom(){setTimeout(()=>{const c=$('chat-messages');c.scrollTop=c.scrollHeight;},100);}
+    async function sendMessage(){if(!currentUser||!currentChatFriend||!userKeyPair)return;const i=$('chat-input'),pt=i.value.trim();if(!pt)return;i.value='';const sk=await getSharedKeyWithFriend(currentChatFriend.id);const enc=await CryptoHelper.encrypt(pt,sk);try{const d=await apiFetch('/messages',{method:'POST',body:JSON.stringify({to_id:currentChatFriend.id,content:enc})});d.message.decrypted_content=pt;appendMessageBubble(d.message,'sent');scrollChatBottom();sendWS({type:'new_message',message:d.message});loadChatList();}catch(e){showToast(e.message);}}
 
-        function switchPage(p){
-            document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-            const t=$('page-'+p); if(t)t.classList.add('active');
-            document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active'));
-            const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`), mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);
-            if(sn)sn.classList.add('active'); if(mn)mn.classList.add('active');
-            if(p==='messages')loadChatList(); if(p==='square')loadSquare(); if(p==='friends')loadFriendsData();
-            if(p==='settings') loadProfileSettings();
-            if(isMobile&&p!=='messages')$('chat-window').classList.remove('mobile-open');
-        }
+    // 广场逻辑
+    async function loadSquare(){if(!currentUser)return;try{const d=await apiFetch('/moments');squareCache=d.moments||[];renderSquare();}catch(e){}}
+    function renderSquare(){const c=$('square-list');if(squareCache.length===0){c.innerHTML='<div style="text-align:center;padding:40px;color:#c4bfd6;">暂无动态，快来发布第一条吧</div>';return;}c.innerHTML=squareCache.map(m=>{const liked=m.likes&&m.likes.includes(currentUser.id);return`<div class="square-card"><div class="square-author"><div class="square-avatar" style="background:${avatarColor(m.nickname||m.username)}">${(m.nickname||m.username)[0].toUpperCase()}</div><div><div class="square-author-name">${m.nickname||m.username}</div><div class="square-time">${formatTime(m.created_at)}</div></div></div><div class="square-content">${m.content.replace(/</g,'&lt;')}</div><div class="square-actions"><span class="${liked?'liked':''}" onclick="toggleLike(${m.id},this)">${liked?'❤️':'🤍'} ${m.like_count||0}</span><span>💬 ${m.comments.length}</span></div><div class="square-comments">${m.comments.map(c=>`<div><strong>${c.nickname||c.username}:</strong> ${c.content.replace(/</g,'&lt;')}</div>`).join('')}</div><div class="square-comment-input"><input id="comment-input-${m.id}" placeholder="评论..."><button onclick="addComment(${m.id})">发送</button></div></div>`;}).join('');}
+    async function postSquare(){const c=$('square-input').value.trim();if(!c)return showToast('请输入内容');try{await apiFetch('/moments',{method:'POST',body:JSON.stringify({content:c})});$('square-input').value='';sendWS({type:'new_moment'});loadSquare();}catch(e){showToast(e.message);}}
+    async function toggleLike(mid,el){try{const d=await apiFetch('/moments/'+mid+'/like',{method:'POST'});el.classList.toggle('liked',d.liked);el.innerHTML=(d.liked?'❤️':'🤍')+' '+d.like_count;}catch(e){}}
+    async function addComment(mid){const i=$('comment-input-'+mid),c=i.value.trim();if(!c)return;try{await apiFetch('/moments/'+mid+'/comment',{method:'POST',body:JSON.stringify({content:c})});i.value='';loadSquare();}catch(e){showToast(e.message);}}
 
-        async function loadProfileSettings() {
-            if (!currentUser) return;
-            try {
-                const data = await apiFetch('/user/profile');
-                currentProfile = { nickname: data.user.nickname || data.user.username, avatar: data.user.avatar || '' };
-                $('nickname-input').value = currentProfile.nickname;
-                updateAvatarPreview();
-                buildColorOptions();
-            } catch(e) { showToast('加载设置失败'); }
-        }
+    // 好友与屏蔽
+    async function loadFriendsData(){if(!currentUser)return;try{const d=await apiFetch('/friends');friendsCache=d.friends||[];renderFriendsList();renderRequestsList(d.requests||[]);}catch(e){}}
+    function renderFriendsList(){const c=$('friends-list');if(friendsCache.length===0){c.innerHTML='<div style="padding:20px;text-align:center;">暂无好友</div>';return;}c.innerHTML=friendsCache.map(f=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(f.nickname||f.username)};width:40px;height:40px;">${(f.nickname||f.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${f.nickname||f.username}</div></div><button class="btn-chat" onclick="openChat(${f.id},'${f.nickname||f.username}');switchPage('messages')">💬</button><button class="btn-block" onclick="toggleBlock(${f.id},${f.is_blocked})">${f.is_blocked?'取消屏蔽':'屏蔽'}</button></div>`).join('');}
+    function renderRequestsList(reqs){const c=$('requests-list');if(!reqs||reqs.length===0){c.innerHTML='<div style="padding:16px 24px;">无待处理请求</div>';return;}c.innerHTML=reqs.map(r=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(r.nickname||r.username)};width:40px;height:40px;">${(r.nickname||r.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${r.nickname||r.username}</div></div><div class="request-actions"><button class="btn-accept" onclick="handleFriendRequest(${r.from_id},'accept')">接受</button><button class="btn-reject" onclick="handleFriendRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join('');}
+    async function toggleBlock(friendId,isBlocked){try{if(isBlocked){await apiFetch('/block/'+friendId,{method:'DELETE'});}else{await apiFetch('/block/'+friendId,{method:'POST'});}showToast(isBlocked?'已取消屏蔽':'已屏蔽');loadFriendsData();loadSquare();}catch(e){showToast(e.message);}}
+    async function searchUser(){const q=$('search-user-input').value.trim();if(!q)return;try{const d=await apiFetch('/search-users?q='+encodeURIComponent(q));const c=$('search-results');if(d.users.length===0)c.innerHTML='<div style="padding:16px;">未找到</div>';else c.innerHTML=d.users.map(u=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(u.nickname||u.username)};width:40px;height:40px;">${(u.nickname||u.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${u.nickname||u.username}</div></div><button class="btn-accept" onclick="sendFriendRequest(${u.id})">➕</button></div>`).join('');}catch(e){showToast('搜索失败');}}
+    async function sendFriendRequest(tid){try{await apiFetch('/friend-request',{method:'POST',body:JSON.stringify({to_id:tid})});showToast('请求已发送');$('search-results').innerHTML='';}catch(e){showToast(e.message);}}
+    async function handleFriendRequest(fid,act){try{await apiFetch('/friend-request/'+fid,{method:'POST',body:JSON.stringify({action:act})});showToast(act==='accept'?'已接受':'已拒绝');loadFriendsData();loadChatList();}catch(e){showToast(e.message);}}
 
-        function updateAvatarPreview() {
-            const preview = $('avatar-preview');
-            if (currentProfile.avatar) {
-                preview.style.backgroundImage = `url(${currentProfile.avatar})`;
-                preview.style.backgroundColor = 'transparent';
-                preview.textContent = '';
-            } else {
-                preview.style.backgroundImage = 'none';
-                preview.style.backgroundColor = avatarColor(currentProfile.nickname || currentUser.username);
-                preview.textContent = (currentProfile.nickname || currentUser.username)[0].toUpperCase();
-            }
-        }
+    async function getSharedKeyWithFriend(fid){const data=await apiFetch(`/user/${fid}/public-key`);const cleanPub={kty:data.public_key.kty,crv:data.public_key.crv,x:data.public_key.x,y:data.public_key.y};return await CryptoHelper.deriveSharedKey(userKeyPair.privateKey,cleanPub);}
+    async function loadAllData(){await Promise.all([loadChatList(),loadFriendsData(),loadSquare()]);}
 
-        function buildColorOptions() {
-            const colors = ['#6c5ce7','#e74c3c','#2ecc71','#f39c12','#9b59b6','#1abc9c','#e67e22','#3498db','#2c3e50','#e91e63'];
-            const container = $('color-options');
-            container.innerHTML = colors.map(c => `<div class="color-dot" style="background:${c}" onclick="setAvatarColor('${c}')"></div>`).join('');
-        }
-
-        function setAvatarColor(color) {
-            currentProfile.avatar = '';
-            $('avatar-preview').style.backgroundImage = 'none';
-            $('avatar-preview').style.backgroundColor = color;
-            $('avatar-preview').textContent = (currentProfile.nickname || currentUser.username)[0].toUpperCase();
-        }
-
-        function previewAvatar(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                currentProfile.avatar = e.target.result;
-                updateAvatarPreview();
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function updateNickname() {
-            const newNick = $('nickname-input').value.trim();
-            if (!newNick) return showToast('昵称不能为空');
-            try {
-                await apiFetch('/user/profile', { method: 'PUT', body: JSON.stringify({ nickname: newNick }) });
-                currentProfile.nickname = newNick;
-                updateUIForUser();
-                showToast('昵称已更新');
-            } catch(e) { showToast(e.message); }
-        }
-
-        async function saveAvatar() {
-            try {
-                await apiFetch('/user/profile', { method: 'PUT', body: JSON.stringify({ avatar: currentProfile.avatar || '' }) });
-                updateUIForUser();
-                showToast('头像已更新');
-            } catch(e) { showToast(e.message); }
-        }
-
-        async function resetAvatarColor() {
-            currentProfile.avatar = '';
-            updateAvatarPreview();
-            await saveAvatar();
-        }
-
-        async function changePassword() {
-            const oldP = $('old-password').value, newP = $('new-password').value;
-            if (!oldP || !newP) return showToast('请填写完整');
-            try {
-                await apiFetch('/user/password', { method: 'PUT', body: JSON.stringify({ oldPassword: oldP, newPassword: newP }) });
-                $('old-password').value = ''; $('new-password').value = '';
-                showToast('密码修改成功');
-            } catch(e) { showToast(e.message); }
-        }
-
-        // 聊天
-        async function loadChatList(){ if(!currentUser)return; try{ const d=await apiFetch('/chat-list'); chatListCache=d.chats||[]; renderChatList(); }catch(e){} }
-        function renderChatList(){ const c=$('chat-list'),e=$('chat-empty'); if(chatListCache.length===0){ c.innerHTML=''; e.style.display='flex'; return; } e.style.display='none'; c.innerHTML=chatListCache.map(ch=>`<div class="chat-list-item ${currentChatFriend&&currentChatFriend.id===ch.friend_id?'active':''}" onclick="openChat(${ch.friend_id},'${ch.friend_name}')"><div class="chat-avatar" style="background:${avatarColor(ch.friend_name)}">${ch.friend_name[0].toUpperCase()}</div><div class="chat-info"><div class="chat-name">${ch.friend_nickname||ch.friend_name}</div><div class="chat-preview">🔒 加密消息</div></div><div class="chat-time">${formatTime(ch.last_time)}</div></div>`).join(''); }
-        async function openChat(fid,fn){ currentChatFriend={id:fid,username:fn}; $('chat-window-title').textContent='🔒 '+fn; $('chat-input-area').style.display='flex'; if(isMobile)$('chat-window').classList.add('mobile-open'); renderChatList(); await loadMessages(fid); scrollChatBottom(); }
-        function closeMobileChat(){ $('chat-window').classList.remove('mobile-open'); currentChatFriend=null; $('chat-input-area').style.display='none'; renderChatList(); }
-        async function loadMessages(fid){ if(!currentUser||!userKeyPair)return; try{ const d=await apiFetch('/messages/'+fid); const ms=d.messages||[]; const c=$('chat-messages'); if(ms.length===0){ c.innerHTML='<div class="empty-state">开始加密聊天</div>'; return; } const sk=await getSharedKeyWithFriend(fid); c.innerHTML=''; for(const m of ms){ const dc=await CryptoHelper.decrypt(m.content,sk); appendMessageBubble({...m,decrypted_content:dc},m.from_id===currentUser.id?'sent':'received'); } scrollChatBottom(); }catch(e){} }
-        function appendMessageBubble(m,t){ const c=$('chat-messages'); if(c.querySelector('.empty-state'))c.innerHTML=''; const b=document.createElement('div'); b.className='message-bubble '+t; b.innerHTML=`${m.decrypted_content||m.content}<div class="msg-time">${formatTime(m.created_at)}</div><div class="encrypted-badge">🔒 已加密</div>`; c.appendChild(b); }
-        function scrollChatBottom(){ setTimeout(()=>{const c=$('chat-messages');c.scrollTop=c.scrollHeight;},100); }
-        async function sendMessage(){ if(!currentUser||!currentChatFriend||!userKeyPair)return; const i=$('chat-input'),pt=i.value.trim(); if(!pt)return; i.value=''; const sk=await getSharedKeyWithFriend(currentChatFriend.id); const enc=await CryptoHelper.encrypt(pt,sk); try{ const d=await apiFetch('/messages',{method:'POST',body:JSON.stringify({to_id:currentChatFriend.id,content:enc})}); d.message.decrypted_content=pt; appendMessageBubble(d.message,'sent'); scrollChatBottom(); sendWS({type:'new_message',message:d.message}); loadChatList(); }catch(e){showToast(e.message);} }
-
-        // 广场
-        async function loadSquare(){ if(!currentUser)return; try{ const d=await apiFetch('/moments'); squareCache=d.moments||[]; renderSquare(); }catch(e){} }
-        function renderSquare(){ const c=$('square-list'); if(squareCache.length===0){ c.innerHTML='<div style="text-align:center;padding:40px;color:#b2bec3;">暂无动态，快来发布第一条吧</div>'; return; } c.innerHTML=squareCache.map(m=>{ const liked=m.likes&&m.likes.includes(currentUser.id); return `<div class="square-card"><div class="square-author"><div class="square-avatar" style="background:${avatarColor(m.nickname||m.username)}">${(m.nickname||m.username)[0].toUpperCase()}</div><div><div class="square-author-name">${m.nickname||m.username}</div><div class="square-time">${formatTime(m.created_at)}</div></div></div><div class="square-content">${m.content.replace(/</g,'&lt;')}</div><div class="square-actions"><span class="${liked?'liked':''}" onclick="toggleLike(${m.id},this)">${liked?'❤️':'🤍'} ${m.like_count||0}</span><span>💬 ${m.comments.length}</span></div><div class="square-comments">${m.comments.map(c=>`<div><strong>${c.nickname||c.username}:</strong> ${c.content.replace(/</g,'&lt;')}</div>`).join('')}</div><div class="square-comment-input"><input id="comment-input-${m.id}" placeholder="评论..."><button onclick="addComment(${m.id})">发送</button></div></div>`; }).join(''); }
-        async function postSquare(){ const c=$('square-input').value.trim(); if(!c)return showToast('请输入内容'); try{ await apiFetch('/moments',{method:'POST',body:JSON.stringify({content:c})}); $('square-input').value=''; sendWS({type:'new_moment'}); loadSquare(); }catch(e){showToast(e.message);} }
-        async function toggleLike(mid,el){ try{ const d=await apiFetch('/moments/'+mid+'/like',{method:'POST'}); el.classList.toggle('liked',d.liked); el.innerHTML=(d.liked?'❤️':'🤍')+' '+d.like_count; }catch(e){} }
-        async function addComment(mid){ const i=$('comment-input-'+mid),c=i.value.trim(); if(!c)return; try{ await apiFetch('/moments/'+mid+'/comment',{method:'POST',body:JSON.stringify({content:c})}); i.value=''; loadSquare(); }catch(e){showToast(e.message);} }
-
-        // 好友与屏蔽
-        async function loadFriendsData(){ if(!currentUser)return; try{ const d=await apiFetch('/friends'); friendsCache=d.friends||[]; renderFriendsList(); renderRequestsList(d.requests||[]); }catch(e){} }
-        function renderFriendsList(){ const c=$('friends-list'); if(friendsCache.length===0){ c.innerHTML='<div style="padding:20px;text-align:center;">暂无好友</div>'; return; } c.innerHTML=friendsCache.map(f=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(f.nickname||f.username)};width:40px;height:40px;">${(f.nickname||f.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${f.nickname||f.username}</div></div><button class="btn-chat" onclick="openChat(${f.id},'${f.nickname||f.username}');switchPage('messages')">💬</button><button class="btn-block" onclick="toggleBlock(${f.id}, ${f.is_blocked})">${f.is_blocked ? '取消屏蔽' : '屏蔽'}</button></div>`).join(''); }
-        function renderRequestsList(reqs){ const c=$('requests-list'); if(!reqs||reqs.length===0){ c.innerHTML='<div style="padding:16px 24px;">无待处理请求</div>'; return; } c.innerHTML=reqs.map(r=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(r.nickname||r.username)};width:40px;height:40px;">${(r.nickname||r.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${r.nickname||r.username}</div></div><div class="request-actions"><button class="btn-accept" onclick="handleFriendRequest(${r.from_id},'accept')">接受</button><button class="btn-reject" onclick="handleFriendRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join(''); }
-        async function toggleBlock(friendId, isBlocked) {
-            try {
-                if (isBlocked) {
-                    await apiFetch('/block/' + friendId, { method: 'DELETE' });
-                } else {
-                    await apiFetch('/block/' + friendId, { method: 'POST' });
-                }
-                showToast(isBlocked ? '已取消屏蔽' : '已屏蔽');
-                loadFriendsData();
-                loadSquare();
-            } catch(e) { showToast(e.message); }
-        }
-        async function searchUser(){ const q=$('search-user-input').value.trim(); if(!q)return; try{ const d=await apiFetch('/search-users?q='+encodeURIComponent(q)); const c=$('search-results'); if(d.users.length===0)c.innerHTML='<div style="padding:16px;">未找到</div>'; else c.innerHTML=d.users.map(u=>`<div class="friend-item"><div class="chat-avatar" style="background:${avatarColor(u.nickname||u.username)};width:40px;height:40px;">${(u.nickname||u.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${u.nickname||u.username}</div></div><button class="btn-accept" onclick="sendFriendRequest(${u.id})">➕</button></div>`).join(''); }catch(e){showToast('搜索失败');} }
-        async function sendFriendRequest(tid){ try{ await apiFetch('/friend-request',{method:'POST',body:JSON.stringify({to_id:tid})}); showToast('请求已发送'); $('search-results').innerHTML=''; }catch(e){showToast(e.message);} }
-        async function handleFriendRequest(fid,act){ try{ await apiFetch('/friend-request/'+fid,{method:'POST',body:JSON.stringify({action:act})}); showToast(act==='accept'?'已接受':'已拒绝'); loadFriendsData(); loadChatList(); }catch(e){showToast(e.message);} }
-
-        async function getSharedKeyWithFriend(fid){ 
-            const data = await apiFetch(`/user/${fid}/public-key`);
-            const cleanPub = { kty: data.public_key.kty, crv: data.public_key.crv, x: data.public_key.x, y: data.public_key.y };
-            return await CryptoHelper.deriveSharedKey(userKeyPair.privateKey, cleanPub);
-        }
-
-        async function loadAllData(){ await Promise.all([loadChatList(),loadFriendsData(),loadSquare()]); }
-
-        window.onload = async function(){
-            const savedToken = localStorage.getItem('securechat_token');
-            const savedUser = localStorage.getItem('securechat_user');
-            if (savedToken && savedUser) {
-                authToken = savedToken;
-                try { currentUser = JSON.parse(savedUser); } catch(e) {}
-                if (currentUser) {
-                    const kp = await getOrGenerateKeyPair(currentUser.id);
-                    userKeyPair = kp;
-                    try {
-                        const profile = await apiFetch('/user/profile');
-                        currentProfile = { nickname: profile.user.nickname || currentUser.username, avatar: profile.user.avatar || '' };
-                    } catch(e) { currentProfile = { nickname: currentUser.username, avatar: '' }; }
-                    updateUIForUser();
-                    connectWebSocket();
-                    switchPage('messages');
-                    loadAllData();
-                    return;
-                }
-            }
-            $('auth-page').style.display = 'flex';
-            updateUIForUser();
-            window.addEventListener('resize', ()=>{
-                const was = isMobile;
-                isMobile = window.innerWidth <= 768;
-                if (was !== isMobile) updateUIForUser();
-            });
-            setInterval(()=>{ if(currentUser) loadChatList(); }, 10000);
-        };
-    </script>
+    window.onload=async function(){
+        const savedToken=localStorage.getItem('securechat_token'),savedUser=localStorage.getItem('securechat_user');
+        if(savedToken&&savedUser){authToken=savedToken;try{currentUser=JSON.parse(savedUser);}catch(e){}if(currentUser){const kp=await getOrGenerateKeyPair(currentUser.id);userKeyPair=kp;try{const profile=await apiFetch('/user/profile');currentProfile={nickname:profile.user.nickname||currentUser.username,avatar:profile.user.avatar||''};}catch(e){currentProfile={nickname:currentUser.username,avatar:''};}updateUIForUser();connectWebSocket();switchPage('messages');loadAllData();return;}}
+        $('auth-page').style.display='flex';updateUIForUser();window.addEventListener('resize',()=>{const was=isMobile;isMobile=window.innerWidth<=768;if(was!==isMobile)updateUIForUser();});setInterval(()=>{if(currentUser)loadChatList();},10000);
+    };
+</script>
 </body>
 </html>
