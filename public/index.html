@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>6nr · 加密聊天</title>
     <style>
         :root {
@@ -93,7 +93,7 @@
         .logout-btn:hover { color:var(--danger); background:#fff0f0; }
 
         /* 主内容区 */
-        .main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+        .main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; background: transparent; }
         .page { display:none; flex-direction:column; height:100%; overflow:hidden; }
         .page.active { display:flex; }
 
@@ -293,10 +293,11 @@
         .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:#2d2a3e; color:#fff; padding:12px 24px; border-radius:24px; font-size:0.85rem; z-index:9999; opacity:0; transition:opacity 0.3s; pointer-events:none; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
         .toast.show { opacity:1; }
 
+        /* 移动端底部导航 */
         .mobile-nav {
             display:none; position:fixed; bottom:0; left:0; right:0;
-            background:rgba(255,255,255,0.8); backdrop-filter:blur(20px);
-            border-top:1px solid rgba(0,0,0,0.04); height:var(--nav-mobile-height); z-index:100;
+            background:rgba(255,255,255,0.85); backdrop-filter:blur(20px);
+            border-top:1px solid rgba(0,0,0,0.05); height:var(--nav-mobile-height); z-index:100;
             justify-content:space-around; align-items:center; padding-bottom:env(safe-area-inset-bottom,0);
         }
         .mobile-nav .nav-tab {
@@ -305,17 +306,27 @@
         }
         .mobile-nav .nav-tab.active { color:var(--primary); font-weight:600; }
 
-        @media (max-width:768px) {
+        /* 移动端适配 */
+        @media (max-width: 768px) {
             .sidebar { display:none; }
             .mobile-nav { display:flex; }
-            .main-content { padding-bottom:var(--nav-mobile-height); }
+            .main-content { padding-bottom: var(--nav-mobile-height); }
             .chat-list-panel { width:100%; min-width:100%; border-right:none; }
-            .chat-window { position:fixed; top:0; left:0; right:0; bottom:var(--nav-mobile-height); z-index:50; display:none; }
+            .chat-window {
+                position:fixed; top:0; left:0; right:0; bottom:0; z-index:50;
+                display:none; background:#faf9ff;
+            }
             .chat-window.mobile-open { display:flex; }
-            .chat-window .window-header .back-btn { display:block; }
+            .chat-window .window-header .back-btn { display:block; background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text); padding:0 8px; }
             .message-bubble { max-width:80%; }
-            .square-post-box, .square-card { margin-left:12px; margin-right:12px; }
+            .square-post-box, .square-card, .search-box { margin-left:12px; margin-right:12px; }
             .settings-page .setting-group { margin-left:12px; margin-right:12px; }
+            .friend-item { padding-left:16px; padding-right:16px; }
+            /* 确保所有页面内部滚动容器高度正确，不被底部导航遮挡 */
+            .chat-list-panel, .square-page, .friends-page, .settings-page {
+                height:100%;
+            }
+            .chat-messages { padding-bottom: 20px; }
         }
     </style>
 </head>
@@ -340,6 +351,7 @@
         </div>
     </aside>
     <main class="main-content" id="main-content">
+        <!-- 消息页 -->
         <div class="page active" id="page-messages">
             <div class="chat-list-page">
                 <div class="chat-list-panel">
@@ -348,12 +360,19 @@
                     <div class="empty-state" id="chat-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#c4bfd6;">还没有聊天，去添加好友吧</div>
                 </div>
                 <div class="chat-window" id="chat-window">
-                    <div class="window-header"><button class="back-btn" onclick="closeMobileChat()">←</button><span id="chat-window-title">选择一个对话</span></div>
+                    <div class="window-header">
+                        <button class="back-btn" onclick="closeMobileChat()">←</button>
+                        <span id="chat-window-title">选择一个对话</span>
+                    </div>
                     <div class="chat-messages" id="chat-messages"><div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:#c4bfd6;">👋 选择一个好友开始加密聊天</div></div>
-                    <div class="chat-input-area" id="chat-input-area" style="display:none"><input type="text" id="chat-input" placeholder="输入消息...（端到端加密）" onkeydown="if(event.key==='Enter')sendMessage()"><button onclick="sendMessage()">➤</button></div>
+                    <div class="chat-input-area" id="chat-input-area" style="display:none">
+                        <input type="text" id="chat-input" placeholder="输入消息...（端到端加密）" onkeydown="if(event.key==='Enter')sendMessage()">
+                        <button onclick="sendMessage()">➤</button>
+                    </div>
                 </div>
             </div>
         </div>
+        <!-- 广场页 -->
         <div class="page" id="page-square">
             <div class="square-page" style="height:100%;">
                 <div class="square-header"><span>✨ 广场</span></div>
@@ -361,6 +380,7 @@
                 <div id="square-list"></div>
             </div>
         </div>
+        <!-- 好友页 -->
         <div class="page" id="page-friends">
             <div class="friends-page" style="height:100%;">
                 <div class="page-header">👥 好友</div>
@@ -370,8 +390,11 @@
                 <div id="friends-list"></div>
                 <div style="padding:8px 24px;font-weight:600;color:#856404;">好友请求</div>
                 <div id="requests-list"></div>
+                <!-- 底部留白防止被导航遮挡 -->
+                <div style="height:var(--nav-mobile-height);"></div>
             </div>
         </div>
+        <!-- 设置页 -->
         <div class="page" id="page-settings">
             <div class="settings-page" style="height:100%;">
                 <div class="page-header">⚙️ 设置</div>
@@ -393,13 +416,15 @@
                 </div>
                 <div class="setting-group">
                     <h3 style="margin-bottom:8px;">密码</h3>
-                    <input type="password" id="old-password" placeholder="旧密码">
-                    <input type="password" id="new-password" placeholder="新密码">
+                    <input type="password" id="old-password" placeholder="旧密码" onfocus="this.scrollIntoView({behavior:'smooth',block:'center'})">
+                    <input type="password" id="new-password" placeholder="新密码" onfocus="this.scrollIntoView({behavior:'smooth',block:'center'})">
                     <button class="btn-primary" onclick="changePassword()" style="margin-top:8px;">修改密码</button>
                 </div>
                 <div style="padding:24px;text-align:center;">
                     <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 32px;border-radius:24px;cursor:pointer;font-weight:600;">退出登录</button>
                 </div>
+                <!-- 底部留白 -->
+                <div style="height:var(--nav-mobile-height);"></div>
             </div>
         </div>
     </main>
@@ -469,7 +494,7 @@
         }catch(e){showToast(e.message);}
     }
 
-    function handleLogout(){if(ws)ws.close();authToken=null;currentUser=null;userKeyPair=null;localStorage.removeItem('securechat_token');localStorage.removeItem('securechat_user');$('auth-page').style.display='flex';updateUIForUser();}
+    function handleLogout(){if(ws)ws.close();authToken=null;currentUser=null;userKeyPair=null;localStorage.removeItem('securechat_token');localStorage.removeItem('securechat_user');$('auth-page').style.display='flex';updateUIForUser();closeMobileChat();}
     function connectWebSocket(){if(!authToken)return;if(ws)ws.close();ws=new WebSocket(WS_URL+'?token='+authToken);ws.onmessage=async(e)=>{const m=JSON.parse(e.data);if(m.type==='new_message'&&currentUser&&userKeyPair){const fid=m.message.from_id===currentUser.id?m.message.to_id:m.message.from_id;if(currentChatFriend&&currentChatFriend.id===fid){const sk=await getSharedKeyWithFriend(fid);const dc=await CryptoHelper.decrypt(m.message.content,sk);appendMessageBubble({...m.message,decrypted_content:dc},m.message.from_id===currentUser.id?'sent':'received');scrollChatBottom();}loadChatList();}if(m.type==='new_moment')loadSquare();};ws.onclose=()=>setTimeout(()=>{if(authToken)connectWebSocket();},5000);}
     function sendWS(d){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(d));}
 
@@ -480,7 +505,18 @@
     }
 
     function switchPage(p){
-        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));const t=$('page-'+p);if(t)t.classList.add('active');document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active'));const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`),mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);if(sn)sn.classList.add('active');if(mn)mn.classList.add('active');if(p==='messages')loadChatList();if(p==='square')loadSquare();if(p==='friends')loadFriendsData();if(p==='settings')loadProfileSettings();if(isMobile&&p!=='messages')$('chat-window').classList.remove('mobile-open');
+        document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+        const t=$('page-'+p); if(t)t.classList.add('active');
+        document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active'));
+        const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`),
+              mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);
+        if(sn)sn.classList.add('active'); if(mn)mn.classList.add('active');
+        // 切换页面时强制关闭聊天窗口（手机端）
+        if(p !== 'messages') closeMobileChat();
+        if(p==='messages')loadChatList();
+        if(p==='square')loadSquare();
+        if(p==='friends')loadFriendsData();
+        if(p==='settings')loadProfileSettings();
     }
 
     async function loadProfileSettings(){if(!currentUser)return;try{const data=await apiFetch('/user/profile');currentProfile={nickname:data.user.nickname||data.user.username,avatar:data.user.avatar||''};$('nickname-input').value=currentProfile.nickname;updateAvatarPreview();buildColorOptions();}catch(e){showToast('加载设置失败');}}
@@ -496,8 +532,26 @@
     // 聊天逻辑
     async function loadChatList(){if(!currentUser)return;try{const d=await apiFetch('/chat-list');chatListCache=d.chats||[];renderChatList();}catch(e){}}
     function renderChatList(){const c=$('chat-list'),e=$('chat-empty');if(chatListCache.length===0){c.innerHTML='';e.style.display='flex';return;}e.style.display='none';c.innerHTML=chatListCache.map(ch=>`<div class="chat-list-item ${currentChatFriend&&currentChatFriend.id===ch.friend_id?'active':''}" onclick="openChat(${ch.friend_id},'${ch.friend_name}')"><div class="chat-avatar" style="background:${avatarColor(ch.friend_name)}">${ch.friend_name[0].toUpperCase()}</div><div class="chat-info"><div class="chat-name">${ch.friend_nickname||ch.friend_name}</div><div class="chat-preview">🔒 加密消息</div></div><div class="chat-time">${formatTime(ch.last_time)}</div></div>`).join('');}
-    async function openChat(fid,fn){currentChatFriend={id:fid,username:fn};$('chat-window-title').textContent='🔒 '+fn;$('chat-input-area').style.display='flex';if(isMobile)$('chat-window').classList.add('mobile-open');renderChatList();await loadMessages(fid);scrollChatBottom();}
-    function closeMobileChat(){$('chat-window').classList.remove('mobile-open');currentChatFriend=null;$('chat-input-area').style.display='none';renderChatList();}
+    async function openChat(fid,fn){
+        currentChatFriend={id:fid,username:fn};
+        $('chat-window-title').textContent='🔒 '+fn;
+        $('chat-input-area').style.display='flex';
+        if(isMobile) {
+            $('chat-window').classList.add('mobile-open');
+            // 禁止背景滚动
+            document.body.style.overflow = 'hidden';
+        }
+        renderChatList();
+        await loadMessages(fid);
+        scrollChatBottom();
+    }
+    function closeMobileChat(){
+        $('chat-window').classList.remove('mobile-open');
+        currentChatFriend=null;
+        $('chat-input-area').style.display='none';
+        document.body.style.overflow = '';
+        renderChatList();
+    }
     async function loadMessages(fid){if(!currentUser||!userKeyPair)return;try{const d=await apiFetch('/messages/'+fid);const ms=d.messages||[];const c=$('chat-messages');if(ms.length===0){c.innerHTML='<div class="empty-state">开始加密聊天</div>';return;}const sk=await getSharedKeyWithFriend(fid);c.innerHTML='';for(const m of ms){const dc=await CryptoHelper.decrypt(m.content,sk);appendMessageBubble({...m,decrypted_content:dc},m.from_id===currentUser.id?'sent':'received');}scrollChatBottom();}catch(e){}}
     function appendMessageBubble(m,t){const c=$('chat-messages');if(c.querySelector('.empty-state'))c.innerHTML='';const b=document.createElement('div');b.className='message-bubble '+t;b.innerHTML=`${m.decrypted_content||m.content}<div class="msg-time">${formatTime(m.created_at)}</div><div class="encrypted-badge">🔒 已加密</div>`;c.appendChild(b);}
     function scrollChatBottom(){setTimeout(()=>{const c=$('chat-messages');c.scrollTop=c.scrollHeight;},100);}
@@ -525,7 +579,9 @@
     window.onload=async function(){
         const savedToken=localStorage.getItem('securechat_token'),savedUser=localStorage.getItem('securechat_user');
         if(savedToken&&savedUser){authToken=savedToken;try{currentUser=JSON.parse(savedUser);}catch(e){}if(currentUser){const kp=await getOrGenerateKeyPair(currentUser.id);userKeyPair=kp;try{const profile=await apiFetch('/user/profile');currentProfile={nickname:profile.user.nickname||currentUser.username,avatar:profile.user.avatar||''};}catch(e){currentProfile={nickname:currentUser.username,avatar:''};}updateUIForUser();connectWebSocket();switchPage('messages');loadAllData();return;}}
-        $('auth-page').style.display='flex';updateUIForUser();window.addEventListener('resize',()=>{const was=isMobile;isMobile=window.innerWidth<=768;if(was!==isMobile)updateUIForUser();});setInterval(()=>{if(currentUser)loadChatList();},10000);
+        $('auth-page').style.display='flex';updateUIForUser();
+        window.addEventListener('resize',()=>{const was=isMobile;isMobile=window.innerWidth<=768;if(was!==isMobile)updateUIForUser();});
+        setInterval(()=>{if(currentUser)loadChatList();},10000);
     };
 </script>
 </body>
