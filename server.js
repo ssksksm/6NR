@@ -10,10 +10,14 @@ const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-// ⚠️ 务必修改下面这行，改成你自己的随机字符串！
 const JWT_SECRET = 'your-random-secret-change-me-to-something-long-and-random';
 const SALT_ROUNDS = 10;
 const PORT = process.env.PORT || 3000;
+
+// 增加 JSON 请求体大小限制（头像可能较大）
+app.use(cors());
+app.use(express.json({ limit: '5mb' }));
+app.use(express.static('public'));
 
 // 数据库初始化
 const db = new sqlite3.Database('securechat.db');
@@ -23,6 +27,8 @@ db.serialize(() => {
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     public_key TEXT NOT NULL,
+    nickname TEXT,
+    avatar TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS friends (
@@ -77,13 +83,18 @@ db.serialize(() => {
     FOREIGN KEY(moment_id) REFERENCES moments(id),
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS blocks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    blocked_user_id INTEGER NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE(user_id, blocked_user_id),
+    FOREIGN KEY(user_id) REFERENCES users(id),
+    FOREIGN KEY(blocked_user_id) REFERENCES users(id)
+  )`);
 });
 
-// 中间件
-app.use(cors());
-app.use(express.json());
-app.use(express.static('public'));
-
+// JWT验证中间件
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
@@ -122,10 +133,7 @@ wss.on('connection', (ws, req) => {
           const receiverId = msg.message.to_id;
           const receiverWs = clients.get(receiverId);
           if (receiverWs && receiverWs.readyState === 1) {
-            receiverWs.send(JSON.stringify({
-              type: 'new_message',
-              message: msg.message
-            }));
+            receiverWs.send(JSON.stringify({ type: 'new_message', message: msg.message }));
           }
         } else if (msg.type === 'new_moment') {
           wss.clients.forEach(client => {
@@ -143,6 +151,8 @@ wss.on('connection', (ws, req) => {
   }
 });
 
+// ==================== API 路由 ====================
+
 // 注册
 app.post('/api/register', async (req, res) => {
   const { username, password, public_key } = req.body;
@@ -152,8 +162,9 @@ app.post('/api/register', async (req, res) => {
   if (password.length < 4) return res.status(400).json({ error: '密码至少4位' });
   try {
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    db.run('INSERT INTO users (username, password_hash, public_key) VALUES (?, ?, ?)',
-      [username, hash, JSON.stringify(public_key)],
+    // 默认昵称同用户名
+    db.run('INSERT INTO users (username, password_hash, public_key, nickname) VALUES (?, ?, ?, ?)',
+      [username, hash, JSON.stringify(public_key), username],
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE constraint')) {
@@ -163,7 +174,7 @@ app.post('/api/register', async (req, res) => {
         }
         const userId = this.lastID;
         const token = jwt.sign({ id: userId, username }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: userId, username } });
+        res.json({ token, user: { id: userId, username, nickname: username } });
       });
   } catch (e) {
     res.status(500).json({ error: '服务器内部错误' });
@@ -179,7 +190,61 @@ app.post('/api/login', async (req, res) => {
     const match = await bcrypt.compare(password, user.password_hash);
     if (!match) return res.status(400).json({ error: '用户名或密码错误' });
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ token, user: { id: user.id, username: user.username } });
+    res.json({
+      token,
+      user: {
+        id: user.id,
+        username: user.username,
+        nickname: user.nickname || user.username,
+        avatar: user.avatar || ''
+      }
+    });
+  });
+});
+
+// 获取当前用户信息
+app.get('/api/user/profile', authenticateToken, (req, res) => {
+  db.get('SELECT id, username, nickname, avatar FROM users WHERE id = ?', [req.user.id], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: '用户不存在' });
+    res.json({ user: row });
+  });
+});
+
+// 更新用户信息（昵称、头像）
+app.put('/api/user/profile', authenticateToken, (req, res) => {
+  const { nickname, avatar } = req.body;
+  const updates = [];
+  const params = [];
+  if (nickname !== undefined) {
+    updates.push('nickname = ?');
+    params.push(nickname);
+  }
+  if (avatar !== undefined) {
+    updates.push('avatar = ?');
+    params.push(avatar);
+  }
+  if (updates.length === 0) return res.status(400).json({ error: '没有要更新的字段' });
+  params.push(req.user.id);
+  db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params, (err) => {
+    if (err) return res.status(500).json({ error: '更新失败' });
+    res.json({ success: true });
+  });
+});
+
+// 修改密码
+app.put('/api/user/password', authenticateToken, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: '请提供旧密码和新密码' });
+  if (newPassword.length < 4) return res.status(400).json({ error: '新密码至少4位' });
+  db.get('SELECT password_hash FROM users WHERE id = ?', [req.user.id], async (err, row) => {
+    if (err || !row) return res.status(500).json({ error: '用户数据错误' });
+    const match = await bcrypt.compare(oldPassword, row.password_hash);
+    if (!match) return res.status(400).json({ error: '旧密码不正确' });
+    const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.id], (err) => {
+      if (err) return res.status(500).json({ error: '密码更新失败' });
+      res.json({ success: true });
+    });
   });
 });
 
@@ -210,8 +275,8 @@ app.get('/api/user/:id/public-key', authenticateToken, (req, res) => {
 // 搜索用户
 app.get('/api/search-users', authenticateToken, (req, res) => {
   const q = req.query.q || '';
-  db.all('SELECT id, username FROM users WHERE username LIKE ? AND id != ? LIMIT 10',
-    [`%${q}%`, req.user.id], (err, rows) => {
+  db.all('SELECT id, username, nickname FROM users WHERE (username LIKE ? OR nickname LIKE ?) AND id != ? LIMIT 10',
+    [`%${q}%`, `%${q}%`, req.user.id], (err, rows) => {
       if (err) return res.status(500).json({ error: '查询错误' });
       res.json({ users: rows });
     });
@@ -257,14 +322,48 @@ app.post('/api/friend-request/:fromId', authenticateToken, (req, res) => {
     });
 });
 
-// 获取好友列表
+// 获取好友列表（附带昵称和屏蔽状态）
 app.get('/api/friends', authenticateToken, (req, res) => {
-  db.all(`SELECT u.id, u.username FROM friends f JOIN users u ON f.friend_id = u.id WHERE f.user_id = ?`, [req.user.id], (err, friends) => {
-    if (err) return res.status(500).json({ error: '查询失败' });
-    db.all(`SELECT fr.id, fr.from_id, u.username FROM friend_requests fr JOIN users u ON fr.from_id = u.id WHERE fr.to_id = ? AND fr.status = 'pending'`, [req.user.id], (err, requests) => {
+  db.all(`SELECT u.id, u.username, u.nickname, u.avatar,
+    (SELECT COUNT(*) FROM blocks WHERE user_id = ? AND blocked_user_id = u.id) as is_blocked
+    FROM friends f JOIN users u ON f.friend_id = u.id WHERE f.user_id = ?`,
+    [req.user.id, req.user.id], (err, friends) => {
       if (err) return res.status(500).json({ error: '查询失败' });
-      res.json({ friends, requests });
+      db.all(`SELECT fr.id, fr.from_id, u.username, u.nickname FROM friend_requests fr
+        JOIN users u ON fr.from_id = u.id WHERE fr.to_id = ? AND fr.status = 'pending'`,
+        [req.user.id], (err, requests) => {
+          if (err) return res.status(500).json({ error: '查询失败' });
+          res.json({ friends, requests });
+        });
     });
+});
+
+// 屏蔽好友
+app.post('/api/block/:friendId', authenticateToken, (req, res) => {
+  const friendId = parseInt(req.params.friendId);
+  db.get('SELECT * FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId], (err, row) => {
+    if (err || !row) return res.status(403).json({ error: '不是好友关系，无法屏蔽' });
+    db.run('INSERT OR IGNORE INTO blocks (user_id, blocked_user_id) VALUES (?, ?)', [req.user.id, friendId], (err) => {
+      if (err) return res.status(500).json({ error: '屏蔽失败' });
+      res.json({ success: true });
+    });
+  });
+});
+
+// 取消屏蔽好友
+app.delete('/api/block/:friendId', authenticateToken, (req, res) => {
+  const friendId = parseInt(req.params.friendId);
+  db.run('DELETE FROM blocks WHERE user_id = ? AND blocked_user_id = ?', [req.user.id, friendId], (err) => {
+    if (err) return res.status(500).json({ error: '取消屏蔽失败' });
+    res.json({ success: true });
+  });
+});
+
+// 获取屏蔽列表
+app.get('/api/blocks', authenticateToken, (req, res) => {
+  db.all('SELECT u.id, u.username, u.nickname FROM blocks b JOIN users u ON b.blocked_user_id = u.id WHERE b.user_id = ?', [req.user.id], (err, rows) => {
+    if (err) return res.status(500).json({ error: '查询失败' });
+    res.json({ blocked: rows });
   });
 });
 
@@ -308,6 +407,7 @@ app.get('/api/chat-list', authenticateToken, (req, res) => {
   db.all(`SELECT 
       CASE WHEN m.from_id = ? THEN m.to_id ELSE m.from_id END as friend_id,
       u.username as friend_name,
+      u.nickname as friend_nickname,
       (SELECT content FROM messages WHERE ((from_id = m.from_id AND to_id = m.to_id) OR (from_id = m.to_id AND to_id = m.from_id)) ORDER BY created_at DESC LIMIT 1) as last_preview,
       (SELECT created_at FROM messages WHERE ((from_id = m.from_id AND to_id = m.to_id) OR (from_id = m.to_id AND to_id = m.from_id)) ORDER BY created_at DESC LIMIT 1) as last_time
     FROM messages m
@@ -320,12 +420,11 @@ app.get('/api/chat-list', authenticateToken, (req, res) => {
     });
 });
 
-// 标记已读（简化）
 app.post('/api/mark-read/:friendId', authenticateToken, (req, res) => {
   res.json({ success: true });
 });
 
-// 好友圈 - 发布动态
+// 微博相关（复用 moments 表）
 app.post('/api/moments', authenticateToken, (req, res) => {
   const { content } = req.body;
   if (!content) return res.status(400).json({ error: '内容不能为空' });
@@ -340,32 +439,37 @@ app.post('/api/moments', authenticateToken, (req, res) => {
   });
 });
 
-// 获取好友圈
 app.get('/api/moments', authenticateToken, (req, res) => {
-  db.all(`SELECT m.*, u.username,
-    (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) as like_count,
-    (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) as liked_by_me
-    FROM moments m
-    JOIN users u ON m.user_id = u.id
-    ORDER BY m.created_at DESC LIMIT 50`, [req.user.id], (err, moments) => {
-      if (err) return res.status(500).json({ error: '查询失败' });
-      const promises = moments.map(moment => {
-        return new Promise((resolve) => {
-          db.all('SELECT mc.*, u.username FROM moment_comments mc JOIN users u ON mc.user_id = u.id WHERE mc.moment_id = ? ORDER BY mc.created_at ASC',
-            [moment.id], (err, comments) => {
-              moment.comments = comments || [];
-              moment.likes = moment.liked_by_me ? [req.user.id] : [];
-              resolve(moment);
-            });
+  // 获取屏蔽列表
+  db.all('SELECT blocked_user_id FROM blocks WHERE user_id = ?', [req.user.id], (err, blockedRows) => {
+    const blockedIds = (blockedRows || []).map(r => r.blocked_user_id);
+    const blockedFilter = blockedIds.length > 0 ? `AND m.user_id NOT IN (${blockedIds.join(',')})` : '';
+    
+    db.all(`SELECT m.*, u.username, u.nickname, u.avatar,
+      (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) as like_count,
+      (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) as liked_by_me
+      FROM moments m
+      JOIN users u ON m.user_id = u.id
+      WHERE 1=1 ${blockedFilter}
+      ORDER BY m.created_at DESC LIMIT 50`, [req.user.id], (err, moments) => {
+        if (err) return res.status(500).json({ error: '查询失败' });
+        const promises = moments.map(moment => {
+          return new Promise((resolve) => {
+            db.all('SELECT mc.*, u.username, u.nickname FROM moment_comments mc JOIN users u ON mc.user_id = u.id WHERE mc.moment_id = ? ORDER BY mc.created_at ASC',
+              [moment.id], (err, comments) => {
+                moment.comments = comments || [];
+                moment.likes = moment.liked_by_me ? [req.user.id] : [];
+                resolve(moment);
+              });
+          });
+        });
+        Promise.all(promises).then(results => {
+          res.json({ moments: results });
         });
       });
-      Promise.all(promises).then(results => {
-        res.json({ moments: results });
-      });
-    });
+  });
 });
 
-// 点赞
 app.post('/api/moments/:id/like', authenticateToken, (req, res) => {
   const momentId = parseInt(req.params.id);
   db.get('SELECT * FROM moment_likes WHERE moment_id = ? AND user_id = ?', [momentId, req.user.id], (err, row) => {
@@ -384,7 +488,6 @@ app.post('/api/moments/:id/like', authenticateToken, (req, res) => {
   });
 });
 
-// 评论
 app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
   const momentId = parseInt(req.params.id);
   const { content } = req.body;
@@ -397,5 +500,5 @@ app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
 });
 
 server.listen(PORT, () => {
-  console.log(`SecureChat 服务运行在端口 ${PORT}`);
+  console.log(`6nr 服务运行在端口 ${PORT}`);
 });
