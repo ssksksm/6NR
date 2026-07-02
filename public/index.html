@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>6nr · 加密聊天</title>
   <style>
-    /* ===== 全局 ===== */
+    /* ===== 全局重置 ===== */
     * { margin:0; padding:0; box-sizing:border-box; }
     :root {
       --primary: #7c5cfc;
@@ -58,6 +58,7 @@
       display:flex; flex-direction:column;
       padding:16px 12px;
       box-shadow:0 8px 30px rgba(0,0,0,0.05);
+      z-index:10;
     }
     .sidebar-header { padding:8px 12px 20px; display:flex; align-items:center; justify-content:space-between; }
     .sidebar-header .logo { font-size:1.8rem; font-weight:800; background:linear-gradient(135deg, var(--primary), #a38cff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
@@ -129,7 +130,7 @@
       height:100%; color:var(--text-secondary); font-size:0.95rem; padding:20px; text-align:center;
     }
 
-    /* 聊天窗口 */
+    /* 聊天窗口 (桌面) */
     .chat-window {
       flex:1; display:flex; flex-direction:column;
       background:var(--surface); backdrop-filter:blur(8px);
@@ -156,7 +157,7 @@
     .message-bubble .msg-time { font-size:0.6rem; margin-top:6px; opacity:0.7; text-align:right; }
     .message-bubble .encrypted-badge { font-size:0.6rem; opacity:0.5; display:flex; align-items:center; gap:4px; margin-top:4px; }
 
-    /* 输入区域 (移动端重点适配) */
+    /* 输入区域 (桌面) */
     .chat-input-area {
       padding:12px 20px;
       padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
@@ -164,8 +165,7 @@
       backdrop-filter:blur(24px) saturate(1.4);
       border-top:1px solid var(--border);
       display:flex; gap:12px; align-items:center;
-      flex-shrink:0;  /* 防止被压缩 */
-      min-height: 64px;
+      flex-shrink:0;
     }
     .chat-input-area input {
       flex:1; padding:12px 20px; border:1.5px solid var(--border); border-radius:40px;
@@ -181,7 +181,7 @@
     }
     .chat-input-area button:active { transform:scale(0.92); }
 
-    /* 广场、好友、设置 (略，与之前相同) */
+    /* 广场、好友、设置 (与之前相同，略) */
     .square-page, .friends-page, .settings-page { padding:0; overflow-y:auto; background:transparent; }
     .square-header, .page-header {
       background:var(--surface); backdrop-filter:blur(24px) saturate(1.4);
@@ -298,30 +298,43 @@
     .mobile-nav .nav-tab.active { color:var(--primary); font-weight:600; }
     .mobile-nav .nav-tab.active .tab-icon { transform:scale(1.1); }
 
-    /* ===== 移动端响应式 ===== */
+    /* ===== 移动端响应式重构 ===== */
     @media (max-width: 768px) {
       .sidebar { display:none; }
       .mobile-nav { display:flex; }
       .main-content { padding-bottom:var(--nav-height); }
       .chat-list-panel { width:100%; min-width:100%; border-right:none; }
 
-      /* 聊天窗口全屏固定 */
+      /* 移动端聊天窗口 - 全屏固定，flex列布局 */
       .chat-window {
         position:fixed;
         top:0; left:0; right:0; bottom:0;
         z-index:60;
-        display:none;
+        display:none; /* 默认隐藏，由mobile-open控制 */
         background:var(--bg);
         flex-direction:column;
-        animation:slideUp 0.3s ease;
+        /* 不使用动画避免干扰 */
       }
-      .chat-window.mobile-open { display:flex !important; }
-      .chat-window .window-header .back-btn { display:block; }
-      .chat-window .chat-messages { flex:1; }
-      .chat-window .chat-input-area {
-        /* 确保在移动端输入框始终显示 */
+      .chat-window.mobile-open {
         display:flex !important;
+      }
+      .chat-window .window-header .back-btn { display:block; }
+      .chat-window .chat-messages {
+        flex:1;
+        overflow-y:auto;
+        -webkit-overflow-scrolling:touch;
+      }
+      .chat-window .chat-input-area {
+        flex-shrink:0;
         padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
+        background:var(--surface);
+        /* 保证在底部 */
+        position: relative;
+        /* 不设置固定定位，利用flex自动在底部 */
+      }
+      /* 确保输入框可见 */
+      .chat-window.mobile-open .chat-input-area {
+        display:flex !important;
       }
 
       .message-bubble { max-width:80%; }
@@ -331,14 +344,13 @@
       .auth-card { padding:32px 20px; }
       .auth-card h2 { font-size:1.6rem; }
     }
-    @keyframes slideUp { from{transform:translateY(100%); opacity:0;} to{transform:translateY(0); opacity:1;} }
   </style>
 </head>
 <body>
 <div id="app">
   <div class="toast" id="toast"></div>
 
-  <!-- 侧边栏 -->
+  <!-- 侧边栏 (桌面) -->
   <aside class="sidebar" id="sidebar">
     <div class="sidebar-header"><span class="logo">6nr</span></div>
     <nav class="sidebar-nav">
@@ -367,6 +379,7 @@
           <div class="chat-list" id="chat-list"></div>
           <div class="empty-state" id="chat-empty">还没有聊天，去添加好友吧</div>
         </div>
+        <!-- 聊天窗口 (桌面及移动) -->
         <div class="chat-window" id="chat-window">
           <div class="window-header">
             <button class="back-btn" onclick="closeMobileChat()">←</button>
@@ -375,6 +388,7 @@
           <div class="chat-messages" id="chat-messages">
             <div class="empty-state">👋 选择一个好友开始加密聊天</div>
           </div>
+          <!-- 输入区域 -->
           <div class="chat-input-area" id="chat-input-area">
             <input type="text" id="chat-input" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMessage()">
             <button onclick="sendMessage()">➤</button>
@@ -383,7 +397,7 @@
       </div>
     </div>
 
-    <!-- 广场 -->
+    <!-- 广场页 -->
     <div class="page" id="page-square">
       <div class="square-page">
         <div class="square-header">✨ 广场</div>
@@ -395,7 +409,7 @@
       </div>
     </div>
 
-    <!-- 好友 -->
+    <!-- 好友页 -->
     <div class="page" id="page-friends">
       <div class="friends-page">
         <div class="page-header">👥 好友</div>
@@ -412,11 +426,12 @@
       </div>
     </div>
 
-    <!-- 设置 -->
+    <!-- 设置页 -->
     <div class="page" id="page-settings">
       <div class="settings-page">
         <div class="page-header">⚙️ 设置</div>
         <div class="settings-container">
+          <!-- 个人信息 -->
           <div class="settings-group">
             <div class="settings-group-title">个人信息</div>
             <div class="settings-item">
@@ -440,6 +455,7 @@
               </div>
             </div>
           </div>
+          <!-- 偏好 -->
           <div class="settings-group">
             <div class="settings-group-title">偏好设置</div>
             <div class="settings-item">
@@ -473,6 +489,7 @@
               </div>
             </div>
           </div>
+          <!-- 安全 -->
           <div class="settings-group">
             <div class="settings-group-title">安全</div>
             <div class="settings-item">
@@ -486,6 +503,7 @@
               </div>
             </div>
           </div>
+          <!-- 关于 -->
           <div class="settings-group">
             <div class="settings-group-title">关于</div>
             <div class="settings-item">
@@ -505,6 +523,7 @@
               <div class="item-control"><a href="#" onclick="alert('GitHub 仓库链接')" style="text-decoration:none;color:var(--primary);font-weight:500;">访问</a></div>
             </div>
           </div>
+          <!-- 退出 -->
           <div class="logout-wrapper">
             <button onclick="handleLogout()">退出登录</button>
           </div>
@@ -550,7 +569,7 @@
 </div>
 
 <script>
-  // ==================== 完整 JS 逻辑 ====================
+  // ==================== 核心逻辑 ====================
   const API_BASE = '/api';
   const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
   let currentUser = null, authToken = null, currentChatFriend = null, ws = null;
@@ -613,8 +632,7 @@
     document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
     const t=$('page-'+p); if(t)t.classList.add('active');
     document.querySelectorAll('.sidebar-nav .nav-item,.mobile-nav .nav-tab').forEach(n=>n.classList.remove('active'));
-    const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`),
-          mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);
+    const sn=document.querySelector(`.sidebar-nav .nav-item[data-page="${p}"]`), mn=document.querySelector(`.mobile-nav .nav-tab[data-page="${p}"]`);
     if(sn)sn.classList.add('active'); if(mn)mn.classList.add('active');
     if(p !== 'messages') closeMobileChat();
     if(p==='messages')loadChatList();
@@ -684,24 +702,19 @@
     }
     currentChatFriend = { id: fid, username: fn };
     $('chat-window-title').textContent = '🔒 ' + fn;
+    // 移动端：显示聊天窗口
     if (isMobile) {
       $('chat-window').classList.add('mobile-open');
       document.body.style.overflow = 'hidden';
     }
-    // 确保输入区域显示
-    const inputArea = document.getElementById('chat-input-area');
-    inputArea.style.display = 'flex';
+    // 输入区域本来就存在，无需额外显示
     renderChatList();
     await loadMessages(fid);
     scrollChatBottom();
     // 聚焦输入框
     setTimeout(() => {
       const inp = document.getElementById('chat-input');
-      if (inp) {
-        inp.focus();
-        // 额外滚动到输入框位置
-        inp.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      if (inp) inp.focus();
     }, 400);
   }
 
@@ -737,14 +750,14 @@
   async function loadAllData(){await Promise.all([loadChatList(),loadFriendsData(),loadSquare()]);}
 
   // ===== 移动端键盘适配 =====
-  // 1. 监听 visualViewport 变化（键盘弹出）
+  // 当输入框获得焦点时，滚动到可视区域（但此时窗口已是fixed，滚动的是页面）
+  // 由于聊天窗口是fixed，键盘弹出时浏览器会自动调整视口，但为了确保输入框不被遮挡，
+  // 我们使用 visualViewport 监听并主动滚动到输入框。
   if ('visualViewport' in window) {
     let lastHeight = window.visualViewport.height;
     window.visualViewport.addEventListener('resize', () => {
       const currentHeight = window.visualViewport.height;
-      const isKeyboardOpen = currentHeight < lastHeight - 100; // 键盘弹出会减小高度
-      if (isKeyboardOpen) {
-        // 键盘弹出时，滚动输入框到可视区域
+      if (currentHeight < lastHeight - 50) { // 键盘弹出
         const inp = document.getElementById('chat-input');
         if (inp && document.activeElement === inp) {
           setTimeout(() => {
@@ -756,7 +769,7 @@
     });
   }
 
-  // 2. 输入框获得焦点时滚动
+  // 额外：focusin 事件确保
   document.addEventListener('focusin', (e) => {
     if (e.target && e.target.id === 'chat-input') {
       setTimeout(() => {
