@@ -10,7 +10,7 @@
             --primary-soft: #9b8afb;
             --primary-light: #ede9fe;
             --bg: #f5f3ff;
-            --surface: rgba(255,255,255,0.72);
+            --surface: rgba(255,255,255,0.65);
             --surface-solid: #ffffff;
             --text: #1e1b2e;
             --text-secondary: #6b6880;
@@ -23,13 +23,13 @@
             --shadow-sm: 0 4px 12px rgba(0,0,0,0.04);
             --shadow: 0 8px 24px rgba(0,0,0,0.06);
             --shadow-lg: 0 16px 40px rgba(0,0,0,0.1);
-            --radius: 20px;
-            --radius-sm: 14px;
-            --radius-xs: 10px;
+            --radius: 24px;
+            --radius-sm: 16px;
+            --radius-xs: 12px;
             --sidebar-width: 340px;
             --header-height: 66px;
-            --nav-mobile-height: 66px;
-            --transition: 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+            --nav-mobile-height: 72px;
+            --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * { margin:0; padding:0; box-sizing:border-box; }
@@ -37,7 +37,7 @@
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
             background: var(--bg); color: var(--text); height:100vh; overflow:hidden;
             -webkit-font-smoothing: antialiased; user-select:none;
-            background-image: radial-gradient(circle at 30% 20%, #e9e4ff 0%, transparent 60%),
+            background-image: radial-gradient(circle at 20% 30%, #e9e4ff 0%, transparent 60%),
                               radial-gradient(circle at 80% 70%, #f0ecff 0%, transparent 50%);
         }
         #app { display:flex; height:100vh; width:100%; backdrop-filter: blur(2px); }
@@ -45,8 +45,8 @@
         /* 侧边栏 */
         .sidebar {
             width: var(--sidebar-width); min-width: var(--sidebar-width);
-            background: var(--surface); backdrop-filter: blur(20px);
-            border-right: 1px solid rgba(255,255,255,0.5);
+            background: var(--surface); backdrop-filter: blur(24px) saturate(1.2);
+            border-right: 1px solid rgba(255,255,255,0.4);
             display:flex; flex-direction:column; z-index:10;
             box-shadow: var(--shadow-sm);
         }
@@ -100,7 +100,7 @@
         /* 聊天列表 */
         .chat-list-page { display:flex; height:100%; }
         .chat-list-panel {
-            width: 350px; min-width:350px; background: var(--surface); backdrop-filter: blur(20px);
+            width: 350px; min-width:350px; background: var(--surface); backdrop-filter: blur(24px) saturate(1.2);
             border-right:1px solid rgba(0,0,0,0.04); display:flex; flex-direction:column;
         }
         .chat-list-panel .panel-header {
@@ -132,47 +132,49 @@
         .chat-window { flex:1; display:flex; flex-direction:column; background:#faf9ff; }
         .chat-window .window-header {
             padding:16px 24px; border-bottom:1px solid rgba(0,0,0,0.04);
-            background: var(--surface); backdrop-filter:blur(20px);
+            background: var(--surface); backdrop-filter:blur(24px) saturate(1.2);
             display:flex; align-items:center; gap:14px; height:var(--header-height);
         }
         .chat-messages { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:12px; }
         .message-bubble {
-            max-width:66%; padding:14px 20px; border-radius:22px; font-size:0.92rem;
+            max-width:72%; padding:14px 20px; border-radius:22px; font-size:0.92rem;
             line-height:1.5; word-break:break-word; animation: msgIn 0.25s ease;
             box-shadow:0 2px 8px rgba(0,0,0,0.04);
         }
-        @keyframes msgIn { from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
+        @keyframes msgIn { from{opacity:0; transform:translateY(10px) scale(0.98);} to{opacity:1; transform:translateY(0) scale(1);} }
         .message-bubble.sent {
-            align-self:flex-end; background:linear-gradient(135deg, #7c5cfc, #9b8afb);
+            align-self:flex-end; background:linear-gradient(135deg, #7c5cfc, #a185ff);
             color:#fff; border-bottom-right-radius:8px;
         }
         .message-bubble.received {
-            align-self:flex-start; background:#fff; border:1px solid #efeafc;
-            border-bottom-left-radius:8px;
+            align-self:flex-start; background:rgba(255,255,255,0.9); border:1px solid #efeafc;
+            border-bottom-left-radius:8px; backdrop-filter:blur(8px);
         }
-        .message-bubble .msg-time { font-size:0.65rem; margin-top:6px; opacity:0.7; text-align:right; }
+        .message-bubble .msg-time { font-size:0.6rem; margin-top:6px; opacity:0.7; text-align:right; }
         .message-bubble .encrypted-badge { font-size:0.6rem; opacity:0.5; display:flex; align-items:center; gap:4px; margin-top:4px; }
         .chat-input-area {
-            padding:14px 20px; background:var(--surface); backdrop-filter:blur(20px);
+            padding:12px 16px; background: var(--surface); backdrop-filter:blur(24px) saturate(1.2);
             border-top:1px solid rgba(0,0,0,0.04); display:flex; gap:12px; align-items:center;
+            padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
         }
         .chat-input-area input {
             flex:1; padding:12px 18px; border:1.5px solid #e9e6f5;
-            border-radius:24px; font-size:0.9rem; outline:none; background:#fcfaff;
+            border-radius:30px; font-size:0.9rem; outline:none; background:#fcfaff;
             transition:var(--transition);
         }
         .chat-input-area input:focus { border-color:var(--primary); background:#fff; box-shadow:0 0 0 3px rgba(124,92,252,0.08); }
         .chat-input-area button {
-            width:44px; height:44px; border-radius:50%; background:var(--primary);
+            width:48px; height:48px; border-radius:50%; background:var(--primary);
             color:#fff; border:none; cursor:pointer; font-size:1.2rem;
             box-shadow:0 6px 16px rgba(124,92,252,0.3); transition:var(--transition);
+            flex-shrink:0;
         }
         .chat-input-area button:hover { background:#6b4eeb; transform:scale(1.05); }
 
         /* 广场 */
         .square-page, .friends-page, .settings-page { padding:0; overflow-y:auto; }
         .square-header, .page-header {
-            background: var(--surface); backdrop-filter:blur(20px);
+            background: var(--surface); backdrop-filter:blur(24px) saturate(1.2);
             padding:20px 24px; font-weight:700; font-size:1.1rem;
             border-bottom:1px solid rgba(0,0,0,0.04); position:sticky; top:0; z-index:5;
             height:var(--header-height); display:flex; align-items:center; justify-content:space-between;
@@ -190,10 +192,10 @@
         .square-post-box textarea:focus { border-color:var(--primary); background:#fff; }
         .square-post-box .post-btn, .settings-page .btn-primary {
             padding:10px 24px; background:linear-gradient(135deg, #7c5cfc, #9b8afb);
-            color:#fff; border:none; border-radius:24px; cursor:pointer; font-weight:600;
+            color:#fff; border:none; border-radius:30px; cursor:pointer; font-weight:600;
             box-shadow:0 6px 14px rgba(124,92,252,0.2); transition:var(--transition);
         }
-        .square-post-box .post-btn:hover, .settings-page .btn-primary:hover { transform:translateY(-1px); box-shadow:0 8px 20px rgba(124,92,252,0.3); }
+        .square-post-box .post-btn:hover, .settings-page .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(124,92,252,0.3); }
         .square-card {
             background: var(--surface-solid); margin:12px 24px; padding:20px;
             border-radius:var(--radius); box-shadow:var(--shadow-xs); border:1px solid rgba(0,0,0,0.02);
@@ -214,8 +216,8 @@
         .square-card .square-actions span.liked { color:#f97066; }
         .square-comments { margin-top:14px; padding-top:14px; border-top:1px solid #f3efff; font-size:0.82rem; }
         .square-comment-input { display:flex; gap:8px; margin-top:10px; }
-        .square-comment-input input { flex:1; padding:8px 14px; border:1px solid #e9e6f5; border-radius:14px; font-size:0.78rem; outline:none; background:#fcfaff; }
-        .square-comment-input button { padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:14px; cursor:pointer; font-weight:600; }
+        .square-comment-input input { flex:1; padding:8px 14px; border:1px solid #e9e6f5; border-radius:20px; font-size:0.78rem; outline:none; background:#fcfaff; }
+        .square-comment-input button { padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:20px; cursor:pointer; font-weight:600; }
 
         /* 好友 */
         .friend-item {
@@ -227,15 +229,15 @@
         .search-box { margin:16px 24px; display:flex; gap:10px; }
         .search-box input {
             flex:1; padding:12px 16px; border:1.5px solid #e9e6f5;
-            border-radius:24px; font-size:0.85rem; outline:none; background:#fcfaff;
+            border-radius:30px; font-size:0.85rem; outline:none; background:#fcfaff;
         }
         .search-box button {
             padding:12px 20px; background:var(--primary); color:#fff; border:none;
-            border-radius:24px; cursor:pointer; font-weight:600;
+            border-radius:30px; cursor:pointer; font-weight:600;
         }
-        .btn-accept, .btn-chat, .btn-block { padding:6px 14px; border:none; border-radius:14px; cursor:pointer; font-weight:600; font-size:0.75rem; }
+        .btn-accept, .btn-chat, .btn-block { padding:6px 14px; border:none; border-radius:30px; cursor:pointer; font-weight:600; font-size:0.75rem; }
         .btn-accept { background:var(--success); color:#fff; }
-        .btn-reject { background:#eee; color:#666; padding:6px 14px; border:none; border-radius:14px; cursor:pointer; }
+        .btn-reject { background:#eee; color:#666; padding:6px 14px; border:none; border-radius:30px; cursor:pointer; }
         .btn-chat { background:var(--primary); color:#fff; margin-left:auto; }
         .btn-block { background:#fdb44b; color:#fff; margin-left:8px; }
 
@@ -269,8 +271,8 @@
             backdrop-filter:blur(10px);
         }
         .auth-card {
-            background:rgba(255,255,255,0.8); backdrop-filter:blur(24px);
-            border-radius:28px; padding:44px 36px;
+            background:rgba(255,255,255,0.75); backdrop-filter:blur(30px) saturate(1.5);
+            border-radius:32px; padding:44px 36px;
             width:100%; max-width:420px; box-shadow:0 30px 60px rgba(0,0,0,0.1);
             border:1px solid rgba(255,255,255,0.5); text-align:center;
         }
@@ -278,33 +280,39 @@
         .auth-card .subtitle { color:var(--text-secondary); font-size:0.9rem; margin-bottom:28px; }
         .auth-card input {
             width:100%; padding:14px 18px; border:1.5px solid #e9e6f5;
-            border-radius:14px; font-size:0.9rem; margin-bottom:14px; outline:none;
+            border-radius:16px; font-size:0.9rem; margin-bottom:14px; outline:none;
             background:rgba(255,255,255,0.7); transition:var(--transition);
         }
         .auth-card input:focus { border-color:var(--primary); background:#fff; }
         .auth-card .btn-primary {
             width:100%; padding:14px; background:linear-gradient(135deg, #7c5cfc, #9b8afb);
-            color:#fff; border:none; border-radius:14px; font-size:1rem; font-weight:700;
+            color:#fff; border:none; border-radius:16px; font-size:1rem; font-weight:700;
             cursor:pointer; margin-top:10px; box-shadow:0 8px 24px rgba(124,92,252,0.3);
         }
         .auth-card .switch-text { margin-top:18px; font-size:0.85rem; color:var(--text-secondary); }
         .auth-card .switch-text a { color:var(--primary); cursor:pointer; font-weight:700; }
 
-        .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:#2d2a3e; color:#fff; padding:12px 24px; border-radius:24px; font-size:0.85rem; z-index:9999; opacity:0; transition:opacity 0.3s; pointer-events:none; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
+        .toast { position:fixed; top:24px; left:50%; transform:translateX(-50%); background:#2d2a3e; color:#fff; padding:12px 24px; border-radius:30px; font-size:0.85rem; z-index:9999; opacity:0; transition:opacity 0.3s; pointer-events:none; box-shadow:0 10px 25px rgba(0,0,0,0.15); }
         .toast.show { opacity:1; }
 
         /* 移动端底部导航 */
         .mobile-nav {
             display:none; position:fixed; bottom:0; left:0; right:0;
-            background:rgba(255,255,255,0.85); backdrop-filter:blur(20px);
-            border-top:1px solid rgba(0,0,0,0.05); height:var(--nav-mobile-height); z-index:100;
-            justify-content:space-around; align-items:center; padding-bottom:env(safe-area-inset-bottom,0);
+            background:rgba(255,255,255,0.8); backdrop-filter:blur(24px) saturate(1.4);
+            border-top:1px solid rgba(255,255,255,0.3);
+            height:var(--nav-mobile-height); z-index:100;
+            justify-content:space-around; align-items:center;
+            padding-bottom:env(safe-area-inset-bottom,0);
         }
         .mobile-nav .nav-tab {
             display:flex; flex-direction:column; align-items:center; cursor:pointer;
-            color:#bfb8d9; font-size:0.7rem; border:none; background:none; padding:8px;
+            color:#bfb8d9; font-size:0.65rem; border:none; background:none; padding:4px 8px;
+            transition:var(--transition); gap:2px;
+            font-weight:500; letter-spacing:0.3px;
         }
+        .mobile-nav .nav-tab .tab-icon { font-size:1.4rem; line-height:1; }
         .mobile-nav .nav-tab.active { color:var(--primary); font-weight:600; }
+        .mobile-nav .nav-tab.active .tab-icon { transform:scale(1.1); }
 
         /* 移动端适配 */
         @media (max-width: 768px) {
@@ -313,11 +321,19 @@
             .main-content { padding-bottom: var(--nav-mobile-height); }
             .chat-list-panel { width:100%; min-width:100%; border-right:none; }
             .chat-window {
-                position:fixed; top:0; left:0; right:0; bottom:0; z-index:50;
-                display:none; background:#faf9ff;
+                position:fixed; top:0; left:0; right:0; bottom:0; z-index:60;
+                display:none; background:#faf9ff; flex-direction:column;
+                animation: slideUp 0.3s ease;
+            }
+            @keyframes slideUp {
+                from { transform:translateY(100%); opacity:0; }
+                to { transform:translateY(0); opacity:1; }
             }
             .chat-window.mobile-open { display:flex; }
-            .chat-window .window-header .back-btn { display:block; background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--text); padding:0 8px; }
+            .chat-window .window-header .back-btn {
+                display:block; background:none; border:none; font-size:1.6rem; cursor:pointer;
+                color:var(--text); padding:0 8px; line-height:1;
+            }
             .message-bubble { max-width:80%; }
             .square-post-box, .square-card, .search-box { margin-left:12px; margin-right:12px; }
             .settings-page .setting-group { margin-left:12px; margin-right:12px; }
@@ -326,6 +342,13 @@
                 height:100%;
             }
             .chat-messages { padding-bottom: 20px; }
+            .chat-input-area { padding:12px 12px; gap:8px; }
+            .chat-input-area input { padding:10px 14px; font-size:0.85rem; }
+            .chat-input-area button { width:44px; height:44px; font-size:1rem; }
+        }
+        @media (max-width: 480px) {
+            .auth-card { padding:32px 20px; }
+            .auth-card h2 { font-size:1.5rem; }
         }
     </style>
 </head>
@@ -365,7 +388,7 @@
                     </div>
                     <div class="chat-messages" id="chat-messages"><div class="empty-state" style="display:flex;align-items:center;justify-content:center;height:100%;color:#c4bfd6;">👋 选择一个好友开始加密聊天</div></div>
                     <div class="chat-input-area" id="chat-input-area" style="display:none">
-                        <input type="text" id="chat-input" placeholder="输入消息...（端到端加密）" onkeydown="if(event.key==='Enter')sendMessage()">
+                        <input type="text" id="chat-input" placeholder="输入消息..." onkeydown="if(event.key==='Enter')sendMessage()">
                         <button onclick="sendMessage()">➤</button>
                     </div>
                 </div>
@@ -389,7 +412,6 @@
                 <div id="friends-list"></div>
                 <div style="padding:8px 24px;font-weight:600;color:#856404;">好友请求</div>
                 <div id="requests-list"></div>
-                <!-- 底部留白防止被导航遮挡 -->
                 <div style="height:var(--nav-mobile-height);"></div>
             </div>
         </div>
@@ -407,8 +429,8 @@
                     <div class="avatar-upload">
                         <div class="avatar-preview" id="avatar-preview">?</div>
                         <input type="file" id="avatar-file" accept="image/*" onchange="previewAvatar(event)" style="display:none">
-                        <button onclick="document.getElementById('avatar-file').click()" style="padding:8px 16px;">上传图片</button>
-                        <button onclick="resetAvatarColor()" style="padding:8px 16px;">重置纯色</button>
+                        <button onclick="document.getElementById('avatar-file').click()" style="padding:8px 16px;border-radius:30px;border:1px solid #e9e6f5;background:transparent;cursor:pointer;">上传图片</button>
+                        <button onclick="resetAvatarColor()" style="padding:8px 16px;border-radius:30px;border:1px solid #e9e6f5;background:transparent;cursor:pointer;">重置纯色</button>
                     </div>
                     <div class="color-options" id="color-options"></div>
                     <button class="btn-primary" onclick="saveAvatar()" style="margin-top:8px;">保存头像</button>
@@ -420,18 +442,29 @@
                     <button class="btn-primary" onclick="changePassword()" style="margin-top:8px;">修改密码</button>
                 </div>
                 <div style="padding:24px;text-align:center;">
-                    <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 32px;border-radius:24px;cursor:pointer;font-weight:600;">退出登录</button>
+                    <button onclick="handleLogout()" style="background:var(--danger);color:#fff;border:none;padding:12px 32px;border-radius:30px;cursor:pointer;font-weight:600;">退出登录</button>
                 </div>
-                <!-- 底部留白 -->
                 <div style="height:var(--nav-mobile-height);"></div>
             </div>
         </div>
     </main>
     <nav class="mobile-nav" id="mobile-nav">
-        <button class="nav-tab active" data-page="messages" onclick="switchPage('messages')">💬消息</button>
-        <button class="nav-tab" data-page="square" onclick="switchPage('square')">✨广场</button>
-        <button class="nav-tab" data-page="friends" onclick="switchPage('friends')">👥好友</button>
-        <button class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️设置</button>
+        <button class="nav-tab active" data-page="messages" onclick="switchPage('messages')">
+            <span class="tab-icon">💬</span>
+            <span>消息</span>
+        </button>
+        <button class="nav-tab" data-page="square" onclick="switchPage('square')">
+            <span class="tab-icon">✨</span>
+            <span>广场</span>
+        </button>
+        <button class="nav-tab" data-page="friends" onclick="switchPage('friends')">
+            <span class="tab-icon">👥</span>
+            <span>好友</span>
+        </button>
+        <button class="nav-tab" data-page="settings" onclick="switchPage('settings')">
+            <span class="tab-icon">⚙️</span>
+            <span>设置</span>
+        </button>
     </nav>
     <div class="auth-page" id="auth-page" style="display:none;">
         <div class="auth-card">
@@ -572,6 +605,17 @@
 
     async function getSharedKeyWithFriend(fid){const data=await apiFetch(`/user/${fid}/public-key`);const cleanPub={kty:data.public_key.kty,crv:data.public_key.crv,x:data.public_key.x,y:data.public_key.y};return await CryptoHelper.deriveSharedKey(userKeyPair.privateKey,cleanPub);}
     async function loadAllData(){await Promise.all([loadChatList(),loadFriendsData(),loadSquare()]);}
+
+    // 移动端键盘处理：当输入框获得焦点时，滚动到底部
+    if ('visualViewport' in window) {
+        window.visualViewport.addEventListener('resize', () => {
+            if (document.activeElement && document.activeElement.tagName === 'INPUT') {
+                setTimeout(() => {
+                    document.activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 200);
+            }
+        });
+    }
 
     window.onload=async function(){
         const savedToken=localStorage.getItem('securechat_token'),savedUser=localStorage.getItem('securechat_user');
