@@ -14,13 +14,47 @@ const JWT_SECRET = 'your-random-secret-change-me-to-something-long-and-random';
 const SALT_ROUNDS = 10;
 const PORT = process.env.PORT || 3000;
 
-// 增加 JSON 请求体大小限制（头像可能较大）
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.static('public'));
 
 // 数据库初始化
 const db = new sqlite3.Database('securechat.db');
+
+// 数据库迁移辅助
+function migrateDatabase() {
+  db.serialize(() => {
+    // 检查并添加 users.bio 列
+    db.get("PRAGMA table_info(users)", (err, rows) => {
+      if (err) return console.error('检查 users 表失败:', err);
+      // rows 是数组，需遍历检查
+      db.all("PRAGMA table_info(users)", (err, columns) => {
+        if (err) return console.error('获取 users 列失败:', err);
+        const hasBio = columns.some(c => c.name === 'bio');
+        if (!hasBio) {
+          db.run("ALTER TABLE users ADD COLUMN bio TEXT", (err) => {
+            if (err) console.error('添加 users.bio 失败:', err);
+            else console.log('已添加 users.bio 列');
+          });
+        }
+      });
+    });
+
+    // 检查并添加 moments.blocked 列
+    db.all("PRAGMA table_info(moments)", (err, columns) => {
+      if (err) return console.error('获取 moments 列失败:', err);
+      const hasBlocked = columns.some(c => c.name === 'blocked');
+      if (!hasBlocked) {
+        db.run("ALTER TABLE moments ADD COLUMN blocked TEXT", (err) => {
+          if (err) console.error('添加 moments.blocked 失败:', err);
+          else console.log('已添加 moments.blocked 列');
+        });
+      }
+    });
+  });
+}
+
+// 创建表（如果不存在）
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -29,6 +63,7 @@ db.serialize(() => {
     public_key TEXT NOT NULL,
     nickname TEXT,
     avatar TEXT DEFAULT '',
+    bio TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
   db.run(`CREATE TABLE IF NOT EXISTS friends (
@@ -62,6 +97,7 @@ db.serialize(() => {
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
+    blocked TEXT DEFAULT '[]',   -- JSON数组，存储被屏蔽的用户ID
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY(user_id) REFERENCES users(id)
   )`);
@@ -92,6 +128,9 @@ db.serialize(() => {
     FOREIGN KEY(user_id) REFERENCES users(id),
     FOREIGN KEY(blocked_user_id) REFERENCES users(id)
   )`);
+
+  // 执行数据库迁移（添加新列）
+  migrateDatabase();
 });
 
 // JWT验证中间件
@@ -162,7 +201,6 @@ app.post('/api/register', async (req, res) => {
   if (password.length < 4) return res.status(400).json({ error: '密码至少4位' });
   try {
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    // 默认昵称同用户名
     db.run('INSERT INTO users (username, password_hash, public_key, nickname) VALUES (?, ?, ?, ?)',
       [username, hash, JSON.stringify(public_key), username],
       function(err) {
@@ -174,7 +212,16 @@ app.post('/api/register', async (req, res) => {
         }
         const userId = this.lastID;
         const token = jwt.sign({ id: userId, username }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({ token, user: { id: userId, username, nickname: username } });
+        res.json({
+          token,
+          user: {
+            id: userId,
+            username,
+            nickname: username,
+            avatar: '',
+            bio: ''
+          }
+        });
       });
   } catch (e) {
     res.status(500).json({ error: '服务器内部错误' });
@@ -196,7 +243,8 @@ app.post('/api/login', async (req, res) => {
         id: user.id,
         username: user.username,
         nickname: user.nickname || user.username,
-        avatar: user.avatar || ''
+        avatar: user.avatar || '',
+        bio: user.bio || ''
       }
     });
   });
@@ -204,15 +252,15 @@ app.post('/api/login', async (req, res) => {
 
 // 获取当前用户信息
 app.get('/api/user/profile', authenticateToken, (req, res) => {
-  db.get('SELECT id, username, nickname, avatar FROM users WHERE id = ?', [req.user.id], (err, row) => {
+  db.get('SELECT id, username, nickname, avatar, bio FROM users WHERE id = ?', [req.user.id], (err, row) => {
     if (err || !row) return res.status(404).json({ error: '用户不存在' });
     res.json({ user: row });
   });
 });
 
-// 更新用户信息（昵称、头像）
+// 更新用户信息（昵称、头像、简介）
 app.put('/api/user/profile', authenticateToken, (req, res) => {
-  const { nickname, avatar } = req.body;
+  const { nickname, avatar, bio } = req.body;
   const updates = [];
   const params = [];
   if (nickname !== undefined) {
@@ -222,6 +270,10 @@ app.put('/api/user/profile', authenticateToken, (req, res) => {
   if (avatar !== undefined) {
     updates.push('avatar = ?');
     params.push(avatar);
+  }
+  if (bio !== undefined) {
+    updates.push('bio = ?');
+    params.push(bio);
   }
   if (updates.length === 0) return res.status(400).json({ error: '没有要更新的字段' });
   params.push(req.user.id);
@@ -272,10 +324,19 @@ app.get('/api/user/:id/public-key', authenticateToken, (req, res) => {
   });
 });
 
+// 获取用户资料（含 bio，用于查看主页）
+app.get('/api/user/:id/profile', authenticateToken, (req, res) => {
+  const userId = parseInt(req.params.id);
+  db.get('SELECT id, username, nickname, avatar, bio FROM users WHERE id = ?', [userId], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: '用户不存在' });
+    res.json({ user: row });
+  });
+});
+
 // 搜索用户
 app.get('/api/search-users', authenticateToken, (req, res) => {
   const q = req.query.q || '';
-  db.all('SELECT id, username, nickname FROM users WHERE (username LIKE ? OR nickname LIKE ?) AND id != ? LIMIT 10',
+  db.all('SELECT id, username, nickname, bio FROM users WHERE (username LIKE ? OR nickname LIKE ?) AND id != ? LIMIT 10',
     [`%${q}%`, `%${q}%`, req.user.id], (err, rows) => {
       if (err) return res.status(500).json({ error: '查询错误' });
       res.json({ users: rows });
@@ -322,9 +383,9 @@ app.post('/api/friend-request/:fromId', authenticateToken, (req, res) => {
     });
 });
 
-// 获取好友列表（附带昵称和屏蔽状态）
+// 获取好友列表（附带昵称、头像、简介、屏蔽状态）
 app.get('/api/friends', authenticateToken, (req, res) => {
-  db.all(`SELECT u.id, u.username, u.nickname, u.avatar,
+  db.all(`SELECT u.id, u.username, u.nickname, u.avatar, u.bio,
     (SELECT COUNT(*) FROM blocks WHERE user_id = ? AND blocked_user_id = u.id) as is_blocked
     FROM friends f JOIN users u ON f.friend_id = u.id WHERE f.user_id = ?`,
     [req.user.id, req.user.id], (err, friends) => {
@@ -336,6 +397,22 @@ app.get('/api/friends', authenticateToken, (req, res) => {
           res.json({ friends, requests });
         });
     });
+});
+
+// 删除好友
+app.delete('/api/friends/:friendId', authenticateToken, (req, res) => {
+  const friendId = parseInt(req.params.friendId);
+  // 检查是否是好友
+  db.get('SELECT * FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId], (err, row) => {
+    if (err || !row) return res.status(404).json({ error: '不是好友关系' });
+    // 删除双向好友记录
+    db.run('DELETE FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId]);
+    db.run('DELETE FROM friends WHERE user_id = ? AND friend_id = ?', [friendId, req.user.id]);
+    // 同时删除屏蔽关系（可选）
+    db.run('DELETE FROM blocks WHERE user_id = ? AND blocked_user_id = ?', [req.user.id, friendId]);
+    db.run('DELETE FROM blocks WHERE user_id = ? AND blocked_user_id = ?', [friendId, req.user.id]);
+    res.json({ success: true });
+  });
 });
 
 // 屏蔽好友
@@ -420,56 +497,98 @@ app.get('/api/chat-list', authenticateToken, (req, res) => {
     });
 });
 
+// 标记已读（简单实现）
 app.post('/api/mark-read/:friendId', authenticateToken, (req, res) => {
   res.json({ success: true });
 });
 
-// 微博相关（复用 moments 表）
+// ==================== 广场（微博）相关 ====================
+
+// 发布动态（支持屏蔽列表）
 app.post('/api/moments', authenticateToken, (req, res) => {
-  const { content } = req.body;
+  const { content, blocked = [] } = req.body;
   if (!content) return res.status(400).json({ error: '内容不能为空' });
-  db.run('INSERT INTO moments (user_id, content) VALUES (?, ?)', [req.user.id, content], function(err) {
-    if (err) return res.status(500).json({ error: '发布失败' });
-    wss.clients.forEach(client => {
-      if (client.readyState === 1 && client.userId !== req.user.id) {
-        client.send(JSON.stringify({ type: 'new_moment' }));
-      }
+  const blockedJson = JSON.stringify(blocked);
+  db.run('INSERT INTO moments (user_id, content, blocked) VALUES (?, ?, ?)',
+    [req.user.id, content, blockedJson],
+    function(err) {
+      if (err) return res.status(500).json({ error: '发布失败' });
+      // 通知所有连接的客户端（除了自己）
+      wss.clients.forEach(client => {
+        if (client.readyState === 1 && client.userId !== req.user.id) {
+          client.send(JSON.stringify({ type: 'new_moment' }));
+        }
+      });
+      res.json({ success: true, moment_id: this.lastID });
     });
-    res.json({ success: true, moment_id: this.lastID });
-  });
 });
 
+// 获取广场动态（支持过滤：?user_id=xxx 获取特定用户动态，同时过滤掉被屏蔽的）
 app.get('/api/moments', authenticateToken, (req, res) => {
-  // 获取屏蔽列表
+  const userId = req.query.user_id ? parseInt(req.query.user_id) : null;
+  // 获取当前用户的屏蔽列表（用于全局广场过滤，但发布者自己的屏蔽由发布者决定，我们只需要过滤掉当前用户被屏蔽的好友的动态）
   db.all('SELECT blocked_user_id FROM blocks WHERE user_id = ?', [req.user.id], (err, blockedRows) => {
-    const blockedIds = (blockedRows || []).map(r => r.blocked_user_id);
-    const blockedFilter = blockedIds.length > 0 ? `AND m.user_id NOT IN (${blockedIds.join(',')})` : '';
-    
-    db.all(`SELECT m.*, u.username, u.nickname, u.avatar,
-      (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) as like_count,
-      (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) as liked_by_me
+    if (err) return res.status(500).json({ error: '查询屏蔽列表失败' });
+    const blockedByMe = (blockedRows || []).map(r => r.blocked_user_id);
+    // 构建过滤条件：排除当前用户屏蔽的好友的动态
+    let filter = '';
+    const params = [req.user.id];
+    if (blockedByMe.length > 0) {
+      filter += ` AND m.user_id NOT IN (${blockedByMe.map(() => '?').join(',')})`;
+      params.push(...blockedByMe);
+    }
+    // 如果指定了用户ID，只查该用户
+    let userFilter = '';
+    if (userId) {
+      userFilter = ` AND m.user_id = ?`;
+      params.push(userId);
+    }
+
+    // 查询动态
+    db.all(`
+      SELECT m.*, u.username, u.nickname, u.avatar,
+        (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) as like_count,
+        (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) as liked_by_me
       FROM moments m
       JOIN users u ON m.user_id = u.id
-      WHERE 1=1 ${blockedFilter}
-      ORDER BY m.created_at DESC LIMIT 50`, [req.user.id], (err, moments) => {
-        if (err) return res.status(500).json({ error: '查询失败' });
-        const promises = moments.map(moment => {
-          return new Promise((resolve) => {
+      WHERE 1=1 ${filter} ${userFilter}
+      ORDER BY m.created_at DESC LIMIT 50
+    `, params, (err, moments) => {
+      if (err) return res.status(500).json({ error: '查询动态失败' });
+      // 额外过滤：发布者自己的屏蔽列表，如果当前用户在发布者的屏蔽列表中，则该动态不显示
+      // 由于我们已经限制了发布者不是当前用户屏蔽的，但发布者屏蔽了当前用户的情况也需要过滤
+      // 这里需要对每条动态检查发布者的 blocked 字段
+      const promises = moments.map(moment => {
+        return new Promise((resolve) => {
+          // 解析发布者的屏蔽列表
+          let blockedByPublisher = [];
+          try {
+            blockedByPublisher = JSON.parse(moment.blocked || '[]');
+          } catch(e) { blockedByPublisher = []; }
+          // 如果当前用户在发布者的屏蔽列表中，则跳过该动态
+          if (blockedByPublisher.includes(req.user.id)) {
+            resolve(null); // 过滤掉
+          } else {
+            // 获取评论
             db.all('SELECT mc.*, u.username, u.nickname FROM moment_comments mc JOIN users u ON mc.user_id = u.id WHERE mc.moment_id = ? ORDER BY mc.created_at ASC',
               [moment.id], (err, comments) => {
                 moment.comments = comments || [];
                 moment.likes = moment.liked_by_me ? [req.user.id] : [];
                 resolve(moment);
               });
-          });
-        });
-        Promise.all(promises).then(results => {
-          res.json({ moments: results });
+          }
         });
       });
+      Promise.all(promises).then(results => {
+        // 过滤掉 null
+        const filtered = results.filter(m => m !== null);
+        res.json({ moments: filtered });
+      });
+    });
   });
 });
 
+// 点赞/取消点赞
 app.post('/api/moments/:id/like', authenticateToken, (req, res) => {
   const momentId = parseInt(req.params.id);
   db.get('SELECT * FROM moment_likes WHERE moment_id = ? AND user_id = ?', [momentId, req.user.id], (err, row) => {
@@ -488,6 +607,7 @@ app.post('/api/moments/:id/like', authenticateToken, (req, res) => {
   });
 });
 
+// 评论
 app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
   const momentId = parseInt(req.params.id);
   const { content } = req.body;
@@ -499,6 +619,7 @@ app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
     });
 });
 
+// 启动服务器
 server.listen(PORT, () => {
   console.log(`6nr 服务运行在端口 ${PORT}`);
 });
