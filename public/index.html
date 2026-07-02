@@ -817,7 +817,7 @@
             font-weight: 700;
         }
 
-        /* ========== 响应式 ========== */
+        /* ========== 响应式 & 移动端输入框强制修复 ========== */
         @media (max-width: 768px) {
             .sidebar { display: none; }
             .mobile-nav { display: flex; }
@@ -837,13 +837,20 @@
                 display: none;
                 background: var(--bg-body);
                 animation: slideUp 0.3s ease;
+                flex-direction: column; /* 确保列排列 */
             }
-            @keyframes slideUp {
-                from { transform: translateY(100%); opacity: 0; }
-                to { transform: translateY(0); opacity: 1; }
+            .chat-window.mobile-open {
+                display: flex !important; /* 强制显示 */
             }
-            .chat-window.mobile-open { display: flex; }
             .chat-window .window-header .back-btn { display: block; }
+            .chat-window .chat-messages {
+                flex: 1; /* 撑满剩余空间 */
+            }
+            /* === 关键修复：移动端输入区域强制显示 === */
+            .chat-window.mobile-open .chat-input-area {
+                display: flex !important;
+                flex-shrink: 0;
+            }
             .message-bubble { max-width: 80%; }
             .square-post-box, .square-card, .search-box { margin-left: 12px; margin-right: 12px; }
             .settings-page .settings-container { padding: 12px 16px; }
@@ -1098,7 +1105,7 @@
 </div>
 
 <script>
-    // ===== 完整 JS 逻辑（包含移动端聊天入口修复） =====
+    // ===== 完整 JS 逻辑（移动端输入框修复） =====
     const API_BASE = '/api';
     const WS_URL = (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host;
     let currentUser = null, authToken = null, currentChatFriend = null, ws = null;
@@ -1152,7 +1159,6 @@
     function updateUIForUser(){
         if(currentUser){
             const displayName=currentProfile.nickname||currentUser.username;$('sidebar-name').textContent=displayName;$('sidebar-avatar').textContent=displayName[0].toUpperCase();$('sidebar-avatar').style.backgroundImage=currentProfile.avatar?`url(${currentProfile.avatar})`:'none';$('sidebar-avatar').style.backgroundColor=currentProfile.avatar?'transparent':avatarColor(displayName);$('sidebar').style.display=isMobile?'none':'flex';$('mobile-nav').style.display=isMobile?'flex':'none';$('auth-page').style.display='none';
-            // 更新设置页面的昵称显示
             const nicknameDisplay = document.getElementById('nickname-display');
             if (nicknameDisplay) nicknameDisplay.textContent = displayName;
         }else{$('sidebar').style.display='none';$('mobile-nav').style.display='none';$('auth-page').style.display='flex';}
@@ -1173,7 +1179,6 @@
     }
 
     async function loadProfileSettings(){if(!currentUser)return;try{const data=await apiFetch('/user/profile');currentProfile={nickname:data.user.nickname||data.user.username,avatar:data.user.avatar||''};updateUIForUser();}catch(e){showToast('加载设置失败');}}
-    // 昵称修改（通过设置页面的隐藏输入框触发）
     async function updateNicknameFromInput(){
         const input = document.getElementById('nickname-input');
         const newNick = input.value.trim();
@@ -1188,12 +1193,9 @@
             input.style.display = 'none';
         }catch(e){showToast(e.message);}
     }
-    // 头像预览和保存
     function previewAvatar(event){const file=event.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=function(e){currentProfile.avatar=e.target.result;updateUIForUser();saveAvatar();};reader.readAsDataURL(file);}
     async function saveAvatar(){try{await apiFetch('/user/profile',{method:'PUT',body:JSON.stringify({avatar:currentProfile.avatar||''})});showToast('头像已更新');}catch(e){showToast(e.message);}}
-    // 重置头像纯色（简单实现）
     async function resetAvatarColor(){currentProfile.avatar='';updateUIForUser();await saveAvatar();}
-    // 修改密码（使用隐藏输入框）
     async function changePassword(){
         const oldP = document.getElementById('old-password').value;
         const newP = document.getElementById('new-password').value;
@@ -1213,14 +1215,12 @@
         document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
     }
-    // 通知开关（模拟）
     function toggleNotification(){
         const toggle = document.getElementById('notif-toggle');
         const active = toggle.classList.toggle('active');
         localStorage.setItem('notifications', active ? 'on' : 'off');
         showToast(active ? '通知已开启' : '通知已关闭');
     }
-    // 清除缓存
     function clearCache(){
         if(confirm('确定要清除所有本地缓存吗？这将删除您的私钥和聊天记录。')) {
             localStorage.clear();
@@ -1229,28 +1229,37 @@
         }
     }
 
-    // ========== 核心聊天逻辑（包含移动端入口自动切换） ==========
+    // ========== 核心聊天逻辑（移动端输入框已修复） ==========
     async function loadChatList(){if(!currentUser)return;try{const d=await apiFetch('/chat-list');chatListCache=d.chats||[];renderChatList();}catch(e){console.error('加载聊天列表失败:',e);}}
     function renderChatList(){const c=$('chat-list'),e=$('chat-empty');if(chatListCache.length===0){c.innerHTML='';e.style.display='flex';return;}e.style.display='none';c.innerHTML=chatListCache.map(ch=>`<div class="chat-list-item ${currentChatFriend&&currentChatFriend.id===ch.friend_id?'active':''}" onclick="openChat(${ch.friend_id},'${ch.friend_name}')"><div class="chat-avatar avatar-base" style="background:${avatarColor(ch.friend_name)}">${ch.friend_name[0].toUpperCase()}</div><div class="chat-info"><div class="chat-name">${ch.friend_nickname||ch.friend_name}</div><div class="chat-preview">🔒 加密消息</div></div><div class="chat-time">${formatTime(ch.last_time)}</div></div>`).join('');}
 
-    // 修复：openChat 在移动端自动切换到消息页并显示窗口
+    // 修复：openChat 确保移动端输入区域必定显示
     async function openChat(fid, fn) {
-        // 移动端且消息页未激活时，先切换页面
+        // 如果移动端且未在消息页，先切换过去
         if (isMobile && !document.getElementById('page-messages').classList.contains('active')) {
             switchPage('messages');
-            // 等待 DOM 更新（短暂延迟确保页面显示）
-            await new Promise(r => setTimeout(r, 50));
+            await new Promise(r => setTimeout(r, 100)); // 等待页面渲染
         }
         currentChatFriend = { id: fid, username: fn };
         $('chat-window-title').textContent = '🔒 ' + fn;
-        $('chat-input-area').style.display = 'flex';
+        // 先显示窗口，再显示输入区（顺序重要）
         if (isMobile) {
             $('chat-window').classList.add('mobile-open');
             document.body.style.overflow = 'hidden';
         }
+        // 强制显示输入区域（CSS 已用 !important 辅助）
+        const inputArea = $('chat-input-area');
+        inputArea.style.display = 'flex';
+        // 额外保险：移除可能的内联隐藏
+        inputArea.style.display = 'flex';
         renderChatList();
         await loadMessages(fid);
         scrollChatBottom();
+        // 确保输入框获得焦点（用户可立即打字）
+        setTimeout(() => {
+            const inp = document.getElementById('chat-input');
+            if (inp) inp.focus();
+        }, 300);
     }
 
     function closeMobileChat(){
@@ -1272,7 +1281,7 @@
     async function toggleLike(mid,el){try{const d=await apiFetch('/moments/'+mid+'/like',{method:'POST'});el.classList.toggle('liked',d.liked);el.innerHTML=(d.liked?'❤️':'🤍')+' '+d.like_count;}catch(e){console.error('点赞失败:',e);}}
     async function addComment(mid){const i=$('comment-input-'+mid),c=i.value.trim();if(!c)return;try{await apiFetch('/moments/'+mid+'/comment',{method:'POST',body:JSON.stringify({content:c})});i.value='';loadSquare();}catch(e){showToast(e.message);}}
 
-    // 好友与屏蔽（不变，但按钮调用 openChat 不再额外 switchPage）
+    // 好友与屏蔽（按钮 openChat 无需额外 switchPage）
     async function loadFriendsData(){if(!currentUser)return;try{const d=await apiFetch('/friends');friendsCache=d.friends||[];renderFriendsList();renderRequestsList(d.requests||[]);}catch(e){console.error('加载好友数据失败:',e);}}
     function renderFriendsList(){const c=$('friends-list');if(friendsCache.length===0){c.innerHTML='<div class="empty-state">暂无好友</div>';return;}c.innerHTML=friendsCache.map(f=>`<div class="friend-item"><div class="avatar-base" style="background:${avatarColor(f.nickname||f.username)};width:40px;height:40px;">${(f.nickname||f.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${f.nickname||f.username}</div></div><button class="btn-chat" onclick="openChat(${f.id},'${f.nickname||f.username}')">💬</button><button class="btn-block" onclick="toggleBlock(${f.id},${f.is_blocked})">${f.is_blocked?'取消屏蔽':'屏蔽'}</button></div>`).join('');}
     function renderRequestsList(reqs){const c=$('requests-list');if(!reqs||reqs.length===0){c.innerHTML='<div class="empty-state">无待处理请求</div>';return;}c.innerHTML=reqs.map(r=>`<div class="friend-item"><div class="avatar-base" style="background:${avatarColor(r.nickname||r.username)};width:40px;height:40px;">${(r.nickname||r.username)[0].toUpperCase()}</div><div><div style="font-weight:600;">${r.nickname||r.username}</div></div><div class="request-actions"><button class="btn-accept" onclick="handleFriendRequest(${r.from_id},'accept')">接受</button><button class="btn-reject" onclick="handleFriendRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join('');}
