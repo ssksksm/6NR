@@ -3,931 +3,402 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>6nr 加密聊天</title>
+  <title>6nr</title>
   <style>
     :root {
-      --primary: #5b6cff;
-      --accent: #00a884;
-      --danger: #d64545;
-      --bg: #f6f7fb;
-      --panel: #ffffff;
-      --panel-soft: #eef1f7;
-      --text: #202434;
-      --muted: #687085;
-      --line: #dfe4ee;
-      --shadow: 0 14px 34px rgba(22, 27, 45, .08);
+      --ink: #15161f;
+      --muted: #697081;
+      --paper: #f4f6f8;
+      --card: #ffffff;
+      --line: #e1e6ee;
+      --primary: #2855ff;
+      --primary-2: #00a884;
+      --danger: #d94646;
+      --shadow: 0 18px 50px rgba(19, 25, 43, .10);
+      --r: 8px;
     }
-
+    [data-theme="dark"] {
+      --ink: #f4f7fb;
+      --muted: #a7b0c1;
+      --paper: #10131a;
+      --card: #171b24;
+      --line: #262d3a;
+      --shadow: 0 18px 50px rgba(0,0,0,.28);
+    }
     * { box-sizing: border-box; }
     body {
       margin: 0;
-      min-height: 100vh;
+      height: 100vh;
       overflow: hidden;
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     }
-    button, input, textarea { font: inherit; }
-    button { cursor: pointer; border: 0; }
+    button, input, textarea, select { font: inherit; }
+    button { border: 0; cursor: pointer; }
     .hidden { display: none !important; }
-    .app { display: grid; grid-template-columns: 280px 1fr; height: 100vh; }
-    .sidebar {
-      background: #151927;
-      color: #fff;
-      display: flex;
-      flex-direction: column;
-      min-width: 0;
-    }
-    .brand { padding: 22px 20px; font-size: 28px; font-weight: 800; letter-spacing: .3px; }
-    .nav { display: grid; gap: 6px; padding: 8px 12px; }
-    .nav button {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 8px;
-      background: transparent;
-      color: #bfc6d9;
-      text-align: left;
-    }
-    .nav button.active, .nav button:hover { background: rgba(255,255,255,.1); color: #fff; }
-    .me {
-      margin-top: auto;
-      padding: 14px;
-      border-top: 1px solid rgba(255,255,255,.1);
-      display: grid;
-      grid-template-columns: 44px 1fr auto;
-      align-items: center;
-      gap: 10px;
-    }
-    .avatar {
-      width: 42px;
-      height: 42px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      color: #fff;
-      background: var(--primary);
-      font-weight: 800;
-      background-size: cover;
-      background-position: center;
-      flex: 0 0 auto;
-    }
-    .main { min-width: 0; height: 100vh; overflow: hidden; }
-    .page { display: none; height: 100%; min-width: 0; }
-    .page.active { display: flex; flex-direction: column; }
-    .header {
-      height: 64px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 22px;
-      border-bottom: 1px solid var(--line);
-      background: var(--panel);
-      flex: 0 0 auto;
-    }
-    .header h1 { margin: 0; font-size: 18px; }
-    .content { overflow: auto; padding: 18px; flex: 1; }
-    .card {
-      background: var(--panel);
-      border: 1px solid var(--line);
-      border-radius: 8px;
-      box-shadow: var(--shadow);
-    }
     .auth {
-      min-height: 100vh;
+      height: 100vh;
       display: grid;
-      place-items: center;
-      padding: 24px;
-      background: linear-gradient(135deg, #f5f8ff, #eef8f4);
+      grid-template-columns: minmax(320px, 480px) 1fr;
+      background: #0f172a;
+      color: #fff;
     }
-    .auth-card { width: min(420px, 100%); padding: 28px; }
-    .auth-card h1 { margin: 0 0 6px; font-size: 30px; }
-    .auth-card p { margin: 0 0 22px; color: var(--muted); }
+    .auth-panel { padding: 64px 54px; display: flex; flex-direction: column; justify-content: center; }
+    .auth-visual {
+      min-width: 0;
+      background:
+        linear-gradient(120deg, rgba(40,85,255,.25), rgba(0,168,132,.18)),
+        url("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1400&q=80") center/cover;
+    }
+    .auth h1 { font-size: 46px; line-height: 1; margin: 0 0 18px; letter-spacing: 0; }
+    .auth p { color: #b9c2d6; margin: 0 0 30px; }
+    .field { margin: 0 0 12px; }
     input, textarea, select {
       width: 100%;
       border: 1px solid var(--line);
-      background: #fff;
-      border-radius: 8px;
+      background: var(--card);
+      color: var(--ink);
+      border-radius: var(--r);
       padding: 11px 12px;
       outline: none;
     }
-    textarea { resize: vertical; min-height: 84px; }
-    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(91,108,255,.12); }
-    .field { margin-bottom: 12px; }
-    .primary { background: var(--primary); color: #fff; border-radius: 8px; padding: 10px 14px; font-weight: 700; }
-    .secondary { background: var(--panel-soft); color: var(--text); border-radius: 8px; padding: 10px 14px; }
-    .danger { background: #ffe8e8; color: var(--danger); border-radius: 8px; padding: 10px 14px; }
-    .link-btn { background: transparent; color: var(--primary); padding: 0; }
-    .split { display: grid; grid-template-columns: 330px 1fr; min-height: 0; flex: 1; }
-    .list-panel { border-right: 1px solid var(--line); background: var(--panel); min-width: 0; display: flex; flex-direction: column; }
-    .list { overflow: auto; flex: 1; padding: 8px; }
-    .row {
-      display: grid;
-      grid-template-columns: 44px 1fr auto;
-      align-items: center;
-      gap: 10px;
-      padding: 10px;
-      border-radius: 8px;
-      min-width: 0;
-    }
-    .row:hover, .row.active { background: var(--panel-soft); }
-    .row-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .row-sub { color: var(--muted); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .badge {
-      min-width: 22px;
-      height: 22px;
-      border-radius: 11px;
-      display: inline-grid;
-      place-items: center;
-      background: var(--danger);
-      color: #fff;
-      font-size: 12px;
-      padding: 0 7px;
-    }
-    .chat { display: flex; flex-direction: column; min-width: 0; background: #f9fafc; }
-    .messages { flex: 1; overflow: auto; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
-    .bubble {
-      max-width: min(680px, 78%);
-      padding: 10px 12px;
-      border-radius: 14px;
-      line-height: 1.5;
-      word-break: break-word;
-      box-shadow: 0 4px 12px rgba(22,27,45,.05);
-    }
-    .sent { align-self: flex-end; background: var(--primary); color: #fff; border-bottom-right-radius: 4px; }
-    .received { align-self: flex-start; background: #fff; border: 1px solid var(--line); border-bottom-left-radius: 4px; }
-    .meta { margin-top: 5px; opacity: .7; font-size: 12px; display: flex; gap: 8px; justify-content: flex-end; }
-    .composer { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 12px; background: var(--panel); border-top: 1px solid var(--line); }
-    .stack { display: grid; gap: 14px; max-width: 860px; }
-    .moment { padding: 16px; display: grid; gap: 10px; }
+    .auth input { background: rgba(255,255,255,.08); color: #fff; border-color: rgba(255,255,255,.14); }
+    textarea { resize: vertical; min-height: 88px; }
+    input:focus, textarea:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(40,85,255,.14); }
+    .btn { border-radius: var(--r); padding: 10px 14px; font-weight: 700; background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+    .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+    .btn.good { background: var(--primary-2); border-color: var(--primary-2); color: #fff; }
+    .btn.danger { background: #fff0f0; border-color: #ffd2d2; color: var(--danger); }
+    .btn.ghost { background: transparent; color: var(--muted); }
+    .app { height: 100vh; display: grid; grid-template-columns: 76px minmax(300px, 380px) 1fr; }
+    .rail { background: #10131a; color: #fff; display: flex; flex-direction: column; align-items: center; padding: 16px 10px; gap: 12px; }
+    .logo { width: 44px; height: 44px; border-radius: 12px; display: grid; place-items: center; background: #fff; color: #10131a; font-weight: 900; font-size: 20px; }
+    .rail button { width: 48px; height: 48px; border-radius: 14px; background: transparent; color: #8f98aa; font-size: 20px; }
+    .rail button.active, .rail button:hover { background: rgba(255,255,255,.10); color: #fff; }
+    .rail .bottom { margin-top: auto; display: grid; gap: 10px; }
+    .panel { border-right: 1px solid var(--line); background: var(--card); min-width: 0; display: flex; flex-direction: column; }
+    .panel-head { padding: 18px; border-bottom: 1px solid var(--line); display: grid; gap: 14px; }
+    .panel-title { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    h2, h3 { margin: 0; letter-spacing: 0; }
+    h2 { font-size: 22px; }
+    h3 { font-size: 15px; }
+    .tabs { display: grid; grid-template-columns: repeat(2, 1fr); padding: 4px; background: var(--paper); border-radius: var(--r); }
+    .tabs button { border-radius: 6px; padding: 8px; background: transparent; color: var(--muted); font-weight: 700; }
+    .tabs button.active { background: var(--card); color: var(--ink); box-shadow: 0 1px 5px rgba(0,0,0,.06); }
+    .list { overflow: auto; padding: 10px; }
+    .item { display: grid; grid-template-columns: 46px 1fr auto; gap: 10px; align-items: center; padding: 10px; border-radius: var(--r); min-width: 0; }
+    .item:hover, .item.active { background: var(--paper); }
+    .avatar { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--primary); font-weight: 900; background-size: cover; background-position: center; flex: 0 0 auto; }
+    .title { font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .sub { color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .badge { min-width: 21px; height: 21px; padding: 0 7px; border-radius: 999px; display: inline-grid; place-items: center; background: var(--danger); color: #fff; font-size: 12px; font-weight: 800; }
+    .workspace { min-width: 0; display: flex; flex-direction: column; background: var(--paper); }
+    .chat-head { height: 72px; border-bottom: 1px solid var(--line); background: rgba(255,255,255,.78); backdrop-filter: blur(14px); display: flex; align-items: center; justify-content: space-between; padding: 0 22px; }
+    [data-theme="dark"] .chat-head { background: rgba(23,27,36,.78); }
+    .chat-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .messages { flex: 1; overflow: auto; padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+    .bubble { max-width: min(720px, 72%); padding: 10px 12px; border-radius: 16px; background: var(--card); border: 1px solid var(--line); box-shadow: 0 8px 24px rgba(19,25,43,.05); word-break: break-word; }
+    .bubble.mine { align-self: flex-end; background: var(--primary); color: #fff; border-color: var(--primary); border-bottom-right-radius: 5px; }
+    .bubble.theirs { align-self: flex-start; border-bottom-left-radius: 5px; }
+    .bubble img { max-width: min(360px, 100%); border-radius: 10px; display: block; margin-top: 8px; }
+    .file-pill { display: flex; align-items: center; gap: 10px; margin-top: 8px; padding: 10px; background: rgba(0,0,0,.06); border-radius: 10px; }
+    .meta { margin-top: 6px; opacity: .72; font-size: 12px; display: flex; gap: 8px; justify-content: flex-end; }
+    .composer { padding: 14px; border-top: 1px solid var(--line); background: var(--card); display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; }
+    .composer input[type=file] { display: none; }
+    .side-page { display: none; overflow: auto; padding: 20px; }
+    .side-page.active { display: block; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow); padding: 16px; margin-bottom: 14px; }
+    .grid { display: grid; gap: 12px; }
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .friend-row { display: grid; grid-template-columns: 44px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--line); }
+    .friend-row:last-child { border-bottom: 0; }
+    .moment { display: grid; gap: 10px; }
     .moment-head { display: flex; align-items: center; gap: 10px; }
-    .actions { display: flex; gap: 10px; flex-wrap: wrap; }
-    .comment { padding: 8px 10px; background: var(--panel-soft); border-radius: 8px; margin-top: 6px; }
-    .friend-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
-    .settings-grid { display: grid; gap: 16px; max-width: 720px; }
-    .setting { padding: 16px; display: grid; gap: 10px; }
-    .avatar-tools { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-    .toast {
-      position: fixed;
-      top: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: #151927;
-      color: #fff;
-      padding: 10px 16px;
-      border-radius: 999px;
-      opacity: 0;
-      pointer-events: none;
-      transition: opacity .2s;
-      z-index: 50;
-      max-width: min(92vw, 560px);
-      text-align: center;
-    }
+    .comment { background: var(--paper); padding: 8px 10px; border-radius: var(--r); margin-top: 6px; }
+    .toast { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 99; background: #10131a; color: #fff; padding: 10px 16px; border-radius: 999px; opacity: 0; pointer-events: none; transition: .2s; max-width: min(92vw, 560px); text-align: center; }
     .toast.show { opacity: 1; }
-    .mobile-nav { display: none; }
-
-    @media (max-width: 760px) {
-      body { overflow: hidden; }
-      .app { grid-template-columns: 1fr; padding-bottom: 62px; }
-      .sidebar { display: none; }
-      .mobile-nav {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        position: fixed;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        height: calc(62px + env(safe-area-inset-bottom, 0px));
-        padding-bottom: env(safe-area-inset-bottom, 0px);
-        background: #fff;
-        border-top: 1px solid var(--line);
-        z-index: 20;
-      }
-      .mobile-nav button { background: transparent; color: var(--muted); }
-      .mobile-nav button.active { color: var(--primary); font-weight: 800; }
-      .split { grid-template-columns: 1fr; }
-      .chat {
-        position: fixed;
-        inset: 0 0 calc(62px + env(safe-area-inset-bottom, 0px)) 0;
-        z-index: 18;
-        display: none;
-      }
-      .chat.open { display: flex; }
-      .list-panel { border-right: 0; }
+    .modal { position: fixed; inset: 0; background: rgba(7,10,18,.55); display: grid; place-items: center; z-index: 80; padding: 20px; }
+    .modal-card { width: min(560px, 100%); max-height: 86vh; overflow: auto; background: var(--card); color: var(--ink); border-radius: 12px; padding: 18px; box-shadow: var(--shadow); }
+    .check-list { display: grid; gap: 8px; margin: 12px 0; }
+    .check { display: flex; align-items: center; gap: 10px; padding: 10px; border: 1px solid var(--line); border-radius: var(--r); }
+    .check input { width: auto; }
+    @media (max-width: 820px) {
+      .auth { grid-template-columns: 1fr; }
+      .auth-visual { display: none; }
+      .auth-panel { padding: 36px 22px; }
+      .app { grid-template-columns: 1fr; grid-template-rows: 1fr 64px; }
+      .rail { grid-row: 2; flex-direction: row; justify-content: space-around; padding: 8px; }
+      .rail .logo, .rail .bottom { display: none; }
+      .panel { display: none; }
+      .workspace { grid-row: 1; }
+      .chat-head { height: 64px; padding: 0 14px; }
       .bubble { max-width: 86%; }
-      .header { padding: 0 14px; }
-      .content { padding: 12px; }
+      .side-page { padding: 12px; }
     }
   </style>
 </head>
 <body>
   <div id="toast" class="toast"></div>
-
   <section id="auth" class="auth">
-    <div class="auth-card card">
-      <h1 id="auth-title">登录 6nr</h1>
-      <p>端到端加密聊天，服务器只保存密文。</p>
-      <div class="field"><input id="auth-username" autocomplete="username" placeholder="用户名"></div>
-      <div class="field"><input id="auth-password" type="password" autocomplete="current-password" placeholder="密码"></div>
-      <div class="field hidden" id="confirm-wrap"><input id="auth-confirm" type="password" autocomplete="new-password" placeholder="确认密码"></div>
-      <button id="auth-submit" class="primary" type="button">登录</button>
-      <p style="margin-top:16px"><span id="auth-switch-text">还没有账号？</span> <button class="link-btn" type="button" onclick="toggleAuthMode()">注册</button></p>
+    <div class="auth-panel">
+      <h1>6nr</h1>
+      <p>干净、实时、端到端加密。图片、文件、群聊和已读状态都走密文。</p>
+      <div class="field"><input id="auth-username" placeholder="用户名" autocomplete="username"></div>
+      <div class="field"><input id="auth-password" type="password" placeholder="密码" autocomplete="current-password"></div>
+      <div id="confirm-wrap" class="field hidden"><input id="auth-confirm" type="password" placeholder="确认密码" autocomplete="new-password"></div>
+      <button id="auth-submit" class="btn primary" type="button">登录</button>
+      <p style="margin-top:18px"><span id="auth-label">还没有账号？</span> <button class="btn ghost" type="button" onclick="toggleAuth()">注册</button></p>
     </div>
+    <div class="auth-visual"></div>
   </section>
 
   <section id="app" class="app hidden">
-    <aside class="sidebar">
-      <div class="brand">6nr</div>
-      <nav class="nav">
-        <button data-page="messages" class="active" type="button" onclick="switchPage('messages')">消息</button>
-        <button data-page="square" type="button" onclick="switchPage('square')">广场</button>
-        <button data-page="friends" type="button" onclick="switchPage('friends')">好友</button>
-        <button data-page="settings" type="button" onclick="switchPage('settings')">设置</button>
-      </nav>
-      <div class="me">
-        <div id="me-avatar" class="avatar">6</div>
-        <div>
-          <div id="me-name" class="row-title">6nr</div>
-          <div class="row-sub">已加密连接</div>
-        </div>
-        <button class="secondary" type="button" onclick="logout()">退出</button>
+    <nav class="rail">
+      <div class="logo">6</div>
+      <button class="active" data-page="chat" title="聊天" onclick="showPage('chat')">⌁</button>
+      <button data-page="square" title="广场" onclick="showPage('square')">◌</button>
+      <button data-page="friends" title="好友" onclick="showPage('friends')">＋</button>
+      <button data-page="settings" title="设置" onclick="showPage('settings')">⚙</button>
+      <div class="bottom"><button title="退出" onclick="logout()">↪</button></div>
+    </nav>
+
+    <aside class="panel">
+      <div class="panel-head">
+        <div class="panel-title"><h2>会话</h2><button class="btn good" type="button" onclick="openGroupModal()">新群聊</button></div>
+        <div class="tabs"><button id="tab-direct" class="active" onclick="setChatTab('direct')">私聊</button><button id="tab-group" onclick="setChatTab('group')">群聊</button></div>
+        <input id="conversation-search" placeholder="搜索会话" oninput="renderConversations()">
       </div>
+      <div id="conversation-list" class="list"></div>
     </aside>
 
-    <main class="main">
-      <section id="page-messages" class="page active">
-        <div class="split">
-          <div class="list-panel">
-            <div class="header"><h1>消息</h1><button class="secondary" type="button" onclick="loadChatList()">刷新</button></div>
-            <div id="chat-list" class="list"></div>
-          </div>
-          <div id="chat" class="chat">
-            <div class="header">
-              <h1 id="chat-title">选择一个好友</h1>
-              <button class="secondary hidden" id="back-chat" type="button" onclick="closeChat()">返回</button>
-            </div>
-            <div id="messages" class="messages"><div class="row-sub">选择一个好友开始聊天。</div></div>
-            <div class="composer">
-              <input id="message-input" placeholder="输入消息，回车发送" onkeydown="if(event.key==='Enter')sendMessage()">
-              <button class="primary" type="button" onclick="sendMessage()">发送</button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-square" class="page">
-        <div class="header"><h1>广场</h1><button class="secondary" type="button" onclick="loadSquare()">刷新</button></div>
-        <div class="content">
-          <div class="stack">
-            <div class="card moment">
-              <textarea id="moment-input" placeholder="分享一条动态"></textarea>
-              <select id="moment-blocked" multiple title="选择不可见好友"></select>
-              <div class="actions"><button class="primary" type="button" onclick="postMoment()">发布</button></div>
-            </div>
-            <div id="square-list" class="stack"></div>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-friends" class="page">
-        <div class="header"><h1>好友</h1><button class="secondary" type="button" onclick="loadFriends()">刷新</button></div>
-        <div class="content">
-          <div class="stack">
-            <div class="card setting">
-              <div class="actions">
-                <input id="search-input" placeholder="搜索用户名或昵称">
-                <button class="primary" type="button" onclick="searchUsers()">搜索</button>
-              </div>
-              <div id="search-results"></div>
-            </div>
-            <div class="card setting">
-              <h3>好友请求</h3>
-              <div id="request-list"></div>
-            </div>
-            <div class="card setting">
-              <h3>好友列表</h3>
-              <div id="friend-list"></div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="page-settings" class="page">
-        <div class="header"><h1>设置</h1></div>
-        <div class="content">
-          <div class="settings-grid">
-            <div class="card setting">
-              <h3>资料</h3>
-              <input id="nickname-input" placeholder="昵称">
-              <textarea id="bio-input" maxlength="160" placeholder="简介"></textarea>
-              <div class="avatar-tools">
-                <div id="avatar-preview" class="avatar">6</div>
-                <input id="avatar-file" type="file" accept="image/*" onchange="previewAvatar(event)">
-              </div>
-              <div class="actions">
-                <button class="primary" type="button" onclick="saveProfile()">保存资料</button>
-                <button class="secondary" type="button" onclick="clearAvatar()">清除头像</button>
-              </div>
-            </div>
-            <div class="card setting">
-              <h3>密码</h3>
-              <input id="old-password" type="password" placeholder="旧密码">
-              <input id="new-password" type="password" placeholder="新密码">
-              <button class="primary" type="button" onclick="changePassword()">修改密码</button>
-            </div>
-          </div>
-        </div>
-      </section>
+    <main id="chat-page" class="workspace">
+      <div class="chat-head">
+        <div class="chat-id"><div id="chat-avatar" class="avatar">6</div><div><h3 id="chat-title">选择会话</h3><div id="chat-sub" class="sub">私聊和群聊都会端到端加密</div></div></div>
+        <div class="actions"><button class="btn" onclick="loadEverything()">刷新</button></div>
+      </div>
+      <div id="messages" class="messages"><div class="sub">从左侧选择一个好友或群聊。</div></div>
+      <div class="composer">
+        <label class="btn" for="file-input">附件</label>
+        <input id="file-input" type="file" onchange="sendAttachment(event)">
+        <input id="message-input" placeholder="输入消息，Enter 发送" onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn primary" onclick="sendMessage()">发送</button>
+      </div>
     </main>
 
-    <nav class="mobile-nav">
-      <button data-page="messages" class="active" type="button" onclick="switchPage('messages')">消息</button>
-      <button data-page="square" type="button" onclick="switchPage('square')">广场</button>
-      <button data-page="friends" type="button" onclick="switchPage('friends')">好友</button>
-      <button data-page="settings" type="button" onclick="switchPage('settings')">设置</button>
-    </nav>
+    <main id="square-page" class="workspace side-page">
+      <div class="card grid">
+        <h2>广场</h2>
+        <textarea id="moment-input" placeholder="写一条动态"></textarea>
+        <select id="moment-blocked" multiple title="不可见好友"></select>
+        <button class="btn primary" onclick="postMoment()">发布</button>
+      </div>
+      <div id="square-list"></div>
+    </main>
+
+    <main id="friends-page" class="workspace side-page">
+      <div class="card grid">
+        <h2>好友</h2>
+        <div class="actions"><input id="search-input" placeholder="搜索用户"><button class="btn primary" onclick="searchUsers()">搜索</button></div>
+        <div id="search-results"></div>
+      </div>
+      <div class="card"><h3>好友请求</h3><div id="request-list"></div></div>
+      <div class="card"><h3>好友列表</h3><div id="friend-list"></div></div>
+    </main>
+
+    <main id="settings-page" class="workspace side-page">
+      <div class="card grid">
+        <h2>设置</h2>
+        <input id="nickname-input" placeholder="昵称">
+        <textarea id="bio-input" maxlength="160" placeholder="简介"></textarea>
+        <input id="avatar-file" type="file" accept="image/*" onchange="previewAvatar(event)">
+        <div class="actions"><div id="avatar-preview" class="avatar">6</div><button class="btn primary" onclick="saveProfile()">保存资料</button><button class="btn" onclick="clearAvatar()">清除头像</button></div>
+      </div>
+      <div class="card grid">
+        <h3>通知与安全</h3>
+        <button class="btn good" onclick="enableNotifications()">开启浏览器通知</button>
+        <button class="btn" onclick="rotateDeviceKey()">重新生成本设备密钥</button>
+        <div class="sub">多设备同步提示：新设备登录会生成新密钥，只能解开新消息；旧消息需要原设备密钥。</div>
+      </div>
+      <div class="card grid">
+        <h3>密码</h3>
+        <input id="old-password" type="password" placeholder="旧密码">
+        <input id="new-password" type="password" placeholder="新密码">
+        <button class="btn primary" onclick="changePassword()">修改密码</button>
+      </div>
+    </main>
   </section>
+
+  <div id="group-modal" class="modal hidden">
+    <div class="modal-card grid">
+      <div class="actions" style="justify-content:space-between"><h2>创建群聊</h2><button class="btn" onclick="closeGroupModal()">关闭</button></div>
+      <input id="group-name" placeholder="群名称">
+      <div id="group-friends" class="check-list"></div>
+      <button class="btn primary" onclick="createGroup()">创建</button>
+    </div>
+  </div>
 
   <script>
     const $ = (id) => document.getElementById(id);
-    const API_BASE = '/api';
-    const WS_URL = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
-
-    let isLogin = true;
+    const API = '/api';
+    const WS = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}`;
     let token = localStorage.getItem('securechat_token') || '';
     let currentUser = JSON.parse(localStorage.getItem('securechat_user') || 'null');
     let profile = {};
     let keyPair = null;
     let ws = null;
+    let isLogin = true;
     let friends = [];
+    let requests = [];
     let chats = [];
-    let square = [];
-    let activeFriend = null;
+    let groups = [];
+    let groupKeys = {};
+    let moments = [];
+    let chatTab = 'direct';
+    let active = null;
     let draftAvatar = '';
 
-    function toast(message) {
-      $('toast').textContent = message;
+    const enc = new TextEncoder();
+    const dec = new TextDecoder();
+
+    function toast(text) {
+      $('toast').textContent = text;
       $('toast').classList.add('show');
       clearTimeout(window.toastTimer);
-      window.toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2600);
+      window.toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2400);
     }
+    function html(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+    function color(v) { const a = ['#2855ff','#00a884','#8b5cf6','#d97706','#db2777','#0891b2']; let n = 0; for (const c of String(v || '6nr')) n = (n + c.charCodeAt(0)) % a.length; return a[n]; }
+    function avatarStyle(u) { return u?.avatar ? `background-image:url(${html(u.avatar)});background-color:transparent` : `background:${color(u?.nickname || u?.username || u?.name)}`; }
+    function initial(u) { return String(u?.nickname || u?.username || u?.name || '?').slice(0,1).toUpperCase(); }
+    function time(v) { if (!v) return ''; const d = new Date(v); const diff = Date.now() - d.getTime(); if (diff < 60000) return '刚刚'; if (diff < 3600000) return `${Math.floor(diff/60000)} 分钟前`; if (diff < 86400000) return `${Math.floor(diff/3600000)} 小时前`; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
 
-    function escapeHtml(value) {
-      return String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    }
-
-    function initials(user) {
-      const name = user?.nickname || user?.username || user || '?';
-      return String(name).slice(0, 1).toUpperCase();
-    }
-
-    function colorFor(value) {
-      const colors = ['#5b6cff', '#00a884', '#b85cff', '#c27a11', '#ce3f6a', '#2574a9', '#6c7a12'];
-      let n = 0;
-      for (const ch of String(value || '6nr')) n = (n + ch.charCodeAt(0)) % colors.length;
-      return colors[n];
-    }
-
-    function avatarStyle(user) {
-      return user?.avatar ? `background-image:url(${escapeHtml(user.avatar)});background-color:transparent` : `background:${colorFor(user?.nickname || user?.username)}`;
-    }
-
-    function timeText(value) {
-      if (!value) return '';
-      const d = new Date(value);
-      if (Number.isNaN(d.getTime())) return '';
-      const diff = Date.now() - d.getTime();
-      if (diff < 60_000) return '刚刚';
-      if (diff < 3_600_000) return `${Math.floor(diff / 60_000)} 分钟前`;
-      if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)} 小时前`;
-      return d.toLocaleDateString('zh-CN', { month: 'short', day: 'numeric' });
-    }
-
-    async function api(path, options = {}) {
-      const headers = { ...(options.headers || {}) };
-      if (!(options.body instanceof FormData)) headers['Content-Type'] = 'application/json';
+    async function api(path, opt = {}) {
+      const headers = {'Content-Type':'application/json', ...(opt.headers || {})};
       if (token) headers.Authorization = `Bearer ${token}`;
-      const response = await fetch(API_BASE + path, { ...options, headers });
-      const text = await response.text();
+      const r = await fetch(API + path, {...opt, headers});
+      const t = await r.text();
       let data = {};
-      try { data = text ? JSON.parse(text) : {}; } catch { data = { error: text || '请求失败' }; }
-      if (!response.ok) throw new Error(data.error || '请求失败');
+      try { data = t ? JSON.parse(t) : {}; } catch { data = { error: t || '请求失败' }; }
+      if (!r.ok) throw new Error(data.error || '请求失败');
       return data;
     }
 
-    const CryptoHelper = {
-      async generateKeyPair() {
-        return crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits']);
-      },
-      async exportPublicKey(key) {
-        const jwk = await crypto.subtle.exportKey('jwk', key);
-        return { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y };
-      },
-      async importPrivateKey(jwk) {
-        return crypto.subtle.importKey('jwk', jwk, { name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveKey', 'deriveBits']);
-      },
-      async importPublicKey(jwk) {
-        return crypto.subtle.importKey('jwk', { kty: jwk.kty, crv: jwk.crv, x: jwk.x, y: jwk.y }, { name: 'ECDH', namedCurve: 'P-256' }, true, []);
-      },
-      async deriveSharedKey(privateKey, publicJwk) {
-        const publicKey = await this.importPublicKey(publicJwk);
-        return crypto.subtle.deriveKey({ name: 'ECDH', public: publicKey }, privateKey, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
-      },
-      async encrypt(plain, key) {
-        const iv = crypto.getRandomValues(new Uint8Array(12));
-        const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(plain)));
-        const all = new Uint8Array(iv.length + encrypted.length);
-        all.set(iv, 0);
-        all.set(encrypted, iv.length);
-        return btoa(String.fromCharCode(...all));
-      },
-      async decrypt(cipher, key) {
-        try {
-          const data = Uint8Array.from(atob(cipher), (c) => c.charCodeAt(0));
-          const plain = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: data.slice(0, 12) }, key, data.slice(12));
-          return new TextDecoder().decode(plain);
-        } catch {
-          return '[解密失败]';
-        }
-      }
+    const Crypto = {
+      async generateKeyPair(){ return crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
+      async exportPublicKey(k){ const jwk = await crypto.subtle.exportKey('jwk', k); return {kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y}; },
+      async importPrivateKey(jwk){ return crypto.subtle.importKey('jwk', jwk, {name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
+      async importPublicKey(jwk){ return crypto.subtle.importKey('jwk', {kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y}, {name:'ECDH',namedCurve:'P-256'}, true, []); },
+      async derive(priv,pub){ const p = await this.importPublicKey(pub); return crypto.subtle.deriveKey({name:'ECDH',public:p}, priv, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']); },
+      async aesKey(){ return crypto.subtle.generateKey({name:'AES-GCM',length:256}, true, ['encrypt','decrypt']); },
+      async exportAes(key){ const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key)); return btoa(String.fromCharCode(...raw)); },
+      async importAes(raw){ const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0)); return crypto.subtle.importKey('raw', bytes, {name:'AES-GCM'}, false, ['encrypt','decrypt']); },
+      async encryptText(text,key){ const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, enc.encode(text))); const all = new Uint8Array(iv.length + ct.length); all.set(iv); all.set(ct, iv.length); return btoa(String.fromCharCode(...all)); },
+      async decryptText(cipher,key){ try { const all = Uint8Array.from(atob(cipher), c => c.charCodeAt(0)); const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key, all.slice(12)); return dec.decode(pt); } catch { return JSON.stringify({type:'text', text:'[解密失败]'}); } }
     };
 
-    async function getOrCreateKeyPair(userId) {
-      const storageKey = `ecdh_private_jwk_${userId}`;
-      const stored = localStorage.getItem(storageKey);
+    async function getKeyPair() {
+      const k = `ecdh_private_jwk_${currentUser.id}`;
+      const stored = localStorage.getItem(k);
       if (stored) {
-        try {
-          const privateKey = await CryptoHelper.importPrivateKey(JSON.parse(stored));
-          return { privateKey, publicKey: await CryptoHelper.exportPublicKey(privateKey) };
-        } catch {
-          localStorage.removeItem(storageKey);
-        }
+        try { const privateKey = await Crypto.importPrivateKey(JSON.parse(stored)); return {privateKey, publicKey: await Crypto.exportPublicKey(privateKey)}; } catch {}
       }
-      const pair = await CryptoHelper.generateKeyPair();
-      localStorage.setItem(storageKey, JSON.stringify(await crypto.subtle.exportKey('jwk', pair.privateKey)));
-      return { privateKey: pair.privateKey, publicKey: await CryptoHelper.exportPublicKey(pair.publicKey) };
+      const pair = await Crypto.generateKeyPair();
+      localStorage.setItem(k, JSON.stringify(await crypto.subtle.exportKey('jwk', pair.privateKey)));
+      return {privateKey: pair.privateKey, publicKey: await Crypto.exportPublicKey(pair.publicKey)};
     }
+    async function friendKey(id) { const d = await api(`/user/${id}/public-key`); return Crypto.derive(keyPair.privateKey, d.public_key); }
+    async function wrapGroupKey(raw, user) { const k = await Crypto.derive(keyPair.privateKey, user.public_key); return Crypto.encryptText(raw, k); }
+    async function unwrapGroupKey(group) { if (groupKeys[group.id]) return groupKeys[group.id]; const k = await Crypto.derive(keyPair.privateKey, group.owner_public_key); const raw = await Crypto.decryptText(group.wrapped_key, k); const key = await Crypto.importAes(raw); groupKeys[group.id] = key; return key; }
 
-    async function sharedKey(friendId) {
-      const data = await api(`/user/${friendId}/public-key`);
-      return CryptoHelper.deriveSharedKey(keyPair.privateKey, data.public_key);
-    }
-
-    function toggleAuthMode() {
-      isLogin = !isLogin;
-      $('auth-title').textContent = isLogin ? '登录 6nr' : '注册 6nr';
-      $('auth-submit').textContent = isLogin ? '登录' : '注册';
-      $('confirm-wrap').classList.toggle('hidden', isLogin);
-      $('auth-switch-text').textContent = isLogin ? '还没有账号？' : '已有账号？';
-      document.querySelector('.link-btn').textContent = isLogin ? '注册' : '登录';
-    }
-
-    async function handleAuth() {
-      const username = $('auth-username').value.trim();
-      const password = $('auth-password').value;
-      const confirm = $('auth-confirm').value;
-      if (!username || !password) return toast('请填写用户名和密码');
+    function toggleAuth(){ isLogin = !isLogin; $('confirm-wrap').classList.toggle('hidden', isLogin); $('auth-submit').textContent = isLogin ? '登录' : '注册'; $('auth-label').textContent = isLogin ? '还没有账号？' : '已有账号？'; document.querySelector('.auth .btn.ghost').textContent = isLogin ? '注册' : '登录'; }
+    async function handleAuth(){
+      const username = $('auth-username').value.trim(), password = $('auth-password').value, confirm = $('auth-confirm').value;
+      if (!username || !password) return toast('请填用户名和密码');
       if (!isLogin && password !== confirm) return toast('两次密码不一致');
-      if (password.length < 4) return toast('密码至少 4 位');
       try {
         let data;
         if (isLogin) {
-          data = await api('/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-          currentUser = data.user;
-          keyPair = await getOrCreateKeyPair(currentUser.id);
-          await api('/user/public-key', { method: 'PUT', body: JSON.stringify({ public_key: keyPair.publicKey }) });
+          data = await api('/login', {method:'POST', body:JSON.stringify({username,password})});
+          currentUser = data.user; keyPair = await getKeyPair(); await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})});
         } else {
-          const tempId = `temp_${Date.now()}`;
-          keyPair = await getOrCreateKeyPair(tempId);
-          data = await api('/register', { method: 'POST', body: JSON.stringify({ username, password, public_key: keyPair.publicKey }) });
-          currentUser = data.user;
-          localStorage.setItem(`ecdh_private_jwk_${currentUser.id}`, localStorage.getItem(`ecdh_private_jwk_${tempId}`));
-          localStorage.removeItem(`ecdh_private_jwk_${tempId}`);
+          currentUser = {id:'temp'}; keyPair = await Crypto.generateKeyPair(); const publicKey = await Crypto.exportPublicKey(keyPair.publicKey);
+          data = await api('/register', {method:'POST', body:JSON.stringify({username,password,public_key:publicKey})});
+          currentUser = data.user; localStorage.setItem(`ecdh_private_jwk_${currentUser.id}`, JSON.stringify(await crypto.subtle.exportKey('jwk', keyPair.privateKey)));
+          keyPair = {privateKey:keyPair.privateKey, publicKey};
         }
-        token = data.token;
-        profile = data.user;
-        localStorage.setItem('securechat_token', token);
-        localStorage.setItem('securechat_user', JSON.stringify(currentUser));
-        await enterApp();
-      } catch (error) {
-        toast(error.message);
-      }
+        token = data.token; profile = data.user; localStorage.setItem('securechat_token', token); localStorage.setItem('securechat_user', JSON.stringify(currentUser)); await enter();
+      } catch(e) { toast(e.message); }
     }
 
-    function logout() {
-      if (ws) ws.close();
-      token = '';
-      currentUser = null;
-      profile = {};
-      activeFriend = null;
-      localStorage.removeItem('securechat_token');
-      localStorage.removeItem('securechat_user');
-      $('auth').classList.remove('hidden');
-      $('app').classList.add('hidden');
+    async function enter(){
+      $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || '';
+      if (!keyPair) keyPair = await getKeyPair();
+      try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; }
+      connect(); await loadEverything(); showPage('chat');
     }
+    function logout(){ if(ws) ws.close(); token=''; currentUser=null; localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
+    function connect(){ if(ws) ws.close(); ws = new WebSocket(`${WS}?token=${encodeURIComponent(token)}`); ws.onmessage = async e => { const m = JSON.parse(e.data); if(m.type==='new_message'){ notify('新私聊消息'); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); } if(m.type==='new_group_message'){ notify('新群聊消息'); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); } if(['groups_changed','friends_changed','friend_request','new_moment','read_receipt','group_read_receipt'].includes(m.type)) loadEverything(); }; ws.onclose = () => { if(token) setTimeout(connect, 3000); }; }
+    function notify(title){ if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:title}); }
+    async function enableNotifications(){ if(!('Notification' in window)) return toast('浏览器不支持通知'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); toast(p === 'granted' ? '通知已开启' : '通知未授权'); }
+    async function rotateDeviceKey(){ if(!confirm('重新生成本设备密钥后，旧消息可能无法解密。继续吗？')) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('本设备密钥已更新'); }
 
-    async function enterApp() {
-      $('auth').classList.add('hidden');
-      $('app').classList.remove('hidden');
-      if (!keyPair) keyPair = await getOrCreateKeyPair(currentUser.id);
-      try {
-        const data = await api('/user/profile');
-        profile = data.user;
-      } catch {
-        profile = currentUser;
-      }
-      renderMe();
-      connectWebSocket();
-      await loadAll();
-      switchPage('messages');
+    async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); }
+    async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
+    async function loadChats(){ chats = (await api('/chat-list')).chats || []; renderConversations(); }
+    async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
+    function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
+    function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.side-page').forEach(x=>x.classList.remove('active')); $('chat-page').style.display = p==='chat' ? 'flex' : 'none'; if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); }
+
+    function renderConversations(){
+      const q = $('conversation-search').value.toLowerCase();
+      let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?'加密消息':'还没有消息'})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:`${g.member_count} 人群聊`}));
+      rows = rows.filter(r => r.name.toLowerCase().includes(q));
+      $('conversation-list').innerHTML = rows.length ? rows.map(r => `<div class="item ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.name)}</div><div class="sub">${html(r.sub)}</div></div><div>${r.unread?`<span class="badge">${r.unread}</span>`:''}<div class="sub">${time(r.time)}</div></div></div>`).join('') : '<div class="sub" style="padding:14px">暂无会话</div>';
     }
+    async function openConversation(type,id){ active = type==='direct' ? {type,id, name:(chats.find(c=>c.friend_id===id)?.friend_nickname || chats.find(c=>c.friend_id===id)?.friend_name || '私聊')} : {type,id, name:groups.find(g=>g.id===id)?.name || '群聊'}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? '端到端加密私聊' : '群密钥加密群聊'; $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); renderConversations(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
 
-    function renderMe() {
-      $('me-name').textContent = profile.nickname || currentUser.username;
-      $('me-avatar').textContent = profile.avatar ? '' : initials(profile);
-      $('me-avatar').style.cssText = avatarStyle(profile);
-    }
+    function payloadText(text){ return JSON.stringify({type:'text', text}); }
+    async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; input.value=''; await sendPayload(payloadText(text)); }
+    async function sendAttachment(e){ const file=e.target.files[0]; e.target.value=''; if(!active || !file) return; if(file.size > 2.5*1024*1024) return toast('附件不能超过 2.5MB'); const data = await new Promise(r => { const fr = new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file); }); await sendPayload(JSON.stringify({type:file.type.startsWith('image/')?'image':'file', name:file.name, mime:file.type, size:file.size, data})); }
+    async function sendPayload(payload){ try { if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
+    async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); $('messages').innerHTML=''; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); appendBubble({...m,payload:safeJson(txt)}, m.from_id===currentUser.id); } if(!(d.messages||[]).length) $('messages').innerHTML='<div class="sub">还没有消息。</div>'; scrollBottom(); }
+    async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); $('messages').innerHTML=''; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); appendBubble({...m,payload:safeJson(txt)}, m.from_id===currentUser.id); } if(!(d.messages||[]).length) $('messages').innerHTML='<div class="sub">群聊已创建，开始说点什么。</div>'; scrollBottom(); }
+    function safeJson(t){ try{return JSON.parse(t)}catch{return{type:'text',text:t}} }
+    function appendBubble(m,mine){ const p=m.payload||{type:'text',text:'[空消息]'}; const b=document.createElement('div'); b.className=`bubble ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||'图片')}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||'文件')}</div><a class="file-pill" href="${p.data}" download="${html(p.name||'file')}">下载文件 · ${Math.ceil((p.size||0)/1024)}KB</a>` : html(p.text); b.innerHTML = `${!mine && active?.type==='group'?`<div class="sub">${html(m.nickname||m.username||'成员')}</div>`:''}${body}<div class="meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?'已读':'已送达'}</span>`:''}</div>`; $('messages').appendChild(b); scrollBottom(); }
+    function scrollBottom(){ setTimeout(()=>{$('messages').scrollTop=$('messages').scrollHeight},20); }
+    async function markDirect(id){ try{await api(`/mark-read/${id}`,{method:'POST'}); loadChats();}catch{} }
+    async function markGroup(id){ try{await api(`/groups/${id}/mark-read`,{method:'POST'}); loadGroups();}catch{} }
 
-    function connectWebSocket() {
-      if (!token) return;
-      if (ws) ws.close();
-      ws = new WebSocket(`${WS_URL}?token=${encodeURIComponent(token)}`);
-      ws.onmessage = async (event) => {
-        const message = JSON.parse(event.data);
-        if (message.type === 'new_message') {
-          const friendId = message.message.from_id === currentUser.id ? message.message.to_id : message.message.from_id;
-          if (activeFriend && activeFriend.id === friendId) {
-            const key = await sharedKey(friendId);
-            const text = await CryptoHelper.decrypt(message.message.content, key);
-            appendMessage({ ...message.message, decrypted_content: text });
-            await markRead(friendId);
-          }
-          loadChatList();
-        }
-        if (['new_moment', 'friends_changed', 'friend_request'].includes(message.type)) loadAll();
-        if (message.type === 'read_receipt' && activeFriend && activeFriend.id === message.by) loadMessages(activeFriend.id);
-      };
-      ws.onclose = () => {
-        if (token) setTimeout(connectWebSocket, 3000);
-      };
-    }
+    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">请求添加你为好友</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">接受</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join('') : '<div class="sub">暂无好友请求。</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">聊天</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'取消屏蔽':'屏蔽'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">删除</button></div></div>`).join('') : '<div class="sub">暂无好友。</div>'; }
+    async function searchUsers(){ const q=$('search-input').value.trim(); if(!q)return; const d=await api(`/search-users?q=${encodeURIComponent(q)}`); $('search-results').innerHTML = d.users.length ? d.users.map(u=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(u)}">${initial(u)}</div><div><div class="title">${html(u.nickname||u.username)}</div><div class="sub">${html(u.bio||u.username)}</div></div><button class="btn primary" onclick="sendFriendRequest(${u.id})">添加</button></div>`).join('') : '<div class="sub">没找到。</div>'; }
+    async function sendFriendRequest(id){ try{await api('/friend-request',{method:'POST',body:JSON.stringify({to_id:id})}); toast('已发送好友请求'); $('search-results').innerHTML='';}catch(e){toast(e.message)} }
+    async function handleRequest(id,action){ await api(`/friend-request/${id}`,{method:'POST',body:JSON.stringify({action})}); toast(action==='accept'?'已添加好友':'已拒绝'); loadEverything(); }
+    async function toggleBlock(id,isBlocked){ await api(`/block/${id}`,{method:isBlocked?'DELETE':'POST'}); toast(isBlocked?'已取消屏蔽':'已屏蔽'); loadEverything(); }
+    async function deleteFriend(id){ if(!confirm('确定删除好友吗？'))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('已删除'); loadEverything(); }
 
-    function switchPage(page) {
-      document.querySelectorAll('.page').forEach((el) => el.classList.remove('active'));
-      $(`page-${page}`).classList.add('active');
-      document.querySelectorAll('[data-page]').forEach((el) => el.classList.toggle('active', el.dataset.page === page));
-      if (page !== 'messages') closeChat(false);
-      if (page === 'messages') loadChatList();
-      if (page === 'square') loadSquare();
-      if (page === 'friends') loadFriends();
-      if (page === 'settings') loadSettings();
-    }
+    function openGroupModal(){ $('group-modal').classList.remove('hidden'); renderGroupFriends(); }
+    function closeGroupModal(){ $('group-modal').classList.add('hidden'); }
+    function renderGroupFriends(){ $('group-friends').innerHTML = friends.length ? friends.map(f=>`<label class="check"><input type="checkbox" value="${f.id}"><span>${html(f.nickname||f.username)}</span></label>`).join('') : '<div class="sub">先添加好友才能建群。</div>'; }
+    async function createGroup(){ const name=$('group-name').value.trim(); const picked=Array.from($('group-friends').querySelectorAll('input:checked')).map(i=>Number(i.value)); if(!name||!picked.length)return toast('填写群名并选择好友'); const aes=await Crypto.aesKey(); const raw=await Crypto.exportAes(aes); const all=[{id:currentUser.id, public_key:keyPair.publicKey}, ...friends.filter(f=>picked.includes(f.id))]; const members=[]; for(const u of all) members.push({user_id:u.id, wrapped_key:await wrapGroupKey(raw,u)}); await api('/groups',{method:'POST',body:JSON.stringify({name,members})}); closeGroupModal(); $('group-name').value=''; toast('群聊已创建'); await loadGroups(); setChatTab('group'); }
 
-    async function loadAll() {
-      await Promise.all([loadFriends(), loadChatList(), loadSquare()]);
-    }
+    async function loadSquare(){ moments=(await api('/moments')).moments||[]; renderSquare(); }
+    function renderMomentOptions(){ $('moment-blocked').innerHTML=friends.map(f=>`<option value="${f.id}">${html(f.nickname||f.username)}</option>`).join(''); }
+    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card moment"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?'取消赞':'点赞'} ${m.like_count||0}</button><span class="sub">${(m.comments||[]).length} 条评论</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="写评论"><button class="btn primary" onclick="addComment(${m.id})">评论</button></div></div>`).join('') : '<div class="card sub">暂无动态。</div>'; }
+    async function postMoment(){ const content=$('moment-input').value.trim(); const blocked=Array.from($('moment-blocked').selectedOptions).map(o=>Number(o.value)); if(!content)return; await api('/moments',{method:'POST',body:JSON.stringify({content,blocked})}); $('moment-input').value=''; loadSquare(); }
+    async function toggleLike(id){ await api(`/moments/${id}/like`,{method:'POST'}); loadSquare(); }
+    async function addComment(id){ const input=$(`comment-${id}`); const content=input.value.trim(); if(!content)return; await api(`/moments/${id}/comment`,{method:'POST',body:JSON.stringify({content})}); loadSquare(); }
 
-    async function loadChatList() {
-      if (!token) return;
-      try {
-        const data = await api('/chat-list');
-        chats = data.chats || [];
-        renderChatList();
-      } catch {}
-    }
-
-    function renderChatList() {
-      const list = $('chat-list');
-      if (!chats.length) {
-        list.innerHTML = '<div class="row-sub" style="padding:18px">暂无会话。先添加好友并发送消息。</div>';
-        return;
-      }
-      list.innerHTML = chats.map((chat) => {
-        const user = { username: chat.friend_name, nickname: chat.friend_nickname, avatar: chat.friend_avatar };
-        const active = activeFriend?.id === chat.friend_id ? 'active' : '';
-        const unread = chat.unread_count ? `<span class="badge">${chat.unread_count}</span>` : '';
-        return `<div class="row ${active}" onclick="openChat(${chat.friend_id}, '${escapeHtml(chat.friend_nickname || chat.friend_name)}')">
-          <div class="avatar" style="${avatarStyle(user)}">${user.avatar ? '' : initials(user)}</div>
-          <div>
-            <div class="row-title">${escapeHtml(chat.friend_nickname || chat.friend_name)}</div>
-            <div class="row-sub">${chat.last_time ? '加密消息' : '还没有消息'}</div>
-          </div>
-          <div>${unread}<div class="row-sub">${timeText(chat.last_time)}</div></div>
-        </div>`;
-      }).join('');
-    }
-
-    async function openChat(id, name) {
-      activeFriend = { id, name };
-      $('chat').classList.add('open');
-      $('back-chat').classList.remove('hidden');
-      $('chat-title').textContent = name;
-      renderChatList();
-      await loadMessages(id);
-      await markRead(id);
-    }
-
-    function closeChat(clear = true) {
-      $('chat').classList.remove('open');
-      $('back-chat').classList.add('hidden');
-      if (clear) activeFriend = null;
-      renderChatList();
-    }
-
-    async function loadMessages(friendId) {
-      try {
-        const data = await api(`/messages/${friendId}`);
-        const key = await sharedKey(friendId);
-        $('messages').innerHTML = '';
-        for (const msg of data.messages || []) {
-          const text = await CryptoHelper.decrypt(msg.content, key);
-          appendMessage({ ...msg, decrypted_content: text });
-        }
-        if (!(data.messages || []).length) $('messages').innerHTML = '<div class="row-sub">还没有消息。</div>';
-        scrollMessages();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    function appendMessage(msg) {
-      const mine = msg.from_id === currentUser.id;
-      const div = document.createElement('div');
-      div.className = `bubble ${mine ? 'sent' : 'received'}`;
-      div.innerHTML = `${escapeHtml(msg.decrypted_content || msg.content)}<div class="meta"><span>${timeText(msg.created_at)}</span>${mine ? `<span>${msg.read_at ? '已读' : '已送达'}</span>` : ''}</div>`;
-      $('messages').appendChild(div);
-      scrollMessages();
-    }
-
-    function scrollMessages() {
-      const box = $('messages');
-      setTimeout(() => { box.scrollTop = box.scrollHeight; }, 20);
-    }
-
-    async function sendMessage() {
-      if (!activeFriend) return toast('请先选择好友');
-      const input = $('message-input');
-      const text = input.value.trim();
-      if (!text) return;
-      input.value = '';
-      try {
-        const key = await sharedKey(activeFriend.id);
-        const encrypted = await CryptoHelper.encrypt(text, key);
-        const data = await api('/messages', { method: 'POST', body: JSON.stringify({ to_id: activeFriend.id, content: encrypted }) });
-        appendMessage({ ...data.message, decrypted_content: text });
-        loadChatList();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function markRead(friendId) {
-      try {
-        await api(`/mark-read/${friendId}`, { method: 'POST' });
-        loadChatList();
-      } catch {}
-    }
-
-    async function loadFriends() {
-      if (!token) return;
-      try {
-        const data = await api('/friends');
-        friends = data.friends || [];
-        renderFriends(data.requests || []);
-        renderMomentBlockedOptions();
-      } catch {}
-    }
-
-    function renderFriends(requests) {
-      $('request-list').innerHTML = requests.length ? requests.map((request) => {
-        const user = { username: request.username, nickname: request.nickname, avatar: request.avatar };
-        return `<div class="row">
-          <div class="avatar" style="${avatarStyle(user)}">${user.avatar ? '' : initials(user)}</div>
-          <div class="row-title">${escapeHtml(user.nickname || user.username)}</div>
-          <div class="friend-actions">
-            <button class="primary" onclick="handleRequest(${request.from_id}, 'accept')">接受</button>
-            <button class="secondary" onclick="handleRequest(${request.from_id}, 'reject')">拒绝</button>
-          </div>
-        </div>`;
-      }).join('') : '<div class="row-sub">暂无好友请求。</div>';
-
-      $('friend-list').innerHTML = friends.length ? friends.map((friend) => {
-        return `<div class="row">
-          <div class="avatar" style="${avatarStyle(friend)}">${friend.avatar ? '' : initials(friend)}</div>
-          <div>
-            <div class="row-title">${escapeHtml(friend.nickname || friend.username)}</div>
-            <div class="row-sub">${escapeHtml(friend.bio || '')}</div>
-          </div>
-          <div class="friend-actions">
-            <button class="primary" onclick="openChat(${friend.id}, '${escapeHtml(friend.nickname || friend.username)}');switchPage('messages')">聊天</button>
-            <button class="secondary" onclick="toggleBlock(${friend.id}, ${Number(friend.is_blocked)})">${Number(friend.is_blocked) ? '取消屏蔽' : '屏蔽'}</button>
-            <button class="danger" onclick="deleteFriend(${friend.id})">删除</button>
-          </div>
-        </div>`;
-      }).join('') : '<div class="row-sub">暂无好友。</div>';
-    }
-
-    function renderMomentBlockedOptions() {
-      $('moment-blocked').innerHTML = friends.map((friend) => `<option value="${friend.id}">${escapeHtml(friend.nickname || friend.username)}</option>`).join('');
-    }
-
-    async function searchUsers() {
-      const q = $('search-input').value.trim();
-      if (!q) return toast('请输入搜索内容');
-      try {
-        const data = await api(`/search-users?q=${encodeURIComponent(q)}`);
-        $('search-results').innerHTML = (data.users || []).length ? data.users.map((user) => `<div class="row">
-          <div class="avatar" style="${avatarStyle(user)}">${user.avatar ? '' : initials(user)}</div>
-          <div><div class="row-title">${escapeHtml(user.nickname || user.username)}</div><div class="row-sub">${escapeHtml(user.username)}</div></div>
-          <button class="primary" onclick="sendFriendRequest(${user.id})">添加</button>
-        </div>`).join('') : '<div class="row-sub">没有找到用户。</div>';
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function sendFriendRequest(id) {
-      try {
-        await api('/friend-request', { method: 'POST', body: JSON.stringify({ to_id: id }) });
-        toast('好友请求已发送');
-        $('search-results').innerHTML = '';
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function handleRequest(fromId, action) {
-      try {
-        await api(`/friend-request/${fromId}`, { method: 'POST', body: JSON.stringify({ action }) });
-        toast(action === 'accept' ? '已添加好友' : '已拒绝');
-        loadAll();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function toggleBlock(id, isBlocked) {
-      try {
-        await api(`/block/${id}`, { method: isBlocked ? 'DELETE' : 'POST' });
-        toast(isBlocked ? '已取消屏蔽' : '已屏蔽');
-        loadAll();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function deleteFriend(id) {
-      if (!confirm('确定删除这个好友吗？双方好友关系都会解除。')) return;
-      try {
-        await api(`/friends/${id}`, { method: 'DELETE' });
-        toast('已删除好友');
-        if (activeFriend?.id === id) closeChat();
-        loadAll();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function loadSquare() {
-      if (!token) return;
-      try {
-        const data = await api('/moments');
-        square = data.moments || [];
-        renderSquare();
-      } catch {}
-    }
-
-    function renderSquare() {
-      $('square-list').innerHTML = square.length ? square.map((moment) => {
-        const liked = moment.likes && moment.likes.includes(currentUser.id);
-        return `<div class="card moment">
-          <div class="moment-head">
-            <div class="avatar" style="${avatarStyle(moment)}">${moment.avatar ? '' : initials(moment)}</div>
-            <div><div class="row-title">${escapeHtml(moment.nickname || moment.username)}</div><div class="row-sub">${timeText(moment.created_at)}</div></div>
-          </div>
-          <div>${escapeHtml(moment.content)}</div>
-          <div class="actions">
-            <button class="secondary" onclick="toggleLike(${moment.id})">${liked ? '取消赞' : '点赞'} ${moment.like_count || 0}</button>
-            <span class="row-sub">${(moment.comments || []).length} 条评论</span>
-          </div>
-          <div>${(moment.comments || []).map((comment) => `<div class="comment"><b>${escapeHtml(comment.nickname || comment.username)}:</b> ${escapeHtml(comment.content)}</div>`).join('')}</div>
-          <div class="actions"><input id="comment-${moment.id}" placeholder="写评论"><button class="primary" onclick="addComment(${moment.id})">评论</button></div>
-        </div>`;
-      }).join('') : '<div class="row-sub">暂无动态。</div>';
-    }
-
-    async function postMoment() {
-      const content = $('moment-input').value.trim();
-      const blocked = Array.from($('moment-blocked').selectedOptions).map((option) => Number(option.value));
-      if (!content) return toast('请输入动态内容');
-      try {
-        await api('/moments', { method: 'POST', body: JSON.stringify({ content, blocked }) });
-        $('moment-input').value = '';
-        $('moment-blocked').selectedIndex = -1;
-        toast('已发布');
-        loadSquare();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function toggleLike(id) {
-      try {
-        await api(`/moments/${id}/like`, { method: 'POST' });
-        loadSquare();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function addComment(id) {
-      const input = $(`comment-${id}`);
-      const content = input.value.trim();
-      if (!content) return;
-      try {
-        await api(`/moments/${id}/comment`, { method: 'POST', body: JSON.stringify({ content }) });
-        input.value = '';
-        loadSquare();
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    function loadSettings() {
-      $('nickname-input').value = profile.nickname || currentUser.username;
-      $('bio-input').value = profile.bio || '';
-      draftAvatar = profile.avatar || '';
-      updateAvatarPreview();
-    }
-
-    function updateAvatarPreview() {
-      $('avatar-preview').textContent = draftAvatar ? '' : initials(profile);
-      $('avatar-preview').style.cssText = draftAvatar ? `background-image:url(${draftAvatar});background-color:transparent` : `background:${colorFor(profile.nickname || currentUser.username)}`;
-    }
-
-    function previewAvatar(event) {
-      const file = event.target.files && event.target.files[0];
-      if (!file) return;
-      if (file.size > 2.5 * 1024 * 1024) return toast('头像不能超过 2.5MB');
-      const reader = new FileReader();
-      reader.onload = () => {
-        draftAvatar = reader.result;
-        updateAvatarPreview();
-      };
-      reader.readAsDataURL(file);
-    }
-
-    function clearAvatar() {
-      draftAvatar = '';
-      updateAvatarPreview();
-    }
-
-    async function saveProfile() {
-      const nickname = $('nickname-input').value.trim();
-      const bio = $('bio-input').value.trim();
-      if (!nickname) return toast('昵称不能为空');
-      try {
-        await api('/user/profile', { method: 'PUT', body: JSON.stringify({ nickname, bio, avatar: draftAvatar }) });
-        const data = await api('/user/profile');
-        profile = data.user;
-        renderMe();
-        toast('资料已保存');
-      } catch (error) {
-        toast(error.message);
-      }
-    }
-
-    async function changePassword() {
-      const oldPassword = $('old-password').value;
-      const newPassword = $('new-password').value;
-      if (!oldPassword || !newPassword) return toast('请填写旧密码和新密码');
-      try {
-        await api('/user/password', { method: 'PUT', body: JSON.stringify({ oldPassword, newPassword }) });
-        $('old-password').value = '';
-        $('new-password').value = '';
-        toast('密码已修改');
-      } catch (error) {
-        toast(error.message);
-      }
-    }
+    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); }
+    function updateAvatarPreview(){ $('avatar-preview').textContent=draftAvatar?'':initial(profile); $('avatar-preview').style.cssText=draftAvatar?`background-image:url(${draftAvatar});background-color:transparent`:avatarStyle(profile); }
+    function previewAvatar(e){ const f=e.target.files[0]; if(!f)return; if(f.size>2.5*1024*1024)return toast('头像不能超过 2.5MB'); const r=new FileReader(); r.onload=()=>{draftAvatar=r.result;updateAvatarPreview()}; r.readAsDataURL(f); }
+    function clearAvatar(){ draftAvatar=''; updateAvatarPreview(); }
+    async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return; await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; toast('已保存'); }
+    async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return; await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('密码已修改'); }
 
     $('auth-submit').addEventListener('click', handleAuth);
-    for (const id of ['auth-username', 'auth-password', 'auth-confirm']) {
-      $(id).addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') handleAuth();
-      });
-    }
-
-    window.addEventListener('load', async () => {
-      if (token && currentUser) {
-        try {
-          await enterApp();
-        } catch {
-          logout();
-        }
-      }
-    });
+    ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
+    window.addEventListener('load', async()=>{ if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
   </script>
 </body>
 </html>
