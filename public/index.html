@@ -88,7 +88,12 @@
 
     /* ===== 主内容 ===== */
     .main-content { flex:1; display:flex; flex-direction:column; overflow:hidden; background:transparent; }
-    .page { display:none; flex-direction:column; height:100%; overflow:hidden; }
+    .page {
+      display:none;
+      flex-direction:column;
+      height:100%;
+      overflow:hidden;
+    }
     .page.active { display:flex; }
 
     /* ===== 聊天列表页 ===== */
@@ -162,8 +167,8 @@
       backdrop-filter:blur(24px) saturate(1.4);
       border-top:1px solid var(--border);
       display:flex; gap:12px; align-items:center;
-      flex-shrink:0;           /* 防止被压缩 */
-      min-height: 64px;        /* 保证高度 */
+      flex-shrink:0;
+      min-height: 64px;
     }
     .chat-input-area input {
       flex:1; padding:12px 20px; border:1.5px solid var(--border); border-radius:40px;
@@ -178,6 +183,17 @@
       box-shadow:0 6px 16px var(--primary-glow); transition:0.2s; flex-shrink:0;
     }
     .chat-input-area button:active { transform:scale(0.92); }
+
+    /* ===== 广场/好友/设置 - 滚动修复 ===== */
+    .square-page,
+    .friends-page,
+    .settings-page {
+      flex: 1;                    /* 填满父容器 */
+      overflow-y: auto;           /* 允许滚动 */
+      padding: 0;
+      background: transparent;
+      -webkit-overflow-scrolling: touch; /* iOS 顺滑滚动 */
+    }
 
     /* ===== 广场发布 (新增屏蔽选择) ===== */
     .square-post-box .block-select {
@@ -230,8 +246,7 @@
       padding:10px 0; border-bottom:1px solid var(--border); font-size:0.9rem;
     }
 
-    /* ===== 广场、好友、设置 (原有样式) ===== */
-    .square-page, .friends-page, .settings-page { padding:0; overflow-y:auto; background:transparent; }
+    /* ===== 广场卡片、好友、设置组件样式 ===== */
     .square-header, .page-header {
       background:var(--surface); backdrop-filter:blur(24px) saturate(1.4);
       padding:16px 24px; font-weight:700; font-size:1.2rem;
@@ -269,7 +284,7 @@
     .square-comment-input input { flex:1; padding:8px 14px; border:1px solid var(--border); border-radius:30px; font-size:0.78rem; outline:none; background:rgba(255,255,255,0.6); color:var(--text); }
     .square-comment-input button { padding:8px 16px; background:var(--primary); color:#fff; border:none; border-radius:30px; cursor:pointer; font-weight:600; }
 
-    /* 好友列表项 (新增删除按钮) */
+    /* 好友列表项 */
     .friend-item {
       display:flex; align-items:center; gap:14px; padding:14px 24px;
       background:var(--surface-solid); border-bottom:1px solid var(--border);
@@ -297,7 +312,7 @@
     .search-box input:focus { border-color:var(--primary); background:var(--surface-solid); }
     .search-box button { padding:12px 20px; background:var(--primary); color:#fff; border:none; border-radius:40px; cursor:pointer; font-weight:600; }
 
-    /* 设置页面 (新增简介) */
+    /* 设置页面 (内部滚动已由父容器控制) */
     .settings-container { padding:16px 20px; max-width:600px; margin:0 auto; width:100%; }
     .settings-group { margin-bottom:24px; }
     .settings-group-title { font-size:0.75rem; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-secondary); padding:0 4px 8px 4px; }
@@ -366,7 +381,7 @@
     .mobile-nav .nav-tab.active { color:var(--primary); font-weight:600; }
     .mobile-nav .nav-tab.active .tab-icon { transform:scale(1.1); }
 
-    /* ===== 移动端响应式 (输入框高度修复) ===== */
+    /* ===== 移动端响应式 (滚动修复) ===== */
     @media (max-width: 768px) {
       .sidebar { display:none; }
       .mobile-nav { display:flex; }
@@ -390,17 +405,16 @@
         overflow-y:auto;
         -webkit-overflow-scrolling:touch;
       }
-      /* 关键：输入框在移动端固定高度 */
       .chat-window .chat-input-area {
         flex-shrink:0;
         min-height: 64px;
         padding-bottom: max(12px, env(safe-area-inset-bottom, 12px));
         background:var(--surface);
-        display:flex !important; /* 确保显示 */
+        display:flex !important;
         position:relative;
       }
       .chat-window .chat-input-area input {
-        font-size:16px; /* 防止iOS自动缩放 */
+        font-size:16px;
       }
 
       .message-bubble { max-width:80%; }
@@ -409,6 +423,15 @@
       .friend-item { padding-left:16px; padding-right:16px; }
       .auth-card { padding:32px 20px; }
       .auth-card h2 { font-size:1.6rem; }
+
+      /* 确保设置、好友、广场页面高度正确且可滚动 */
+      .square-page,
+      .friends-page,
+      .settings-page {
+        height: 100%; /* 保底，但 flex:1 已经足够 */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+      }
     }
   </style>
 </head>
@@ -467,7 +490,6 @@
         <div class="square-header">✨ 广场</div>
         <div class="square-post-box">
           <textarea id="square-input" placeholder="分享新鲜事..."></textarea>
-          <!-- 屏蔽选择 -->
           <div class="block-select">
             <label>🔒 屏蔽好友：</label>
             <select id="block-select" multiple size="2">
@@ -849,7 +871,6 @@
     if(squareCache.length===0){c.innerHTML='<div class="empty-state">暂无动态，快来发布第一条吧</div>';return;}
     c.innerHTML=squareCache.map(m=>{
       const liked=m.likes&&m.likes.includes(currentUser.id);
-      // 检查当前用户是否被屏蔽（屏蔽逻辑由后端过滤，前端仅展示）
       return `<div class="square-card">
         <div class="square-author" onclick="viewProfile(${m.user_id})">
           <div class="square-avatar" style="background:${avatarColor(m.nickname||m.username)}">${(m.nickname||m.username)[0].toUpperCase()}</div>
@@ -872,7 +893,6 @@
         </div>
       </div>`;
     }).join('');
-    // 填充屏蔽下拉
     populateBlockSelect();
   }
   function populateBlockSelect(){
@@ -891,7 +911,6 @@
     if(!content) return showToast('请输入内容');
     const select = document.getElementById('block-select');
     const blockedIds = Array.from(select.selectedOptions).map(o => parseInt(o.value));
-    // 发送时附带屏蔽列表（后端需支持）
     try{
       await apiFetch('/moments',{method:'POST',body:JSON.stringify({content, blocked: blockedIds})});
       document.getElementById('square-input').value = '';
@@ -941,14 +960,13 @@
   // ===== 查看主页（弹窗） =====
   async function viewProfile(userId){
     try{
-      const data = await apiFetch('/user/'+userId+'/profile'); // 需后端实现
+      const data = await apiFetch('/user/'+userId+'/profile');
       const user = data.user;
       document.getElementById('modal-avatar').style.backgroundImage = user.avatar ? `url(${user.avatar})` : 'none';
       document.getElementById('modal-avatar').style.backgroundColor = user.avatar ? 'transparent' : avatarColor(user.nickname||user.username);
       document.getElementById('modal-avatar').textContent = user.avatar ? '' : (user.nickname||user.username)[0].toUpperCase();
       document.getElementById('modal-name').textContent = user.nickname || user.username;
       document.getElementById('modal-bio').textContent = user.bio || '这个人很懒，什么都没写';
-      // 获取该用户动态
       const momentsData = await apiFetch('/moments?user_id='+userId);
       const list = document.getElementById('modal-moments-list');
       if(momentsData.moments && momentsData.moments.length){
