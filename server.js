@@ -163,6 +163,34 @@ function broadcastGroup(groupId, payload, exceptUserId) {
   });
 }
 
+function getPresencePeers(userId, cb) {
+  db.all(
+    `SELECT friend_id AS user_id FROM friends WHERE user_id = ?
+     UNION
+     SELECT gm2.user_id
+     FROM group_members gm1
+     JOIN group_members gm2 ON gm2.group_id = gm1.group_id
+     WHERE gm1.user_id = ? AND gm2.user_id != ?`,
+    [userId, userId, userId],
+    (err, rows) => cb(err, (rows || []).map((row) => Number(row.user_id)))
+  );
+}
+
+function broadcastPresence(userId, online) {
+  getPresencePeers(userId, (err, peers) => {
+    if (err) return;
+    for (const peerId of peers) sendToUser(peerId, { type: 'presence', user_id: userId, online });
+  });
+}
+
+function sendPresenceSnapshot(userId) {
+  getPresencePeers(userId, (err, peers) => {
+    if (err) return;
+    const online = peers.filter((peerId) => clients.has(peerId));
+    sendToUser(userId, { type: 'presence_snapshot', online });
+  });
+}
+
 function isGroupMember(groupId, userId, cb) {
   db.get('SELECT id FROM group_members WHERE group_id = ? AND user_id = ?', [groupId, userId], (err, row) => cb(err, !!row));
 }
@@ -176,11 +204,36 @@ wss.on('connection', (ws, req) => {
     ws.userId = user.id;
     if (!clients.has(user.id)) clients.set(user.id, new Set());
     clients.get(user.id).add(ws);
+    sendPresenceSnapshot(user.id);
+    broadcastPresence(user.id, true);
+    ws.on('message', (data) => {
+      try {
+        const event = JSON.parse(data);
+        if (event.type !== 'typing') return;
+        const payload = {
+          type: 'typing',
+          from_id: user.id,
+          is_typing: Boolean(event.is_typing),
+          target_type: event.target_type
+        };
+        if (event.target_type === 'direct') {
+          const toId = intParam(event.to_id);
+          if (toId) sendToUser(toId, { ...payload, to_id: toId });
+        }
+        if (event.target_type === 'group') {
+          const groupId = intParam(event.group_id);
+          if (groupId) broadcastGroup(groupId, { ...payload, group_id: groupId }, user.id);
+        }
+      } catch {}
+    });
     ws.on('close', () => {
       const sockets = clients.get(user.id);
       if (!sockets) return;
       sockets.delete(ws);
-      if (sockets.size === 0) clients.delete(user.id);
+      if (sockets.size === 0) {
+        clients.delete(user.id);
+        broadcastPresence(user.id, false);
+      }
     });
   } catch {
     ws.close(1008, 'Invalid token');
