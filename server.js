@@ -5,56 +5,27 @@ const jwt = require('jsonwebtoken');
 const sqlite3 = require('sqlite3').verbose();
 const { WebSocketServer } = require('ws');
 const http = require('http');
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const JWT_SECRET = 'your-random-secret-change-me-to-something-long-and-random';
+const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production-with-a-long-random-secret';
 const SALT_ROUNDS = 10;
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json({ limit: '5mb' }));
-app.use(express.static('public'));
+app.use(express.json({ limit: '6mb' }));
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 
-// 数据库初始化
-const db = new sqlite3.Database('securechat.db');
+const db = new sqlite3.Database(path.join(__dirname, 'securechat.db'));
 
-// 数据库迁移辅助
-function migrateDatabase() {
-  db.serialize(() => {
-    // 检查并添加 users.bio 列
-    db.get("PRAGMA table_info(users)", (err, rows) => {
-      if (err) return console.error('检查 users 表失败:', err);
-      // rows 是数组，需遍历检查
-      db.all("PRAGMA table_info(users)", (err, columns) => {
-        if (err) return console.error('获取 users 列失败:', err);
-        const hasBio = columns.some(c => c.name === 'bio');
-        if (!hasBio) {
-          db.run("ALTER TABLE users ADD COLUMN bio TEXT", (err) => {
-            if (err) console.error('添加 users.bio 失败:', err);
-            else console.log('已添加 users.bio 列');
-          });
-        }
-      });
-    });
-
-    // 检查并添加 moments.blocked 列
-    db.all("PRAGMA table_info(moments)", (err, columns) => {
-      if (err) return console.error('获取 moments 列失败:', err);
-      const hasBlocked = columns.some(c => c.name === 'blocked');
-      if (!hasBlocked) {
-        db.run("ALTER TABLE moments ADD COLUMN blocked TEXT", (err) => {
-          if (err) console.error('添加 moments.blocked 失败:', err);
-          else console.log('已添加 moments.blocked 列');
-        });
-      }
-    });
-  });
+function addColumn(table, definition) {
+  db.run(`ALTER TABLE ${table} ADD COLUMN ${definition}`, () => {});
 }
 
-// 创建表（如果不存在）
 db.serialize(() => {
   db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -66,176 +37,166 @@ db.serialize(() => {
     bio TEXT DEFAULT '',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS friends (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     friend_id INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, friend_id),
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(friend_id) REFERENCES users(id)
+    UNIQUE(user_id, friend_id)
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS friend_requests (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     from_id INTEGER NOT NULL,
     to_id INTEGER NOT NULL,
     status TEXT DEFAULT 'pending',
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(from_id) REFERENCES users(id),
-    FOREIGN KEY(to_id) REFERENCES users(id)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     from_id INTEGER NOT NULL,
     to_id INTEGER NOT NULL,
     content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(from_id) REFERENCES users(id),
-    FOREIGN KEY(to_id) REFERENCES users(id)
+    read_at DATETIME,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS moments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
-    blocked TEXT DEFAULT '[]',   -- JSON数组，存储被屏蔽的用户ID
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    blocked TEXT DEFAULT '[]',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS moment_likes (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     moment_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(moment_id, user_id),
-    FOREIGN KEY(moment_id) REFERENCES moments(id),
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    UNIQUE(moment_id, user_id)
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS moment_comments (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     moment_id INTEGER NOT NULL,
     user_id INTEGER NOT NULL,
     content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY(moment_id) REFERENCES moments(id),
-    FOREIGN KEY(user_id) REFERENCES users(id)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+
   db.run(`CREATE TABLE IF NOT EXISTS blocks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id INTEGER NOT NULL,
     blocked_user_id INTEGER NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, blocked_user_id),
-    FOREIGN KEY(user_id) REFERENCES users(id),
-    FOREIGN KEY(blocked_user_id) REFERENCES users(id)
+    UNIQUE(user_id, blocked_user_id)
   )`);
 
-  // 执行数据库迁移（添加新列）
-  migrateDatabase();
+  addColumn('users', "nickname TEXT");
+  addColumn('users', "avatar TEXT DEFAULT ''");
+  addColumn('users', "bio TEXT DEFAULT ''");
+  addColumn('messages', 'read_at DATETIME');
+  addColumn('moments', "blocked TEXT DEFAULT '[]'");
 });
 
-// JWT验证中间件
 function authenticateToken(req, res, next) {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
-  if (!token) return res.status(401).json({ error: '未提供令牌' });
+  const authHeader = req.headers.authorization || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null;
+  if (!token) return res.status(401).json({ error: 'Missing token' });
   jwt.verify(token, JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ error: '令牌无效或过期' });
+    if (err) return res.status(403).json({ error: 'Invalid or expired token' });
     req.user = user;
     next();
   });
 }
 
-// WebSocket 连接处理
-const clients = new Map();
-wss.on('connection', (ws, req) => {
-  const params = new URLSearchParams(req.url.split('?')[1]);
-  const token = params.get('token');
-  if (!token) {
-    ws.close(1008, '缺少认证令牌');
-    return;
+function intParam(value) {
+  const n = Number.parseInt(value, 10);
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
+function sendToUser(userId, payload) {
+  const sockets = clients.get(Number(userId));
+  if (!sockets) return;
+  const data = JSON.stringify(payload);
+  for (const ws of sockets) {
+    if (ws.readyState === ws.OPEN) ws.send(data);
   }
+}
+
+function parseBlocked(value) {
+  try {
+    const parsed = JSON.parse(value || '[]');
+    return Array.isArray(parsed) ? parsed.map(Number).filter(Boolean) : [];
+  } catch {
+    return [];
+  }
+}
+
+const clients = new Map();
+
+wss.on('connection', (ws, req) => {
+  const params = new URLSearchParams(req.url.split('?')[1] || '');
+  const token = params.get('token');
+  if (!token) return ws.close(1008, 'Missing token');
+
   try {
     const user = jwt.verify(token, JWT_SECRET);
     ws.userId = user.id;
-    clients.set(user.id, ws);
-    console.log(`用户 ${user.username} 已连接 WebSocket`);
+    if (!clients.has(user.id)) clients.set(user.id, new Set());
+    clients.get(user.id).add(ws);
 
     ws.on('close', () => {
-      clients.delete(user.id);
-      console.log(`用户 ${user.username} 断开连接`);
+      const sockets = clients.get(user.id);
+      if (!sockets) return;
+      sockets.delete(ws);
+      if (sockets.size === 0) clients.delete(user.id);
     });
-
-    ws.on('message', (data) => {
-      try {
-        const msg = JSON.parse(data);
-        if (msg.type === 'new_message') {
-          const receiverId = msg.message.to_id;
-          const receiverWs = clients.get(receiverId);
-          if (receiverWs && receiverWs.readyState === 1) {
-            receiverWs.send(JSON.stringify({ type: 'new_message', message: msg.message }));
-          }
-        } else if (msg.type === 'new_moment') {
-          wss.clients.forEach(client => {
-            if (client.readyState === 1 && client.userId !== ws.userId) {
-              client.send(JSON.stringify({ type: 'new_moment' }));
-            }
-          });
-        }
-      } catch (e) {
-        console.error('WebSocket消息处理错误:', e);
-      }
-    });
-  } catch (e) {
-    ws.close(1008, '无效的令牌');
+  } catch {
+    ws.close(1008, 'Invalid token');
   }
 });
 
-// ==================== API 路由 ====================
-
-// 注册
 app.post('/api/register', async (req, res) => {
-  const { username, password, public_key } = req.body;
-  if (!username || !password || !public_key) {
-    return res.status(400).json({ error: '请提供用户名、密码和公钥' });
-  }
-  if (password.length < 4) return res.status(400).json({ error: '密码至少4位' });
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '');
+  const publicKey = req.body.public_key;
+
+  if (!username || !password || !publicKey) return res.status(400).json({ error: 'Username, password and public key are required' });
+  if (username.length > 32) return res.status(400).json({ error: 'Username is too long' });
+  if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
+
   try {
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
-    db.run('INSERT INTO users (username, password_hash, public_key, nickname) VALUES (?, ?, ?, ?)',
-      [username, hash, JSON.stringify(public_key), username],
-      function(err) {
+    db.run(
+      'INSERT INTO users (username, password_hash, public_key, nickname) VALUES (?, ?, ?, ?)',
+      [username, hash, JSON.stringify(publicKey), username],
+      function onInsert(err) {
         if (err) {
-          if (err.message.includes('UNIQUE constraint')) {
-            return res.status(409).json({ error: '用户名已存在' });
-          }
-          return res.status(500).json({ error: '数据库错误' });
+          if (String(err.message).includes('UNIQUE')) return res.status(409).json({ error: 'Username already exists' });
+          return res.status(500).json({ error: 'Database error' });
         }
-        const userId = this.lastID;
-        const token = jwt.sign({ id: userId, username }, JWT_SECRET, { expiresIn: '7d' });
-        res.json({
-          token,
-          user: {
-            id: userId,
-            username,
-            nickname: username,
-            avatar: '',
-            bio: ''
-          }
-        });
-      });
-  } catch (e) {
-    res.status(500).json({ error: '服务器内部错误' });
+        const token = jwt.sign({ id: this.lastID, username }, JWT_SECRET, { expiresIn: '7d' });
+        res.json({ token, user: { id: this.lastID, username, nickname: username, avatar: '', bio: '' } });
+      }
+    );
+  } catch {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 
-// 登录
-app.post('/api/login', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) return res.status(400).json({ error: '请提供用户名和密码' });
+app.post('/api/login', (req, res) => {
+  const username = String(req.body.username || '').trim();
+  const password = String(req.body.password || '');
+  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
-    if (err || !user) return res.status(400).json({ error: '用户名或密码错误' });
-    const match = await bcrypt.compare(password, user.password_hash);
-    if (!match) return res.status(400).json({ error: '用户名或密码错误' });
+    if (err || !user) return res.status(400).json({ error: 'Incorrect username or password' });
+    const ok = await bcrypt.compare(password, user.password_hash);
+    if (!ok) return res.status(400).json({ error: 'Incorrect username or password' });
     const token = jwt.sign({ id: user.id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
     res.json({
       token,
@@ -250,376 +211,426 @@ app.post('/api/login', async (req, res) => {
   });
 });
 
-// 获取当前用户信息
 app.get('/api/user/profile', authenticateToken, (req, res) => {
-  db.get('SELECT id, username, nickname, avatar, bio FROM users WHERE id = ?', [req.user.id], (err, row) => {
-    if (err || !row) return res.status(404).json({ error: '用户不存在' });
-    res.json({ user: row });
+  db.get('SELECT id, username, nickname, avatar, bio FROM users WHERE id = ?', [req.user.id], (err, user) => {
+    if (err || !user) return res.status(404).json({ error: 'User not found' });
+    res.json({ user });
   });
 });
 
-// 更新用户信息（昵称、头像、简介）
 app.put('/api/user/profile', authenticateToken, (req, res) => {
-  const { nickname, avatar, bio } = req.body;
   const updates = [];
   const params = [];
-  if (nickname !== undefined) {
+
+  if (req.body.nickname !== undefined) {
+    const nickname = String(req.body.nickname || '').trim();
+    if (!nickname) return res.status(400).json({ error: 'Nickname cannot be empty' });
+    if (nickname.length > 24) return res.status(400).json({ error: 'Nickname is too long' });
     updates.push('nickname = ?');
     params.push(nickname);
   }
-  if (avatar !== undefined) {
+
+  if (req.body.avatar !== undefined) {
+    const avatar = String(req.body.avatar || '');
+    if (avatar.length > 5 * 1024 * 1024) return res.status(400).json({ error: 'Avatar image is too large' });
     updates.push('avatar = ?');
     params.push(avatar);
   }
-  if (bio !== undefined) {
+
+  if (req.body.bio !== undefined) {
+    const bio = String(req.body.bio || '').trim();
+    if (bio.length > 160) return res.status(400).json({ error: 'Bio is too long' });
     updates.push('bio = ?');
     params.push(bio);
   }
-  if (updates.length === 0) return res.status(400).json({ error: '没有要更新的字段' });
+
+  if (updates.length === 0) return res.status(400).json({ error: 'No fields to update' });
   params.push(req.user.id);
   db.run(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`, params, (err) => {
-    if (err) return res.status(500).json({ error: '更新失败' });
+    if (err) return res.status(500).json({ error: 'Update failed' });
     res.json({ success: true });
   });
 });
 
-// 修改密码
-app.put('/api/user/password', authenticateToken, async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
-  if (!oldPassword || !newPassword) return res.status(400).json({ error: '请提供旧密码和新密码' });
-  if (newPassword.length < 4) return res.status(400).json({ error: '新密码至少4位' });
+app.put('/api/user/password', authenticateToken, (req, res) => {
+  const oldPassword = String(req.body.oldPassword || '');
+  const newPassword = String(req.body.newPassword || '');
+  if (!oldPassword || !newPassword) return res.status(400).json({ error: 'Old and new password are required' });
+  if (newPassword.length < 4) return res.status(400).json({ error: 'New password must be at least 4 characters' });
+
   db.get('SELECT password_hash FROM users WHERE id = ?', [req.user.id], async (err, row) => {
-    if (err || !row) return res.status(500).json({ error: '用户数据错误' });
-    const match = await bcrypt.compare(oldPassword, row.password_hash);
-    if (!match) return res.status(400).json({ error: '旧密码不正确' });
-    const newHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
-    db.run('UPDATE users SET password_hash = ? WHERE id = ?', [newHash, req.user.id], (err) => {
-      if (err) return res.status(500).json({ error: '密码更新失败' });
+    if (err || !row) return res.status(500).json({ error: 'User data error' });
+    const ok = await bcrypt.compare(oldPassword, row.password_hash);
+    if (!ok) return res.status(400).json({ error: 'Old password is incorrect' });
+    const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    db.run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.user.id], (updateErr) => {
+      if (updateErr) return res.status(500).json({ error: 'Password update failed' });
       res.json({ success: true });
     });
   });
 });
 
-// 更新公钥
 app.put('/api/user/public-key', authenticateToken, (req, res) => {
-  const { public_key } = req.body;
-  if (!public_key) return res.status(400).json({ error: '缺少公钥' });
-  db.run('UPDATE users SET public_key = ? WHERE id = ?', [JSON.stringify(public_key), req.user.id], (err) => {
-    if (err) return res.status(500).json({ error: '更新失败' });
+  if (!req.body.public_key) return res.status(400).json({ error: 'Public key is required' });
+  db.run('UPDATE users SET public_key = ? WHERE id = ?', [JSON.stringify(req.body.public_key), req.user.id], (err) => {
+    if (err) return res.status(500).json({ error: 'Public key update failed' });
     res.json({ success: true });
   });
 });
 
-// 获取用户公钥
 app.get('/api/user/:id/public-key', authenticateToken, (req, res) => {
-  const userId = parseInt(req.params.id);
+  const userId = intParam(req.params.id);
+  if (!userId) return res.status(400).json({ error: 'Invalid user id' });
   db.get('SELECT public_key FROM users WHERE id = ?', [userId], (err, row) => {
-    if (err || !row) return res.status(404).json({ error: '用户不存在' });
+    if (err || !row) return res.status(404).json({ error: 'User not found' });
     try {
-      const pubKey = JSON.parse(row.public_key);
-      res.json({ public_key: pubKey });
-    } catch (e) {
-      res.status(500).json({ error: '公钥格式错误' });
+      res.json({ public_key: JSON.parse(row.public_key) });
+    } catch {
+      res.status(500).json({ error: 'Invalid public key data' });
     }
   });
 });
 
-// 获取用户资料（含 bio，用于查看主页）
 app.get('/api/user/:id/profile', authenticateToken, (req, res) => {
-  const userId = parseInt(req.params.id);
-  db.get('SELECT id, username, nickname, avatar, bio FROM users WHERE id = ?', [userId], (err, row) => {
-    if (err || !row) return res.status(404).json({ error: '用户不存在' });
-    res.json({ user: row });
+  const userId = intParam(req.params.id);
+  if (!userId) return res.status(400).json({ error: 'Invalid user id' });
+  db.get('SELECT id, username, nickname, avatar, bio FROM users WHERE id = ?', [userId], (err, user) => {
+    if (err || !user) return res.status(404).json({ error: 'User not found' });
+    db.all(
+      `SELECT m.*, u.username, u.nickname, u.avatar
+       FROM moments m JOIN users u ON u.id = m.user_id
+       WHERE m.user_id = ?
+       ORDER BY m.created_at DESC LIMIT 30`,
+      [userId],
+      (momentsErr, rows) => {
+        if (momentsErr) return res.status(500).json({ error: 'Query failed' });
+        const moments = (rows || []).filter((m) => !parseBlocked(m.blocked).includes(req.user.id));
+        res.json({ user, moments });
+      }
+    );
   });
 });
 
-// 搜索用户
 app.get('/api/search-users', authenticateToken, (req, res) => {
-  const q = req.query.q || '';
-  db.all('SELECT id, username, nickname, bio FROM users WHERE (username LIKE ? OR nickname LIKE ?) AND id != ? LIMIT 10',
-    [`%${q}%`, `%${q}%`, req.user.id], (err, rows) => {
-      if (err) return res.status(500).json({ error: '查询错误' });
-      res.json({ users: rows });
-    });
+  const q = String(req.query.q || '').trim();
+  if (!q) return res.json({ users: [] });
+  db.all(
+    `SELECT id, username, nickname, avatar, bio
+     FROM users
+     WHERE (username LIKE ? OR nickname LIKE ?) AND id != ?
+     LIMIT 10`,
+    [`%${q}%`, `%${q}%`, req.user.id],
+    (err, users) => {
+      if (err) return res.status(500).json({ error: 'Query failed' });
+      res.json({ users: users || [] });
+    }
+  );
 });
 
-// 发送好友请求
 app.post('/api/friend-request', authenticateToken, (req, res) => {
-  const { to_id } = req.body;
-  if (!to_id) return res.status(400).json({ error: '缺少目标用户ID' });
-  if (to_id === req.user.id) return res.status(400).json({ error: '不能添加自己为好友' });
-  db.get('SELECT id FROM users WHERE id = ?', [to_id], (err, row) => {
-    if (err || !row) return res.status(404).json({ error: '用户不存在' });
-    db.get('SELECT * FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)',
-      [req.user.id, to_id, to_id, req.user.id], (err, existing) => {
-        if (err) return res.status(500).json({ error: '查询错误' });
-        if (existing) return res.status(400).json({ error: '已经是好友或已存在请求' });
-        db.run('INSERT INTO friend_requests (from_id, to_id) VALUES (?, ?)',
-          [req.user.id, to_id], function(err) {
-            if (err) return res.status(500).json({ error: '请求发送失败' });
+  const toId = intParam(req.body.to_id);
+  if (!toId) return res.status(400).json({ error: 'Invalid target user id' });
+  if (toId === req.user.id) return res.status(400).json({ error: 'You cannot add yourself' });
+
+  db.get('SELECT id FROM users WHERE id = ?', [toId], (err, user) => {
+    if (err || !user) return res.status(404).json({ error: 'User not found' });
+    db.get('SELECT id FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, toId], (friendErr, existing) => {
+      if (friendErr) return res.status(500).json({ error: 'Query failed' });
+      if (existing) return res.status(400).json({ error: 'Already friends' });
+      db.get(
+        `SELECT id FROM friend_requests
+         WHERE ((from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)) AND status = 'pending'`,
+        [req.user.id, toId, toId, req.user.id],
+        (pendingErr, pending) => {
+          if (pendingErr) return res.status(500).json({ error: 'Query failed' });
+          if (pending) return res.status(400).json({ error: 'Friend request already exists' });
+          db.run('INSERT INTO friend_requests (from_id, to_id) VALUES (?, ?)', [req.user.id, toId], (insertErr) => {
+            if (insertErr) return res.status(500).json({ error: 'Request failed' });
+            sendToUser(toId, { type: 'friend_request' });
             res.json({ success: true });
           });
-      });
+        }
+      );
+    });
   });
 });
 
-// 处理好友请求
 app.post('/api/friend-request/:fromId', authenticateToken, (req, res) => {
-  const fromId = parseInt(req.params.fromId);
-  const { action } = req.body;
-  if (!['accept', 'reject'].includes(action)) return res.status(400).json({ error: '无效操作' });
-  db.get('SELECT * FROM friend_requests WHERE from_id = ? AND to_id = ? AND status = "pending"',
-    [fromId, req.user.id], (err, request) => {
-      if (err || !request) return res.status(404).json({ error: '请求不存在或已处理' });
-      if (action === 'accept') {
-        db.run('UPDATE friend_requests SET status = "accepted" WHERE id = ?', [request.id]);
-        db.run('INSERT INTO friends (user_id, friend_id) VALUES (?, ?)', [req.user.id, fromId]);
-        db.run('INSERT INTO friends (user_id, friend_id) VALUES (?, ?)', [fromId, req.user.id]);
-        res.json({ success: true });
-      } else {
-        db.run('UPDATE friend_requests SET status = "rejected" WHERE id = ?', [request.id]);
-        res.json({ success: true });
-      }
-    });
-});
+  const fromId = intParam(req.params.fromId);
+  const action = req.body.action;
+  if (!fromId || !['accept', 'reject'].includes(action)) return res.status(400).json({ error: 'Invalid request' });
 
-// 获取好友列表（附带昵称、头像、简介、屏蔽状态）
-app.get('/api/friends', authenticateToken, (req, res) => {
-  db.all(`SELECT u.id, u.username, u.nickname, u.avatar, u.bio,
-    (SELECT COUNT(*) FROM blocks WHERE user_id = ? AND blocked_user_id = u.id) as is_blocked
-    FROM friends f JOIN users u ON f.friend_id = u.id WHERE f.user_id = ?`,
-    [req.user.id, req.user.id], (err, friends) => {
-      if (err) return res.status(500).json({ error: '查询失败' });
-      db.all(`SELECT fr.id, fr.from_id, u.username, u.nickname FROM friend_requests fr
-        JOIN users u ON fr.from_id = u.id WHERE fr.to_id = ? AND fr.status = 'pending'`,
-        [req.user.id], (err, requests) => {
-          if (err) return res.status(500).json({ error: '查询失败' });
-          res.json({ friends, requests });
+  db.get(
+    `SELECT id FROM friend_requests WHERE from_id = ? AND to_id = ? AND status = 'pending'`,
+    [fromId, req.user.id],
+    (err, request) => {
+      if (err || !request) return res.status(404).json({ error: 'Request not found' });
+      const status = action === 'accept' ? 'accepted' : 'rejected';
+      db.run('UPDATE friend_requests SET status = ? WHERE id = ?', [status, request.id], (updateErr) => {
+        if (updateErr) return res.status(500).json({ error: 'Update failed' });
+        if (action === 'reject') return res.json({ success: true });
+        db.serialize(() => {
+          db.run('INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)', [req.user.id, fromId]);
+          db.run('INSERT OR IGNORE INTO friends (user_id, friend_id) VALUES (?, ?)', [fromId, req.user.id], (friendErr) => {
+            if (friendErr) return res.status(500).json({ error: 'Add friend failed' });
+            sendToUser(fromId, { type: 'friends_changed' });
+            res.json({ success: true });
+          });
         });
-    });
+      });
+    }
+  );
 });
 
-// 删除好友
+app.get('/api/friends', authenticateToken, (req, res) => {
+  db.all(
+    `SELECT u.id, u.username, u.nickname, u.avatar, u.bio,
+       (SELECT COUNT(*) FROM blocks WHERE user_id = ? AND blocked_user_id = u.id) AS is_blocked
+     FROM friends f JOIN users u ON f.friend_id = u.id
+     WHERE f.user_id = ?
+     ORDER BY COALESCE(u.nickname, u.username) COLLATE NOCASE ASC`,
+    [req.user.id, req.user.id],
+    (err, friends) => {
+      if (err) return res.status(500).json({ error: 'Query failed' });
+      db.all(
+        `SELECT fr.id, fr.from_id, u.username, u.nickname, u.avatar
+         FROM friend_requests fr JOIN users u ON fr.from_id = u.id
+         WHERE fr.to_id = ? AND fr.status = 'pending'
+         ORDER BY fr.created_at DESC`,
+        [req.user.id],
+        (requestErr, requests) => {
+          if (requestErr) return res.status(500).json({ error: 'Query failed' });
+          res.json({ friends: friends || [], requests: requests || [] });
+        }
+      );
+    }
+  );
+});
+
 app.delete('/api/friends/:friendId', authenticateToken, (req, res) => {
-  const friendId = parseInt(req.params.friendId);
-  // 检查是否是好友
-  db.get('SELECT * FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId], (err, row) => {
-    if (err || !row) return res.status(404).json({ error: '不是好友关系' });
-    // 删除双向好友记录
-    db.run('DELETE FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId]);
-    db.run('DELETE FROM friends WHERE user_id = ? AND friend_id = ?', [friendId, req.user.id]);
-    // 同时删除屏蔽关系（可选）
-    db.run('DELETE FROM blocks WHERE user_id = ? AND blocked_user_id = ?', [req.user.id, friendId]);
-    db.run('DELETE FROM blocks WHERE user_id = ? AND blocked_user_id = ?', [friendId, req.user.id]);
-    res.json({ success: true });
-  });
-});
-
-// 屏蔽好友
-app.post('/api/block/:friendId', authenticateToken, (req, res) => {
-  const friendId = parseInt(req.params.friendId);
-  db.get('SELECT * FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId], (err, row) => {
-    if (err || !row) return res.status(403).json({ error: '不是好友关系，无法屏蔽' });
-    db.run('INSERT OR IGNORE INTO blocks (user_id, blocked_user_id) VALUES (?, ?)', [req.user.id, friendId], (err) => {
-      if (err) return res.status(500).json({ error: '屏蔽失败' });
+  const friendId = intParam(req.params.friendId);
+  if (!friendId) return res.status(400).json({ error: 'Invalid friend id' });
+  db.serialize(() => {
+    db.run('DELETE FROM friends WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)', [req.user.id, friendId, friendId, req.user.id]);
+    db.run('DELETE FROM blocks WHERE (user_id = ? AND blocked_user_id = ?) OR (user_id = ? AND blocked_user_id = ?)', [req.user.id, friendId, friendId, req.user.id]);
+    db.run('DELETE FROM friend_requests WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)', [req.user.id, friendId, friendId, req.user.id], (err) => {
+      if (err) return res.status(500).json({ error: 'Delete failed' });
+      sendToUser(friendId, { type: 'friends_changed' });
       res.json({ success: true });
     });
   });
 });
 
-// 取消屏蔽好友
+app.post('/api/block/:friendId', authenticateToken, (req, res) => {
+  const friendId = intParam(req.params.friendId);
+  if (!friendId) return res.status(400).json({ error: 'Invalid friend id' });
+  db.get('SELECT id FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, friendId], (err, row) => {
+    if (err || !row) return res.status(403).json({ error: 'You can only block friends' });
+    db.run('INSERT OR IGNORE INTO blocks (user_id, blocked_user_id) VALUES (?, ?)', [req.user.id, friendId], (insertErr) => {
+      if (insertErr) return res.status(500).json({ error: 'Block failed' });
+      res.json({ success: true });
+    });
+  });
+});
+
 app.delete('/api/block/:friendId', authenticateToken, (req, res) => {
-  const friendId = parseInt(req.params.friendId);
+  const friendId = intParam(req.params.friendId);
+  if (!friendId) return res.status(400).json({ error: 'Invalid friend id' });
   db.run('DELETE FROM blocks WHERE user_id = ? AND blocked_user_id = ?', [req.user.id, friendId], (err) => {
-    if (err) return res.status(500).json({ error: '取消屏蔽失败' });
+    if (err) return res.status(500).json({ error: 'Unblock failed' });
     res.json({ success: true });
   });
 });
 
-// 获取屏蔽列表
 app.get('/api/blocks', authenticateToken, (req, res) => {
-  db.all('SELECT u.id, u.username, u.nickname FROM blocks b JOIN users u ON b.blocked_user_id = u.id WHERE b.user_id = ?', [req.user.id], (err, rows) => {
-    if (err) return res.status(500).json({ error: '查询失败' });
-    res.json({ blocked: rows });
-  });
+  db.all(
+    'SELECT u.id, u.username, u.nickname, u.avatar FROM blocks b JOIN users u ON b.blocked_user_id = u.id WHERE b.user_id = ?',
+    [req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Query failed' });
+      res.json({ blocked: rows || [] });
+    }
+  );
 });
 
-// 发送消息
 app.post('/api/messages', authenticateToken, (req, res) => {
-  const { to_id, content } = req.body;
-  if (!to_id || !content) return res.status(400).json({ error: '缺少必要参数' });
-  db.get('SELECT * FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, to_id], (err, row) => {
-    if (err || !row) return res.status(403).json({ error: '不是好友关系' });
-    db.run('INSERT INTO messages (from_id, to_id, content) VALUES (?, ?, ?)',
-      [req.user.id, to_id, content], function(err) {
-        if (err) return res.status(500).json({ error: '消息发送失败' });
-        const newMsg = {
-          id: this.lastID,
-          from_id: req.user.id,
-          to_id: to_id,
-          content: content,
-          created_at: new Date().toISOString()
-        };
-        const receiverWs = clients.get(to_id);
-        if (receiverWs && receiverWs.readyState === 1) {
-          receiverWs.send(JSON.stringify({ type: 'new_message', message: newMsg }));
-        }
-        res.json({ message: newMsg });
-      });
+  const toId = intParam(req.body.to_id);
+  const content = String(req.body.content || '');
+  if (!toId || !content) return res.status(400).json({ error: 'Missing message data' });
+
+  db.get('SELECT id FROM friends WHERE user_id = ? AND friend_id = ?', [req.user.id, toId], (err, row) => {
+    if (err || !row) return res.status(403).json({ error: 'Not friends' });
+    db.run('INSERT INTO messages (from_id, to_id, content) VALUES (?, ?, ?)', [req.user.id, toId, content], function onInsert(insertErr) {
+      if (insertErr) return res.status(500).json({ error: 'Send failed' });
+      const message = {
+        id: this.lastID,
+        from_id: req.user.id,
+        to_id: toId,
+        content,
+        read_at: null,
+        created_at: new Date().toISOString()
+      };
+      sendToUser(toId, { type: 'new_message', message });
+      res.json({ message });
+    });
   });
 });
 
-// 获取聊天记录
 app.get('/api/messages/:friendId', authenticateToken, (req, res) => {
-  const friendId = parseInt(req.params.friendId);
-  db.all(`SELECT * FROM messages WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?) ORDER BY created_at ASC`,
-    [req.user.id, friendId, friendId, req.user.id], (err, messages) => {
-      if (err) return res.status(500).json({ error: '查询失败' });
-      res.json({ messages });
-    });
+  const friendId = intParam(req.params.friendId);
+  if (!friendId) return res.status(400).json({ error: 'Invalid friend id' });
+  db.all(
+    `SELECT * FROM messages
+     WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)
+     ORDER BY created_at ASC, id ASC`,
+    [req.user.id, friendId, friendId, req.user.id],
+    (err, messages) => {
+      if (err) return res.status(500).json({ error: 'Query failed' });
+      res.json({ messages: messages || [] });
+    }
+  );
 });
 
-// 获取聊天列表
 app.get('/api/chat-list', authenticateToken, (req, res) => {
-  db.all(`SELECT 
-      CASE WHEN m.from_id = ? THEN m.to_id ELSE m.from_id END as friend_id,
-      u.username as friend_name,
-      u.nickname as friend_nickname,
-      (SELECT content FROM messages WHERE ((from_id = m.from_id AND to_id = m.to_id) OR (from_id = m.to_id AND to_id = m.from_id)) ORDER BY created_at DESC LIMIT 1) as last_preview,
-      (SELECT created_at FROM messages WHERE ((from_id = m.from_id AND to_id = m.to_id) OR (from_id = m.to_id AND to_id = m.from_id)) ORDER BY created_at DESC LIMIT 1) as last_time
-    FROM messages m
-    JOIN users u ON u.id = CASE WHEN m.from_id = ? THEN m.to_id ELSE m.from_id END
-    WHERE m.from_id = ? OR m.to_id = ?
-    GROUP BY friend_id
-    ORDER BY last_time DESC`, [req.user.id, req.user.id, req.user.id, req.user.id], (err, rows) => {
-      if (err) return res.status(500).json({ error: '查询失败' });
-      res.json({ chats: rows });
-    });
+  db.all(
+    `SELECT
+       u.id AS friend_id,
+       u.username AS friend_name,
+       u.nickname AS friend_nickname,
+       u.avatar AS friend_avatar,
+       lm.content AS last_preview,
+       lm.created_at AS last_time,
+       (SELECT COUNT(*) FROM messages unread
+        WHERE unread.from_id = u.id AND unread.to_id = ? AND unread.read_at IS NULL) AS unread_count
+     FROM friends f
+     JOIN users u ON u.id = f.friend_id
+     LEFT JOIN messages lm ON lm.id = (
+       SELECT id FROM messages
+       WHERE (from_id = ? AND to_id = u.id) OR (from_id = u.id AND to_id = ?)
+       ORDER BY created_at DESC, id DESC LIMIT 1
+     )
+     WHERE f.user_id = ?
+     ORDER BY COALESCE(lm.created_at, f.created_at) DESC`,
+    [req.user.id, req.user.id, req.user.id, req.user.id],
+    (err, rows) => {
+      if (err) return res.status(500).json({ error: 'Query failed' });
+      res.json({ chats: rows || [] });
+    }
+  );
 });
 
-// 标记已读（简单实现）
 app.post('/api/mark-read/:friendId', authenticateToken, (req, res) => {
-  res.json({ success: true });
+  const friendId = intParam(req.params.friendId);
+  if (!friendId) return res.status(400).json({ error: 'Invalid friend id' });
+  const readAt = new Date().toISOString();
+  db.run(
+    'UPDATE messages SET read_at = ? WHERE from_id = ? AND to_id = ? AND read_at IS NULL',
+    [readAt, friendId, req.user.id],
+    function onUpdate(err) {
+      if (err) return res.status(500).json({ error: 'Mark read failed' });
+      sendToUser(friendId, { type: 'read_receipt', by: req.user.id, read_at: readAt });
+      res.json({ success: true, updated: this.changes, read_at: readAt });
+    }
+  );
 });
 
-// ==================== 广场（微博）相关 ====================
-
-// 发布动态（支持屏蔽列表）
 app.post('/api/moments', authenticateToken, (req, res) => {
-  const { content, blocked = [] } = req.body;
-  if (!content) return res.status(400).json({ error: '内容不能为空' });
-  const blockedJson = JSON.stringify(blocked);
-  db.run('INSERT INTO moments (user_id, content, blocked) VALUES (?, ?, ?)',
-    [req.user.id, content, blockedJson],
-    function(err) {
-      if (err) return res.status(500).json({ error: '发布失败' });
-      // 通知所有连接的客户端（除了自己）
-      wss.clients.forEach(client => {
-        if (client.readyState === 1 && client.userId !== req.user.id) {
-          client.send(JSON.stringify({ type: 'new_moment' }));
-        }
-      });
-      res.json({ success: true, moment_id: this.lastID });
-    });
-});
+  const content = String(req.body.content || '').trim();
+  const blocked = Array.isArray(req.body.blocked) ? req.body.blocked.map(Number).filter(Boolean) : [];
+  if (!content) return res.status(400).json({ error: 'Content cannot be empty' });
+  if (content.length > 1000) return res.status(400).json({ error: 'Content is too long' });
 
-// 获取广场动态（支持过滤：?user_id=xxx 获取特定用户动态，同时过滤掉被屏蔽的）
-app.get('/api/moments', authenticateToken, (req, res) => {
-  const userId = req.query.user_id ? parseInt(req.query.user_id) : null;
-  // 获取当前用户的屏蔽列表（用于全局广场过滤，但发布者自己的屏蔽由发布者决定，我们只需要过滤掉当前用户被屏蔽的好友的动态）
-  db.all('SELECT blocked_user_id FROM blocks WHERE user_id = ?', [req.user.id], (err, blockedRows) => {
-    if (err) return res.status(500).json({ error: '查询屏蔽列表失败' });
-    const blockedByMe = (blockedRows || []).map(r => r.blocked_user_id);
-    // 构建过滤条件：排除当前用户屏蔽的好友的动态
-    let filter = '';
-    const params = [req.user.id];
-    if (blockedByMe.length > 0) {
-      filter += ` AND m.user_id NOT IN (${blockedByMe.map(() => '?').join(',')})`;
-      params.push(...blockedByMe);
+  db.run('INSERT INTO moments (user_id, content, blocked) VALUES (?, ?, ?)', [req.user.id, content, JSON.stringify(blocked)], function onInsert(err) {
+    if (err) return res.status(500).json({ error: 'Post failed' });
+    for (const [userId] of clients) {
+      if (userId !== req.user.id && !blocked.includes(userId)) sendToUser(userId, { type: 'new_moment' });
     }
-    // 如果指定了用户ID，只查该用户
-    let userFilter = '';
-    if (userId) {
-      userFilter = ` AND m.user_id = ?`;
-      params.push(userId);
-    }
-
-    // 查询动态
-    db.all(`
-      SELECT m.*, u.username, u.nickname, u.avatar,
-        (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) as like_count,
-        (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) as liked_by_me
-      FROM moments m
-      JOIN users u ON m.user_id = u.id
-      WHERE 1=1 ${filter} ${userFilter}
-      ORDER BY m.created_at DESC LIMIT 50
-    `, params, (err, moments) => {
-      if (err) return res.status(500).json({ error: '查询动态失败' });
-      // 额外过滤：发布者自己的屏蔽列表，如果当前用户在发布者的屏蔽列表中，则该动态不显示
-      // 由于我们已经限制了发布者不是当前用户屏蔽的，但发布者屏蔽了当前用户的情况也需要过滤
-      // 这里需要对每条动态检查发布者的 blocked 字段
-      const promises = moments.map(moment => {
-        return new Promise((resolve) => {
-          // 解析发布者的屏蔽列表
-          let blockedByPublisher = [];
-          try {
-            blockedByPublisher = JSON.parse(moment.blocked || '[]');
-          } catch(e) { blockedByPublisher = []; }
-          // 如果当前用户在发布者的屏蔽列表中，则跳过该动态
-          if (blockedByPublisher.includes(req.user.id)) {
-            resolve(null); // 过滤掉
-          } else {
-            // 获取评论
-            db.all('SELECT mc.*, u.username, u.nickname FROM moment_comments mc JOIN users u ON mc.user_id = u.id WHERE mc.moment_id = ? ORDER BY mc.created_at ASC',
-              [moment.id], (err, comments) => {
-                moment.comments = comments || [];
-                moment.likes = moment.liked_by_me ? [req.user.id] : [];
-                resolve(moment);
-              });
-          }
-        });
-      });
-      Promise.all(promises).then(results => {
-        // 过滤掉 null
-        const filtered = results.filter(m => m !== null);
-        res.json({ moments: filtered });
-      });
-    });
+    res.json({ success: true, moment_id: this.lastID });
   });
 });
 
-// 点赞/取消点赞
+app.get('/api/moments', authenticateToken, (req, res) => {
+  const profileUserId = req.query.user_id ? intParam(req.query.user_id) : null;
+  db.all(
+    `SELECT blocked_user_id FROM blocks WHERE user_id = ?
+     UNION
+     SELECT user_id AS blocked_user_id FROM blocks WHERE blocked_user_id = ?`,
+    [req.user.id, req.user.id],
+    (blockErr, blockRows) => {
+      if (blockErr) return res.status(500).json({ error: 'Query failed' });
+      const blockedUsers = new Set((blockRows || []).map((r) => Number(r.blocked_user_id)));
+      const params = [req.user.id];
+      const userFilter = profileUserId ? 'AND m.user_id = ?' : '';
+      if (profileUserId) params.push(profileUserId);
+
+      db.all(
+        `SELECT m.*, u.username, u.nickname, u.avatar,
+           (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) AS like_count,
+           (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) AS liked_by_me
+         FROM moments m
+         JOIN users u ON m.user_id = u.id
+         WHERE 1 = 1 ${userFilter}
+         ORDER BY m.created_at DESC LIMIT 100`,
+        params,
+        (err, moments) => {
+          if (err) return res.status(500).json({ error: 'Query failed' });
+          const visible = (moments || []).filter((moment) => {
+            if (blockedUsers.has(Number(moment.user_id))) return false;
+            return !parseBlocked(moment.blocked).includes(req.user.id);
+          }).slice(0, 50);
+
+          Promise.all(visible.map((moment) => new Promise((resolve) => {
+            db.all(
+              'SELECT mc.*, u.username, u.nickname FROM moment_comments mc JOIN users u ON mc.user_id = u.id WHERE mc.moment_id = ? ORDER BY mc.created_at ASC',
+              [moment.id],
+              (commentErr, comments) => {
+                moment.comments = commentErr ? [] : (comments || []);
+                moment.likes = moment.liked_by_me ? [req.user.id] : [];
+                moment.blocked = parseBlocked(moment.blocked);
+                resolve(moment);
+              }
+            );
+          }))).then((results) => res.json({ moments: results }));
+        }
+      );
+    }
+  );
+});
+
 app.post('/api/moments/:id/like', authenticateToken, (req, res) => {
-  const momentId = parseInt(req.params.id);
-  db.get('SELECT * FROM moment_likes WHERE moment_id = ? AND user_id = ?', [momentId, req.user.id], (err, row) => {
-    if (err) return res.status(500).json({ error: '查询错误' });
+  const momentId = intParam(req.params.id);
+  if (!momentId) return res.status(400).json({ error: 'Invalid moment id' });
+  db.get('SELECT id FROM moment_likes WHERE moment_id = ? AND user_id = ?', [momentId, req.user.id], (err, row) => {
+    if (err) return res.status(500).json({ error: 'Query failed' });
+    const done = (liked) => db.get('SELECT COUNT(*) AS count FROM moment_likes WHERE moment_id = ?', [momentId], (countErr, countRow) => {
+      if (countErr) return res.status(500).json({ error: 'Query failed' });
+      res.json({ liked, like_count: countRow.count });
+    });
     if (row) {
-      db.run('DELETE FROM moment_likes WHERE moment_id = ? AND user_id = ?', [momentId, req.user.id]);
-      db.get('SELECT COUNT(*) as count FROM moment_likes WHERE moment_id = ?', [momentId], (err, countRow) => {
-        res.json({ liked: false, like_count: countRow.count });
+      db.run('DELETE FROM moment_likes WHERE moment_id = ? AND user_id = ?', [momentId, req.user.id], (deleteErr) => {
+        if (deleteErr) return res.status(500).json({ error: 'Unlike failed' });
+        done(false);
       });
     } else {
-      db.run('INSERT INTO moment_likes (moment_id, user_id) VALUES (?, ?)', [momentId, req.user.id]);
-      db.get('SELECT COUNT(*) as count FROM moment_likes WHERE moment_id = ?', [momentId], (err, countRow) => {
-        res.json({ liked: true, like_count: countRow.count });
+      db.run('INSERT OR IGNORE INTO moment_likes (moment_id, user_id) VALUES (?, ?)', [momentId, req.user.id], (insertErr) => {
+        if (insertErr) return res.status(500).json({ error: 'Like failed' });
+        done(true);
       });
     }
   });
 });
 
-// 评论
 app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
-  const momentId = parseInt(req.params.id);
-  const { content } = req.body;
-  if (!content) return res.status(400).json({ error: '评论不能为空' });
-  db.run('INSERT INTO moment_comments (moment_id, user_id, content) VALUES (?, ?, ?)',
-    [momentId, req.user.id, content], (err) => {
-      if (err) return res.status(500).json({ error: '评论失败' });
-      res.json({ success: true });
-    });
+  const momentId = intParam(req.params.id);
+  const content = String(req.body.content || '').trim();
+  if (!momentId || !content) return res.status(400).json({ error: 'Invalid comment' });
+  if (content.length > 300) return res.status(400).json({ error: 'Comment is too long' });
+  db.run('INSERT INTO moment_comments (moment_id, user_id, content) VALUES (?, ?, ?)', [momentId, req.user.id, content], (err) => {
+    if (err) return res.status(500).json({ error: 'Comment failed' });
+    res.json({ success: true });
+  });
 });
 
-// 启动服务器
 server.listen(PORT, () => {
-  console.log(`6nr 服务运行在端口 ${PORT}`);
+  console.log(`6nr server listening on port ${PORT}`);
 });
