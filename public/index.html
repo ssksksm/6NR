@@ -325,17 +325,17 @@
   <section id="auth" class="auth">
     <div class="auth-form">
       <div class="auth-brand">6</div>
-      <h1 id="auth-title">欢迎回来</h1>
+      <h1 id="auth-title">Welcome back</h1>
       <p id="auth-subtitle">6nr</p>
-      <input id="auth-username" placeholder="用户名" autocomplete="username">
+      <input id="auth-username" placeholder="Username" autocomplete="username">
       <div style="height:10px"></div>
-      <input id="auth-password" type="password" placeholder="密码" autocomplete="current-password">
+      <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
       <div style="height:10px"></div>
-      <input id="auth-confirm" class="hidden" type="password" placeholder="确认密码" autocomplete="new-password">
+      <input id="auth-confirm" class="hidden" type="password" placeholder="ConfirmPassword" autocomplete="new-password">
       <div style="height:14px"></div>
-      <button id="auth-submit" class="btn primary" type="button">登录</button>
+      <button id="auth-submit" class="btn primary" type="button">Sign in</button>
       <div style="height:16px"></div>
-      <button id="auth-switch" class="btn ghost" type="button" onclick="toggleAuth()">创建账号</button>
+      <button id="auth-switch" class="btn ghost" type="button" onclick="toggleAuth()">Create account</button>
     </div>
     <div class="auth-visual"></div>
   </section>
@@ -343,13 +343,13 @@
   <section id="app" class="app hidden">
     <nav class="rail">
       <div class="rail-logo">6</div>
-      <button class="active" data-page="chat" title="聊天" onclick="showPage('chat')"></button>
-      <button data-page="square" title="广场" onclick="showPage('square')"></button>
-      <button data-page="friends" title="好友" onclick="showPage('friends')"></button>
-      <button data-page="settings" title="设置" onclick="showPage('settings')"></button>
+      <button class="active" data-page="chat" title="Chats" onclick="showPage('chat')"></button>
+      <button data-page="square" title="Square" onclick="showPage('square')"></button>
+      <button data-page="friends" title="Friends" onclick="showPage('friends')"></button>
+      <button data-page="settings" title="Settings" onclick="showPage('settings')"></button>
       <div class="rail-bottom">
-        <button title="切换主题" onclick="toggleTheme()"></button>
-        <button title="退出" onclick="logout()"></button>
+        <button title="Theme" onclick="toggleTheme()"></button>
+        <button title="Log out" onclick="logout()"></button>
       </div>
     </nav>
 
@@ -357,17 +357,17 @@
       <div class="side-head">
         <div class="me-line">
           <div id="me-avatar" class="avatar">6</div>
-          <div><div id="me-name" class="title">6nr</div><div id="me-status" class="sub">在线</div></div>
+          <div><div id="me-name" class="title">6nr</div><div id="me-status" class="sub">Online</div></div>
         </div>
         <div class="side-title">
-          <h2>消息</h2>
-          <button class="btn good" type="button" onclick="openGroupModal()"><span data-i="plus"></span>新群聊</button>
+          <h2>Messages</h2>
+          <button class="btn good" type="button" onclick="openGroupModal()"><span data-i="plus"></span>New group</button>
         </div>
         <div class="seg">
-          <button id="tab-direct" class="active" onclick="setChatTab('direct')">私聊</button>
-          <button id="tab-group" onclick="setChatTab('group')">群聊</button>
+          <button id="tab-direct" class="active" onclick="setChatTab('direct')">Direct</button>
+          <button id="tab-group" onclick="setChatTab('group')">Groups</button>
         </div>
-        <div class="search-box"><span data-i="search"></span><input id="conversation-search" placeholder="搜索会话" oninput="renderConversations()"></div>
+        <div class="search-box"><span data-i="search"></span><input id="conversation-search" placeholder="Search conversations" oninput="renderConversations()"></div>
       </div>
       <div id="conversation-list" class="conversation-list"></div>
     </aside>
@@ -376,37 +376,37 @@
       <header class="chat-head">
         <div class="chat-id">
           <div id="chat-avatar" class="avatar">6</div>
-          <div><h3 id="chat-title">选择会话</h3><div id="chat-sub" class="sub"> </div></div>
+          <div><h3 id="chat-title">Select conversation</h3><div id="chat-sub" class="sub"> </div></div>
         </div>
-        <div class="search-box"><span data-i="search"></span><input id="message-search" placeholder="搜索当前聊天" oninput="renderLoadedMessages()"></div>
+        <div class="search-box"><span data-i="search"></span><input id="message-search" placeholder="SearchCurrentChats" oninput="renderLoadedMessages()"></div>
         <div class="chat-tools">
-          <button id="pin-btn" class="btn icon-only" title="置顶会话" onclick="togglePinActive()"></button>
-          <button id="mute-btn" class="btn icon-only" title="静音会话" onclick="toggleMuteActive()"></button>
-          <button class="btn icon-only" title="刷新" onclick="loadEverything()"></button>
+          <button id="pin-btn" class="btn icon-only" title="Pin conversation" onclick="togglePinActive()"></button>
+          <button id="mute-btn" class="btn icon-only" title="Mute conversation" onclick="toggleMuteActive()"></button>
+          <button class="btn icon-only" title="Refresh" onclick="loadEverything()"></button>
         </div>
       </header>
-      <div id="messages" class="messages"><div class="empty-chat">选择一个会话</div></div>
+      <div id="messages" class="messages"><div class="empty-chat">Select a conversation</div></div>
       <div id="typing-line" class="typing-line"></div>
       <div class="composer">
-        <label class="btn icon-only" for="file-input" title="发送附件"></label>
+        <label class="btn icon-only" for="file-input" title="Attach file"></label>
         <input id="file-input" type="file" onchange="sendAttachment(event)">
-        <input id="message-input" placeholder="输入消息" oninput="handleDraftInput()" onkeydown="if(event.key==='Enter')sendMessage()">
-        <button class="btn primary" onclick="sendMessage()"><span data-i="send"></span>发送</button>
+        <input id="message-input" placeholder="TypeMessages" oninput="handleDraftInput()" onkeydown="if(event.key==='Enter')sendMessage()">
+        <button class="btn primary" onclick="sendMessage()"><span data-i="send"></span>Send</button>
       </div>
     </main>
 
     <aside id="inspector" class="inspector">
-      <div class="inspector-head"><h3>详情</h3><button class="btn icon-only" onclick="loadEverything()" title="同步"></button></div>
+      <div class="inspector-head"><h3>Details</h3><button class="btn icon-only" onclick="loadEverything()" title="Sync"></button></div>
       <div id="inspector-body" class="inspector-body"></div>
     </aside>
 
     <main id="square-page" class="page">
       <div class="page-grid">
         <div class="card">
-          <h2>广场</h2>
-          <textarea id="moment-input" placeholder="写一条动态"></textarea>
-          <select id="moment-blocked" multiple title="不可见好友"></select>
-          <button class="btn primary" onclick="postMoment()">发布</button>
+          <h2>Square</h2>
+          <textarea id="moment-input" placeholder="Write a post"></textarea>
+          <select id="moment-blocked" multiple title="HiddenFriends"></select>
+          <button class="btn primary" onclick="postMoment()">Post</button>
         </div>
         <div id="square-list"></div>
       </div>
@@ -416,13 +416,13 @@
       <div class="page-grid">
         <div>
           <div class="card">
-            <h2>好友</h2>
-            <div class="actions"><input id="search-input" placeholder="搜索用户"><button class="btn primary" onclick="searchUsers()">搜索</button></div>
+            <h2>Friends</h2>
+            <div class="actions"><input id="search-input" placeholder="Search users"><button class="btn primary" onclick="searchUsers()">Search</button></div>
             <div id="search-results"></div>
           </div>
-          <div class="card"><h3>好友请求</h3><div id="request-list"></div></div>
+          <div class="card"><h3>FriendsRequest</h3><div id="request-list"></div></div>
         </div>
-        <div class="card"><h3>好友列表</h3><div id="friend-list"></div></div>
+        <div class="card"><h3>FriendsList</h3><div id="friend-list"></div></div>
       </div>
     </main>
 
@@ -430,29 +430,29 @@
       <div class="page-grid">
         <div>
           <div class="card">
-            <h2>资料</h2>
-            <input id="nickname-input" placeholder="昵称">
-            <textarea id="bio-input" maxlength="160" placeholder="简介"></textarea>
+            <h2>Profile</h2>
+            <input id="nickname-input" placeholder="Nickname">
+            <textarea id="bio-input" maxlength="160" placeholder="Bio"></textarea>
             <input id="avatar-file" type="file" accept="image/*" onchange="previewAvatar(event)">
-            <div class="actions"><div id="avatar-preview" class="avatar">6</div><button class="btn primary" onclick="saveProfile()">保存</button><button class="btn" onclick="clearAvatar()">清除头像</button></div>
+            <div class="actions"><div id="avatar-preview" class="avatar">6</div><button class="btn primary" onclick="saveProfile()">Save</button><button class="btn" onclick="clearAvatar()">Clear avatar</button></div>
           </div>
           <div class="card">
-            <h3>密码</h3>
-            <input id="old-password" type="password" placeholder="旧密码">
-            <input id="new-password" type="password" placeholder="新密码">
-            <button class="btn primary" onclick="changePassword()">修改密码</button>
+            <h3>Password</h3>
+            <input id="old-password" type="password" placeholder="OldPassword">
+            <input id="new-password" type="password" placeholder="NewPassword">
+            <button class="btn primary" onclick="changePassword()">ChangePassword</button>
           </div>
         </div>
         <div>
           <div class="card">
-            <h3>通知</h3>
-            <button class="btn good" onclick="enableNotifications()">开启浏览器通知</button>
-            <button class="btn" onclick="toggleTheme()">切换主题</button>
+            <h3>Notifications</h3>
+            <button class="btn good" onclick="enableNotifications()">Enable browserNotifications</button>
+            <button class="btn" onclick="toggleTheme()">Theme</button>
           </div>
           <div class="card">
-            <h3>设备密钥</h3>
-            <button class="btn danger" onclick="rotateDeviceKey()">重新生成本设备密钥</button>
-            <div class="sub">新设备只能解开新消息。</div>
+            <h3>Device key</h3>
+            <button class="btn danger" onclick="rotateDeviceKey()">ReNewgenerateThisDevice key</button>
+            <div class="sub">Newdevice can only decryptNewMessages.</div>
           </div>
         </div>
       </div>
@@ -461,10 +461,10 @@
 
   <div id="group-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="actions" style="justify-content:space-between"><h2>创建群聊</h2><button class="btn" onclick="closeGroupModal()">关闭</button></div>
-      <input id="group-name" placeholder="群名称">
+      <div class="actions" style="justify-content:space-between"><h2>CreateGroups</h2><button class="btn" onclick="closeGroupModal()">Close</button></div>
+      <input id="group-name" placeholder="Group name">
       <div id="group-friends" class="check-list"></div>
-      <button class="btn primary" onclick="createGroup()">创建</button>
+      <button class="btn primary" onclick="createGroup()">Create</button>
     </div>
   </div>
 
@@ -517,12 +517,12 @@
       document.querySelector('[data-page="square"]').innerHTML = icons.circle;
       document.querySelector('[data-page="friends"]').innerHTML = icons.users;
       document.querySelector('[data-page="settings"]').innerHTML = icons.settings;
-      document.querySelector('[title="切换主题"]').innerHTML = icons.moon;
-      document.querySelector('[title="退出"]').innerHTML = icons.logout;
+      document.querySelector('[title="Theme"]').innerHTML = icons.moon;
+      document.querySelector('[title="Log out"]').innerHTML = icons.logout;
       $('pin-btn').innerHTML = icons.pin;
       $('mute-btn').innerHTML = icons.bell;
-      document.querySelector('[title="刷新"]').innerHTML = icons.refresh;
-      document.querySelector('[title="同步"]').innerHTML = icons.refresh;
+      document.querySelector('[title="Refresh"]').innerHTML = icons.refresh;
+      document.querySelector('[title="Sync"]').innerHTML = icons.refresh;
       document.querySelector('label[for="file-input"]').innerHTML = icons.attach;
     }
     function keyOf(type, id) { return `${type}:${id}`; }
@@ -532,7 +532,7 @@
     function color(v) { const a = ['#315efb','#00a884','#7c3aed','#b7791f','#e14d6d','#0891b2']; let n = 0; for (const c of String(v || '6nr')) n = (n + c.charCodeAt(0)) % a.length; return a[n]; }
     function initial(u) { return String(u?.nickname || u?.username || u?.name || '?').slice(0,1).toUpperCase(); }
     function avatarStyle(u) { return u?.avatar ? `background-image:url(${html(u.avatar)});background-color:transparent` : `background:${color(u?.nickname || u?.username || u?.name)}`; }
-    function time(v) { if (!v) return ''; const d = new Date(v); const diff = Date.now() - d.getTime(); if (diff < 60000) return '刚刚'; if (diff < 3600000) return `${Math.floor(diff/60000)} 分钟前`; if (diff < 86400000) return `${Math.floor(diff/3600000)} 小时前`; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
+    function time(v) { if (!v) return ''; const d = new Date(v); const diff = Date.now() - d.getTime(); if (diff < 60000) return 'Just now'; if (diff < 3600000) return `${Math.floor(diff/60000)}  min ago`; if (diff < 86400000) return `${Math.floor(diff/3600000)}  hr ago`; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
     function highlight(text, q) { const safe = html(text); if (!q) return safe; return safe.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`); }
     function safeJson(t){ try{return JSON.parse(t)}catch{return{type:'text',text:t}} }
 
@@ -542,8 +542,8 @@
       const r = await fetch(API + path, {...opt, headers});
       const t = await r.text();
       let data = {};
-      try { data = t ? JSON.parse(t) : {}; } catch { data = { error: t || '请求失败' }; }
-      if (!r.ok) throw new Error(data.error || '请求失败');
+      try { data = t ? JSON.parse(t) : {}; } catch { data = { error: t || 'Request failed' }; }
+      if (!r.ok) throw new Error(data.error || 'Request failed');
       return data;
     }
     const Crypto = {
@@ -556,18 +556,18 @@
       async exportAes(key){ const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key)); return btoa(String.fromCharCode(...raw)); },
       async importAes(raw){ const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0)); return crypto.subtle.importKey('raw', bytes, {name:'AES-GCM'}, false, ['encrypt','decrypt']); },
       async encryptText(text,key){ const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, enc.encode(text))); const all = new Uint8Array(iv.length + ct.length); all.set(iv); all.set(ct, iv.length); return btoa(String.fromCharCode(...all)); },
-      async decryptText(cipher,key){ try { const all = Uint8Array.from(atob(cipher), c => c.charCodeAt(0)); const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key, all.slice(12)); return dec.decode(pt); } catch { return JSON.stringify({type:'text', text:'[解密失败]'}); } }
+      async decryptText(cipher,key){ try { const all = Uint8Array.from(atob(cipher), c => c.charCodeAt(0)); const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key, all.slice(12)); return dec.decode(pt); } catch { return JSON.stringify({type:'text', text:'[Decrypt failed]'}); } }
     };
     async function getKeyPair() { const k = `ecdh_private_jwk_${currentUser.id}`; const stored = localStorage.getItem(k); if (stored) { try { const privateKey = await Crypto.importPrivateKey(JSON.parse(stored)); return {privateKey, publicKey: await Crypto.exportPublicKey(privateKey)}; } catch {} } const pair = await Crypto.generateKeyPair(); localStorage.setItem(k, JSON.stringify(await crypto.subtle.exportKey('jwk', pair.privateKey))); return {privateKey: pair.privateKey, publicKey: await Crypto.exportPublicKey(pair.publicKey)}; }
     async function friendKey(id) { const d = await api(`/user/${id}/public-key`); return Crypto.derive(keyPair.privateKey, d.public_key); }
     async function wrapGroupKey(raw, user) { const k = await Crypto.derive(keyPair.privateKey, user.public_key); return Crypto.encryptText(raw, k); }
     async function unwrapGroupKey(group) { if (groupKeys[group.id]) return groupKeys[group.id]; const k = await Crypto.derive(keyPair.privateKey, group.owner_public_key); const raw = await Crypto.decryptText(group.wrapped_key, k); const key = await Crypto.importAes(raw); groupKeys[group.id] = key; return key; }
 
-    function toggleAuth(){ isLogin = !isLogin; $('auth-title').textContent = isLogin ? '欢迎回来' : '创建账号'; $('auth-confirm').classList.toggle('hidden', isLogin); $('auth-submit').textContent = isLogin ? '登录' : '注册'; $('auth-switch').textContent = isLogin ? '创建账号' : '返回登录'; }
+    function toggleAuth(){ isLogin = !isLogin; $('auth-title').textContent = isLogin ? 'Welcome back' : 'Create account'; $('auth-confirm').classList.toggle('hidden', isLogin); $('auth-submit').textContent = isLogin ? 'Sign in' : 'Register'; $('auth-switch').textContent = isLogin ? 'Create account' : 'BackSign in'; }
     async function handleAuth(){
       const username = $('auth-username').value.trim(), password = $('auth-password').value, confirm = $('auth-confirm').value;
-      if (!username || !password) return toast('请填写账号和密码');
-      if (!isLogin && password !== confirm) return toast('两次密码不一致');
+      if (!username || !password) return toast('Enter username andPassword');
+      if (!isLogin && password !== confirm) return toast('BothPassworddo not match');
       try {
         let data;
         if (isLogin) {
@@ -595,8 +595,8 @@
         if(m.type==='presence_snapshot') { onlineIds = new Set((m.online||[]).map(Number)); renderConversations(); renderInspector(); }
         if(m.type==='presence') { m.online ? onlineIds.add(Number(m.user_id)) : onlineIds.delete(Number(m.user_id)); renderConversations(); renderInspector(); }
         if(m.type==='typing') showTyping(m);
-        if(m.type==='new_message'){ notify('新私聊消息', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
-        if(m.type==='new_group_message'){ notify('新群聊消息', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
+        if(m.type==='new_message'){ notify('NewDirectMessages', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
+        if(m.type==='new_group_message'){ notify('New groupMessages', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
         if(['groups_changed','friends_changed','friend_request','new_moment','read_receipt','group_read_receipt'].includes(m.type)) loadEverything();
       };
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
@@ -604,9 +604,9 @@
     function sendWs(data){ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data)); }
     function notify(title, convKey){ if(mutes.has(convKey)) return; if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:title}); }
     function sendTyping(isTyping=true){ if(!active) return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); }
-    function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? '对方正在输入' : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || '成员'} 正在输入` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
-    async function enableNotifications(){ if(!('Notification' in window)) return toast('浏览器不支持通知'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); toast(p === 'granted' ? '通知已开启' : '通知未授权'); }
-    async function rotateDeviceKey(){ if(!confirm('重新生成本设备密钥后，旧消息可能无法解密。继续吗？')) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('本设备密钥已更新'); }
+    function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? 'Typing...' : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || 'Member'} is typing` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
+    async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not supportNotifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); toast(p === 'granted' ? 'NotificationsOn' : 'NotificationsNot allowed'); }
+    async function rotateDeviceKey(){ if(!confirm('ReNewgenerateThisDevice key after ,OldMessagesmayNonebe unreadable. Continue?')) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('ThisDevice keyDoneupdateNew'); }
 
     async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); renderInspector(); }
     async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
@@ -614,53 +614,53 @@
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
     function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); }
-    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?'加密消息':'还没有消息'})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:`${g.member_count} 人` })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
-    function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">●</span> ':''}${html(r.name)}</div><div class="sub">${muted?'静音 · ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : '<div class="sub" style="padding:14px">暂无会话</div>'; updateHeaderButtons(); }
+    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?'EncryptedMessages':'NoMessages'})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:`${g.member_count} members` })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
+    function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?'Muted - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : '<div class="sub" style="padding:14px">No conversations</div>'; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
     function toggleMute(k){ mutes.has(k)?mutes.delete(k):mutes.add(k); saveSet('mutes', mutes); renderConversations(); renderInspector(); }
     function togglePinActive(){ if(active) togglePin(keyOf(active.type, active.id)); }
     function toggleMuteActive(){ if(active) toggleMute(keyOf(active.type, active.id)); }
     function updateHeaderButtons(){ if(!active) return; const k=keyOf(active.type, active.id); $('pin-btn').classList.toggle('pin', pins.has(k)); $('mute-btn').classList.toggle('pin', mutes.has(k)); }
-    async function openConversation(type,id){ const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || '私聊'} : {type,id, name:data?.name || '群聊'}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? '在线' : '离线') : `${data?.member_count || 0} 人`; $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
-    function renderInspector(){ const body=$('inspector-body'); if(!active){ body.innerHTML='<div class="info-card sub">未选择会话</div>'; return; } const k=keyOf(active.type,active.id); const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null; const group=active.type==='group'?groups.find(g=>g.id===active.id):null; body.innerHTML = `<div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?'在线':'离线'):(group?.member_count||0)+' 人'}</div></div></div></div><div class="info-card"><div class="kv"><span>置顶</span><strong>${pins.has(k)?'已开启':'关闭'}</strong></div><div class="kv"><span>静音</span><strong>${mutes.has(k)?'已开启':'关闭'}</strong></div><div class="kv"><span>草稿</span><strong>${localStorage.getItem('draft:'+k)?'已保存':'无'}</strong></div></div><div class="info-card"><button class="btn" onclick="togglePinActive()">切换置顶</button><button class="btn" onclick="toggleMuteActive()">切换静音</button></div>`; }
+    async function openConversation(type,id){ const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || 'Direct'} : {type,id, name:data?.name || 'Groups'}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? 'Online' : 'Offline') : `${data?.member_count || 0} members`; $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
+    function renderInspector(){ const body=$('inspector-body'); if(!active){ body.innerHTML='<div class="info-card sub">NoSelect conversation</div>'; return; } const k=keyOf(active.type,active.id); const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null; const group=active.type==='group'?groups.find(g=>g.id===active.id):null; body.innerHTML = `<div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?'Online':'Offline'):(group?.member_count||0)+' members'}</div></div></div></div><div class="info-card"><div class="kv"><span>Pinned</span><strong>${pins.has(k)?'On':'Close'}</strong></div><div class="kv"><span>Muted</span><strong>${mutes.has(k)?'On':'Close'}</strong></div><div class="kv"><span>Draft</span><strong>${localStorage.getItem('draft:'+k)?'DoneSave':'None'}</strong></div></div><div class="info-card"><button class="btn" onclick="togglePinActive()">TogglePinned</button><button class="btn" onclick="toggleMuteActive()">ToggleMuted</button></div>`; }
 
     function payloadText(text){ return JSON.stringify({type:'text', text}); }
     function handleDraftInput(){ if(!active) return; const k=keyOf(active.type, active.id); localStorage.setItem(`draft:${k}`, $('message-input').value); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
     async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; input.value=''; localStorage.removeItem(`draft:${keyOf(active.type, active.id)}`); sendTyping(false); await sendPayload(payloadText(text)); }
-    async function sendAttachment(e){ const file=e.target.files[0]; e.target.value=''; if(!active || !file) return; if(file.size > 2.5*1024*1024) return toast('附件不能超过 2.5MB'); const data = await new Promise(r => { const fr = new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file); }); await sendPayload(JSON.stringify({type:file.type.startsWith('image/')?'image':'file', name:file.name, mime:file.type, size:file.size, data})); }
+    async function sendAttachment(e){ const file=e.target.files[0]; e.target.value=''; if(!active || !file) return; if(file.size > 2.5*1024*1024) return toast('Attachment must be under 2.5MB'); const data = await new Promise(r => { const fr = new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file); }); await sendPayload(JSON.stringify({type:file.type.startsWith('image/')?'image':'file', name:file.name, mime:file.type, size:file.size, data})); }
     async function sendPayload(payload){ try { if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
     async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
-    function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML='<div class="empty-chat">没有消息</div>'; scrollBottom(); }
-    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:'[空消息]'}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||'图片')}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||'文件')}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||'成员')}</div>`:''}<div class="msg-actions"><button class="mini" title="复制" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?'已读':'已送达'}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
-    function copyMessage(encoded){ navigator.clipboard?.writeText(decodeURIComponent(escape(atob(encoded)))); toast('已复制'); }
+    function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML='<div class="empty-chat">NoMessages</div>'; scrollBottom(); }
+    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:'[EmptyMessages]'}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||'Image')}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||'File')}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||'Member')}</div>`:''}<div class="msg-actions"><button class="mini" title="Copy" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?'Read':'Delivered'}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
+    function copyMessage(encoded){ navigator.clipboard?.writeText(decodeURIComponent(escape(atob(encoded)))); toast('DoneCopy'); }
     function scrollBottom(){ setTimeout(()=>{$('messages').scrollTop=$('messages').scrollHeight},20); }
     async function markDirect(id){ try{await api(`/mark-read/${id}`,{method:'POST'}); loadChats();}catch{} }
     async function markGroup(id){ try{await api(`/groups/${id}/mark-read`,{method:'POST'}); loadGroups();}catch{} }
 
-    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">请求添加你为好友</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">接受</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">拒绝</button></div></div>`).join('') : '<div class="sub">暂无好友请求。</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar ${onlineIds.has(f.id)?'online':''}" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${onlineIds.has(f.id)?'在线':'离线'} · ${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">聊天</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'取消屏蔽':'屏蔽'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">删除</button></div></div>`).join('') : '<div class="sub">暂无好友。</div>'; }
-    async function searchUsers(){ const q=$('search-input').value.trim(); if(!q)return; const d=await api(`/search-users?q=${encodeURIComponent(q)}`); $('search-results').innerHTML = d.users.length ? d.users.map(u=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(u)}">${initial(u)}</div><div><div class="title">${html(u.nickname||u.username)}</div><div class="sub">${html(u.bio||u.username)}</div></div><button class="btn primary" onclick="sendFriendRequest(${u.id})">添加</button></div>`).join('') : '<div class="sub">没找到。</div>'; }
-    async function sendFriendRequest(id){ try{await api('/friend-request',{method:'POST',body:JSON.stringify({to_id:id})}); toast('已发送好友请求'); $('search-results').innerHTML='';}catch(e){toast(e.message)} }
-    async function handleRequest(id,action){ await api(`/friend-request/${id}`,{method:'POST',body:JSON.stringify({action})}); toast(action==='accept'?'已添加好友':'已拒绝'); loadEverything(); }
-    async function toggleBlock(id,isBlocked){ await api(`/block/${id}`,{method:isBlocked?'DELETE':'POST'}); toast(isBlocked?'已取消屏蔽':'已屏蔽'); loadEverything(); }
-    async function deleteFriend(id){ if(!confirm('确定删除好友吗？'))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('已删除'); loadEverything(); }
+    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">RequestAddyou asFriends</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">Accept</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">Reject</button></div></div>`).join('') : '<div class="sub">NoNoneFriendsRequest.</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar ${onlineIds.has(f.id)?'online':''}" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${onlineIds.has(f.id)?'Online':'Offline'} - ${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">Chats</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'Unblock':'Block'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">Delete</button></div></div>`).join('') : '<div class="sub">NoNoneFriends.</div>'; }
+    async function searchUsers(){ const q=$('search-input').value.trim(); if(!q)return; const d=await api(`/search-users?q=${encodeURIComponent(q)}`); $('search-results').innerHTML = d.users.length ? d.users.map(u=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(u)}">${initial(u)}</div><div><div class="title">${html(u.nickname||u.username)}</div><div class="sub">${html(u.bio||u.username)}</div></div><button class="btn primary" onclick="sendFriendRequest(${u.id})">Add</button></div>`).join('') : '<div class="sub">No results.</div>'; }
+    async function sendFriendRequest(id){ try{await api('/friend-request',{method:'POST',body:JSON.stringify({to_id:id})}); toast('DoneSendFriendsRequest'); $('search-results').innerHTML='';}catch(e){toast(e.message)} }
+    async function handleRequest(id,action){ await api(`/friend-request/${id}`,{method:'POST',body:JSON.stringify({action})}); toast(action==='accept'?'DoneAddFriends':'DoneReject'); loadEverything(); }
+    async function toggleBlock(id,isBlocked){ await api(`/block/${id}`,{method:isBlocked?'DELETE':'POST'}); toast(isBlocked?'DoneUnblock':'DoneBlock'); loadEverything(); }
+    async function deleteFriend(id){ if(!confirm('ConfirmDeleteFriends?'))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('DoneDelete'); loadEverything(); }
     function openGroupModal(){ $('group-modal').classList.remove('hidden'); renderGroupFriends(); }
     function closeGroupModal(){ $('group-modal').classList.add('hidden'); }
-    function renderGroupFriends(){ $('group-friends').innerHTML = friends.length ? friends.map(f=>`<label class="check"><input type="checkbox" value="${f.id}"><span>${html(f.nickname||f.username)}</span></label>`).join('') : '<div class="sub">先添加好友才能建群。</div>'; }
-    async function createGroup(){ const name=$('group-name').value.trim(); const picked=Array.from($('group-friends').querySelectorAll('input:checked')).map(i=>Number(i.value)); if(!name||!picked.length)return toast('填写群名并选择好友'); const aes=await Crypto.aesKey(); const raw=await Crypto.exportAes(aes); const all=[{id:currentUser.id, public_key:keyPair.publicKey}, ...friends.filter(f=>picked.includes(f.id))]; const members=[]; for(const u of all) members.push({user_id:u.id, wrapped_key:await wrapGroupKey(raw,u)}); await api('/groups',{method:'POST',body:JSON.stringify({name,members})}); closeGroupModal(); $('group-name').value=''; toast('群聊已创建'); await loadGroups(); setChatTab('group'); }
+    function renderGroupFriends(){ $('group-friends').innerHTML = friends.length ? friends.map(f=>`<label class="check"><input type="checkbox" value="${f.id}"><span>${html(f.nickname||f.username)}</span></label>`).join('') : '<div class="sub">FirstAddFriendsbefore creating a group.</div>'; }
+    async function createGroup(){ const name=$('group-name').value.trim(); const picked=Array.from($('group-friends').querySelectorAll('input:checked')).map(i=>Number(i.value)); if(!name||!picked.length)return toast('Enter group name and selectFriends'); const aes=await Crypto.aesKey(); const raw=await Crypto.exportAes(aes); const all=[{id:currentUser.id, public_key:keyPair.publicKey}, ...friends.filter(f=>picked.includes(f.id))]; const members=[]; for(const u of all) members.push({user_id:u.id, wrapped_key:await wrapGroupKey(raw,u)}); await api('/groups',{method:'POST',body:JSON.stringify({name,members})}); closeGroupModal(); $('group-name').value=''; toast('GroupsDoneCreate'); await loadGroups(); setChatTab('group'); }
 
     async function loadSquare(){ moments=(await api('/moments')).moments||[]; renderSquare(); }
     function renderMomentOptions(){ $('moment-blocked').innerHTML=friends.map(f=>`<option value="${f.id}">${html(f.nickname||f.username)}</option>`).join(''); }
-    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?'取消赞':'点赞'} ${m.like_count||0}</button><span class="sub">${(m.comments||[]).length} 条评论</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="写评论"><button class="btn primary" onclick="addComment(${m.id})">评论</button></div></div>`).join('') : '<div class="card sub">暂无动态。</div>'; }
+    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?'Unlike':'Like'} ${m.like_count||0}</button><span class="sub">${(m.comments||[]).length} comments</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="Write a comment"><button class="btn primary" onclick="addComment(${m.id})">Comment</button></div></div>`).join('') : '<div class="card sub">NoNoneposts.</div>'; }
     async function postMoment(){ const content=$('moment-input').value.trim(); const blocked=Array.from($('moment-blocked').selectedOptions).map(o=>Number(o.value)); if(!content)return; await api('/moments',{method:'POST',body:JSON.stringify({content,blocked})}); $('moment-input').value=''; loadSquare(); }
     async function toggleLike(id){ await api(`/moments/${id}/like`,{method:'POST'}); loadSquare(); }
     async function addComment(id){ const input=$(`comment-${id}`); const content=input.value.trim(); if(!content)return; await api(`/moments/${id}/comment`,{method:'POST',body:JSON.stringify({content})}); loadSquare(); }
     function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); }
     function updateAvatarPreview(){ $('avatar-preview').textContent=draftAvatar?'':initial(profile); $('avatar-preview').style.cssText=draftAvatar?`background-image:url(${draftAvatar});background-color:transparent`:avatarStyle(profile); }
-    function previewAvatar(e){ const f=e.target.files[0]; if(!f)return; if(f.size>2.5*1024*1024)return toast('头像不能超过 2.5MB'); const r=new FileReader(); r.onload=()=>{draftAvatar=r.result;updateAvatarPreview()}; r.readAsDataURL(f); }
+    function previewAvatar(e){ const f=e.target.files[0]; if(!f)return; if(f.size>2.5*1024*1024)return toast('Avatar must be under 2.5MB'); const r=new FileReader(); r.onload=()=>{draftAvatar=r.result;updateAvatarPreview()}; r.readAsDataURL(f); }
     function clearAvatar(){ draftAvatar=''; updateAvatarPreview(); }
-    async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return; await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; renderMe(); toast('已保存'); }
-    async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return; await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('密码已修改'); }
+    async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return; await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; renderMe(); toast('DoneSave'); }
+    async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return; await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('PasswordDoneChange'); }
 
     $('auth-submit').addEventListener('click', handleAuth);
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
