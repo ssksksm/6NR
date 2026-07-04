@@ -317,7 +317,7 @@
 
     .settings-page { padding: 18px; }
     .settings-shell {
-      max-width: 1040px;
+      max-width: 1080px;
       margin: 0 auto;
       display: grid;
       gap: 14px;
@@ -332,17 +332,78 @@
       border-radius: 18px;
     }
     .settings-hero {
-      min-height: 116px;
+      min-height: 128px;
       display: grid;
-      grid-template-columns: auto 1fr auto;
+      grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      gap: 16px;
-      padding: 18px;
+      gap: 18px;
+      padding: 20px;
     }
-    .settings-avatar { width: 62px; height: 62px; font-size: 20px; }
+    .settings-avatar { width: 70px; height: 70px; font-size: 22px; box-shadow: 0 14px 34px rgba(16,20,31,.14); }
     .settings-title { display: grid; gap: 2px; min-width: 0; }
     .eyebrow { margin: 0; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
     .settings-title h2 { font-size: 28px; }
+    .settings-status-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .settings-stat {
+      min-height: 76px;
+      padding: 13px;
+      border: 1px solid var(--glass-line);
+      border-radius: 16px;
+      background:
+        linear-gradient(160deg, var(--glass-shine), transparent 44%),
+        var(--glass-strong);
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+    .settings-stat strong { font-size: 20px; line-height: 1; }
+    .settings-stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .security-list { display: grid; gap: 10px; }
+    .security-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--glass-line);
+      border-radius: 16px;
+      background: var(--surface-solid);
+    }
+    .security-summary strong { display: block; }
+    .security-summary span { color: var(--muted); font-size: 12px; margin-top: 3px; }
+    .security-item {
+      display: grid;
+      grid-template-columns: auto minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      border: 1px solid var(--glass-line);
+      border-radius: 14px;
+      background: var(--glass-strong);
+    }
+    .security-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 99px;
+      background: var(--green);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--green) 14%, transparent);
+    }
+    .security-item strong { display: block; }
+    .security-item span { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .security-value {
+      max-width: 160px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
     .settings-panel {
       padding: 18px;
       display: grid;
@@ -373,6 +434,7 @@
       border-color: var(--glass-line);
     }
     .settings-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .settings-actions .btn.primary { min-width: 92px; }
     .setting-row {
       display: grid;
       grid-template-columns: 1fr auto;
@@ -428,6 +490,7 @@
       .settings-page { padding: 12px; }
       .settings-hero { grid-template-columns: auto 1fr; }
       .settings-hero .settings-actions { grid-column: 1 / -1; }
+      .settings-status-grid { grid-template-columns: 1fr; }
       .settings-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -553,6 +616,12 @@
           </div>
         </section>
 
+        <section class="settings-status-grid">
+          <div class="settings-stat"><strong id="settings-friend-count">0</strong><span>Friends</span></div>
+          <div class="settings-stat"><strong id="settings-theme-state">Light</strong><span>Theme</span></div>
+          <div class="settings-stat"><strong id="settings-key-state">Ready</strong><span>Encrypted</span></div>
+        </section>
+
         <div class="settings-grid">
           <section class="settings-panel">
             <div class="settings-head">
@@ -607,10 +676,41 @@
           <section class="settings-panel danger-zone">
             <div class="settings-head">
               <div>
-                <h3>Device key</h3>
-                <p>Encryption identity</p>
+                <h3>Encryption info</h3>
+                <p>Device security status</p>
               </div>
-              <span class="setting-status">Local</span>
+              <span class="setting-status">AES-GCM 256</span>
+            </div>
+            <div class="security-summary">
+              <div><strong>Message body encrypted</strong><span>Server stores ciphertext after local encryption</span></div>
+              <span class="setting-status">E2EE</span>
+            </div>
+            <div class="security-list">
+              <div class="security-item">
+                <span class="security-dot"></span>
+                <div><strong>Message encryption</strong><span>ECDH P-256 derives AES-GCM 256-bit keys</span></div>
+                <span class="setting-status">On</span>
+              </div>
+              <div class="security-item">
+                <span class="security-dot"></span>
+                <div><strong>Private key storage</strong><span>Private key never uploads to server</span></div>
+                <span class="setting-status">Browser only</span>
+              </div>
+              <div class="security-item">
+                <span class="security-dot"></span>
+                <div><strong>Server visibility</strong><span>Server cannot read message text</span></div>
+                <span class="setting-status">Ciphertext</span>
+              </div>
+              <div class="security-item">
+                <span class="security-dot"></span>
+                <div><strong>Group keys</strong><span>Wrapped for each member</span></div>
+                <span class="setting-status">Protected</span>
+              </div>
+              <div class="security-item">
+                <span class="security-dot"></span>
+                <div><strong>Device fingerprint</strong><span>Current encryption identity</span></div>
+                <code id="settings-key-fingerprint" data-device-fingerprint class="security-value">--</code>
+              </div>
             </div>
             <div class="setting-row">
               <div><strong>Rotate key</strong><span>New key only decrypts new messages</span></div>
@@ -688,14 +788,247 @@
       document.querySelector('[title="Sync"]').innerHTML = icons.refresh;
       document.querySelector('label[for="file-input"]').innerHTML = icons.attach;
     }
+
+    const I18N = {
+      'Welcome back': '\u6b22\u8fce\u56de\u6765',
+      '6nr': '6nr',
+      'Start with a secure account': '\u521b\u5efa\u5b89\u5168\u8d26\u53f7',
+      'Username': '\u7528\u6237\u540d',
+      'Password': '\u5bc6\u7801',
+      'Confirm password': '\u786e\u8ba4\u5bc6\u7801',
+      'Sign in': '\u767b\u5f55',
+      'Create account': '\u521b\u5efa\u8d26\u53f7',
+      'Register': '\u6ce8\u518c',
+      'Back to sign in': '\u8fd4\u56de\u767b\u5f55',
+      'Enter username and password': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
+      'Confirm your password': '\u8bf7\u786e\u8ba4\u5bc6\u7801',
+      'Passwords do not match': '\u4e24\u6b21\u5bc6\u7801\u4e0d\u4e00\u81f4',
+      'Chats': '\u804a\u5929',
+      'Square': '\u5e7f\u573a',
+      'Friends': '\u597d\u53cb',
+      'Settings': '\u8bbe\u7f6e',
+      'Theme': '\u4e3b\u9898',
+      'Log out': '\u9000\u51fa\u767b\u5f55',
+      'Online': '\u5728\u7ebf',
+      'Offline': '\u79bb\u7ebf',
+      'Messages': '\u6d88\u606f',
+      'New group': '\u65b0\u7fa4\u804a',
+      'Direct': '\u79c1\u804a',
+      'Groups': '\u7fa4\u804a',
+      'Search conversations': '\u641c\u7d22\u4f1a\u8bdd',
+      'Select conversation': '\u9009\u62e9\u4f1a\u8bdd',
+      'Search messages': '\u641c\u7d22\u6d88\u606f',
+      'Pin conversation': '\u7f6e\u9876\u4f1a\u8bdd',
+      'Mute conversation': '\u9759\u97f3\u4f1a\u8bdd',
+      'Refresh': '\u5237\u65b0',
+      'Select a conversation': '\u9009\u62e9\u4e00\u4e2a\u4f1a\u8bdd',
+      'Attach file': '\u6dfb\u52a0\u9644\u4ef6',
+      'Type a message': '\u8f93\u5165\u6d88\u606f',
+      'Send': '\u53d1\u9001',
+      'Details': '\u8be6\u60c5',
+      'Sync': '\u540c\u6b65',
+      'Write a post': '\u5199\u70b9\u4ec0\u4e48',
+      'Hidden friends': '\u5bf9\u8fd9\u4e9b\u597d\u53cb\u9690\u85cf',
+      'Post': '\u53d1\u5e03',
+      'Search users': '\u641c\u7d22\u7528\u6237',
+      'Search': '\u641c\u7d22',
+      'Friend requests': '\u597d\u53cb\u8bf7\u6c42',
+      'Friend list': '\u597d\u53cb\u5217\u8868',
+      'Profile': '\u4e2a\u4eba\u8d44\u6599',
+      'Public identity': '\u516c\u5f00\u8d44\u6599',
+      'Nickname': '\u6635\u79f0',
+      'Bio': '\u7b80\u4ecb',
+      'Avatar': '\u5934\u50cf',
+      'Clear avatar': '\u6e05\u9664\u5934\u50cf',
+      'Preferences': '\u504f\u597d',
+      'Local options': '\u672c\u5730\u9009\u9879',
+      'Current appearance': '\u5f53\u524d\u5916\u89c2',
+      'Light': '\u6d45\u8272',
+      'Dark': '\u6df1\u8272',
+      'Notifications': '\u901a\u77e5',
+      'Browser permission': '\u6d4f\u89c8\u5668\u6743\u9650',
+      'Enable': '\u5f00\u542f',
+      'Enabled': '\u5df2\u5f00\u542f',
+      'Account security': '\u8d26\u53f7\u5b89\u5168',
+      'Old password': '\u65e7\u5bc6\u7801',
+      'New password': '\u65b0\u5bc6\u7801',
+      'Change password': '\u4fee\u6539\u5bc6\u7801',
+      'Device key': '\u8bbe\u5907\u5bc6\u94a5',
+      'Encryption identity': '\u52a0\u5bc6\u8eab\u4efd',
+      'Local': '\u672c\u5730',
+      'Rotate key': '\u8f6e\u6362\u5bc6\u94a5',
+      'New key only decrypts new messages': '\u65b0\u5bc6\u94a5\u53ea\u80fd\u89e3\u5bc6\u65b0\u6d88\u606f',
+      'Encryption info': '\u52a0\u5bc6\u4fe1\u606f',
+      'Device security status': '\u8bbe\u5907\u5b89\u5168\u72b6\u6001',
+      'Message body encrypted': '\u6d88\u606f\u5185\u5bb9\u5df2\u52a0\u5bc6',
+      'Server stores ciphertext after local encryption': '\u672c\u5730\u52a0\u5bc6\u540e\uff0c\u670d\u52a1\u5668\u53ea\u4fdd\u5b58\u5bc6\u6587',
+      'Message encryption': '\u6d88\u606f\u52a0\u5bc6',
+      'ECDH P-256 derives AES-GCM 256-bit keys': '\u4f7f\u7528 ECDH P-256 \u6d3e\u751f AES-GCM 256 \u4f4d\u5bc6\u94a5',
+      'Private key storage': '\u79c1\u94a5\u5b58\u50a8',
+      'Private key never uploads to server': '\u79c1\u94a5\u4e0d\u4f1a\u4e0a\u4f20\u5230\u670d\u52a1\u5668',
+      'Browser only': '\u4ec5\u5f53\u524d\u6d4f\u89c8\u5668',
+      'Server visibility': '\u670d\u52a1\u5668\u53ef\u89c1\u8303\u56f4',
+      'Server cannot read message text': '\u670d\u52a1\u5668\u65e0\u6cd5\u8bfb\u53d6\u6d88\u606f\u6b63\u6587',
+      'Ciphertext': '\u5bc6\u6587',
+      'End-to-end encryption': '\u7aef\u5230\u7aef\u52a0\u5bc6',
+      'Messages encrypt before upload': '\u6d88\u606f\u4e0a\u4f20\u524d\u5b8c\u6210\u52a0\u5bc6',
+      'Device private key': '\u8bbe\u5907\u79c1\u94a5',
+      'Stored only in this browser': '\u4ec5\u4fdd\u5b58\u5728\u5f53\u524d\u6d4f\u89c8\u5668',
+      'Group keys': '\u7fa4\u804a\u5bc6\u94a5',
+      'Wrapped for each member': '\u4e3a\u6bcf\u4e2a\u6210\u5458\u72ec\u7acb\u5c01\u88c5',
+      'Device fingerprint': '\u8bbe\u5907\u6307\u7eb9',
+      'Current encryption identity': '\u5f53\u524d\u52a0\u5bc6\u8eab\u4efd',
+      'E2EE': '\u7aef\u5230\u7aef',
+      'Protected': '\u5df2\u4fdd\u62a4',
+      'Ready': '\u5df2\u5c31\u7eea',
+      'Rotate': '\u8f6e\u6362',
+      'Current chat encryption': '\u5f53\u524d\u4f1a\u8bdd\u52a0\u5bc6',
+      'Mode': '\u6a21\u5f0f',
+      'Key scope': '\u5bc6\u94a5\u8303\u56f4',
+      'Local device': '\u672c\u673a\u8bbe\u5907',
+      'Direct E2EE': '\u79c1\u804a\u7aef\u5230\u7aef',
+      'Group E2EE': '\u7fa4\u804a\u7aef\u5230\u7aef',
+      'Per chat key': '\u5355\u4e2a\u4f1a\u8bdd\u5bc6\u94a5',
+      'Shared group key': '\u7fa4\u804a\u5171\u4eab\u5bc6\u94a5',
+      'Create group': '\u521b\u5efa\u7fa4\u804a',
+      'Close': '\u5173\u95ed',
+      'Group name': '\u7fa4\u804a\u540d\u79f0',
+      'Create': '\u521b\u5efa',
+      'Save': '\u4fdd\u5b58',
+      'No bio': '\u6682\u65e0\u7b80\u4ecb',
+      'Just now': '\u521a\u521a',
+      'Yesterday': '\u6628\u5929',
+      'min ago': '\u5206\u949f\u524d',
+      'hr ago': '\u5c0f\u65f6\u524d',
+      '[Decrypt failed]': '[\u89e3\u5bc6\u5931\u8d25]',
+      'New direct message': '\u65b0\u79c1\u804a\u6d88\u606f',
+      'New group message': '\u65b0\u7fa4\u804a\u6d88\u606f',
+      'Typing...': '\u6b63\u5728\u8f93\u5165...',
+      'is typing': '\u6b63\u5728\u8f93\u5165',
+      'Browser does not support notifications': '\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u901a\u77e5',
+      'Notifications enabled': '\u901a\u77e5\u5df2\u5f00\u542f',
+      'Notifications blocked': '\u901a\u77e5\u672a\u6388\u6743',
+      'Rotate this device key? Old messages may be unreadable on this device.': '\u8981\u8f6e\u6362\u6b64\u8bbe\u5907\u5bc6\u94a5\u5417\uff1f\u65e7\u6d88\u606f\u53ef\u80fd\u65e0\u6cd5\u5728\u6b64\u8bbe\u5907\u4e0a\u8bfb\u53d6\u3002',
+      'Device key updated': '\u8bbe\u5907\u5bc6\u94a5\u5df2\u66f4\u65b0',
+      'Encrypted message': '\u52a0\u5bc6\u6d88\u606f',
+      'Encrypted': '\u5df2\u52a0\u5bc6',
+      'No messages': '\u6682\u65e0\u6d88\u606f',
+      'No conversations': '\u6682\u65e0\u4f1a\u8bdd',
+      'No conversation selected': '\u672a\u9009\u62e9\u4f1a\u8bdd',
+      'Pinned': '\u7f6e\u9876',
+      'Muted': '\u9759\u97f3',
+      'Draft': '\u8349\u7a3f',
+      'On': '\u5f00',
+      'Off': '\u5173',
+      'Saved': '\u5df2\u4fdd\u5b58',
+      'None': '\u65e0',
+      'Toggle pin': '\u5207\u6362\u7f6e\u9876',
+      'Toggle mute': '\u5207\u6362\u9759\u97f3',
+      '[Empty message]': '[\u7a7a\u6d88\u606f]',
+      'Image': '\u56fe\u7247',
+      'File': '\u6587\u4ef6',
+      'Member': '\u6210\u5458',
+      'members': '\u4f4d\u6210\u5458',
+      'Copy': '\u590d\u5236',
+      'Read': '\u5df2\u8bfb',
+      'Delivered': '\u5df2\u9001\u8fbe',
+      'Copied': '\u5df2\u590d\u5236',
+      'Attachment must be under 2.5MB': '\u9644\u4ef6\u4e0d\u80fd\u8d85\u8fc7 2.5MB',
+      'Wants to add you': '\u60f3\u6dfb\u52a0\u4f60\u4e3a\u597d\u53cb',
+      'Accept': '\u63a5\u53d7',
+      'Reject': '\u62d2\u7edd',
+      'No friend requests.': '\u6682\u65e0\u597d\u53cb\u8bf7\u6c42\u3002',
+      'No friends yet.': '\u6682\u65e0\u597d\u53cb\u3002',
+      'Chat': '\u804a\u5929',
+      'Unblock': '\u53d6\u6d88\u62c9\u9ed1',
+      'Block': '\u62c9\u9ed1',
+      'Delete': '\u5220\u9664',
+      'No results.': '\u6ca1\u6709\u7ed3\u679c\u3002',
+      'Add': '\u6dfb\u52a0',
+      'Friend request sent': '\u597d\u53cb\u8bf7\u6c42\u5df2\u53d1\u9001',
+      'Friend added': '\u5df2\u6dfb\u52a0\u597d\u53cb',
+      'Request rejected': '\u5df2\u62d2\u7edd',
+      'Unblocked': '\u5df2\u53d6\u6d88\u62c9\u9ed1',
+      'Blocked': '\u5df2\u62c9\u9ed1',
+      'Friend deleted': '\u597d\u53cb\u5df2\u5220\u9664',
+      'Delete this friend?': '\u5220\u9664\u8fd9\u4e2a\u597d\u53cb\uff1f',
+      'Add friends before creating a group.': '\u521b\u5efa\u7fa4\u804a\u524d\u8bf7\u5148\u6dfb\u52a0\u597d\u53cb\u3002',
+      'Enter group name and select friends': '\u8f93\u5165\u7fa4\u540d\u5e76\u9009\u62e9\u597d\u53cb',
+      'Group created': '\u7fa4\u804a\u5df2\u521b\u5efa',
+      'Unlike': '\u53d6\u6d88\u70b9\u8d5e',
+      'Like': '\u70b9\u8d5e',
+      'comments': '\u6761\u8bc4\u8bba',
+      'Write a comment': '\u5199\u8bc4\u8bba',
+      'Comment': '\u8bc4\u8bba',
+      'No posts yet.': '\u6682\u65e0\u52a8\u6001\u3002',
+      'Enter a nickname': '\u8bf7\u8f93\u5165\u6635\u79f0',
+      'Enter both passwords': '\u8bf7\u8f93\u5165\u4e24\u4e2a\u5bc6\u7801',
+      'Password changed': '\u5bc6\u7801\u5df2\u4fee\u6539',
+      'Avatar must be under 2.5MB': '\u5934\u50cf\u4e0d\u80fd\u8d85\u8fc7 2.5MB',
+      'Done': '\u5b8c\u6210',
+      'Request failed': '\u8bf7\u6c42\u5931\u8d25',
+      'No posts': '\u6682\u65e0\u52a8\u6001'
+    };
+    function zh(text) { const key = String(text ?? ''); return I18N[key] || key; }
+    function memberText(count) { return String(count || 0) + ' ' + zh('members'); }
+    function commentText(count) { return String(count || 0) + ' ' + zh('comments'); }
+    function localizeStatic(root = document) {
+      const scope = root.nodeType === 1 || root.nodeType === 9 ? root : document;
+      const skip = (el) => el && el.closest && (el.closest('#messages') || el.closest('#square-list'));
+      const attrs = ['placeholder', 'title', 'aria-label'];
+      const visitElement = (el) => {
+        if (!el || skip(el)) return;
+        for (const attr of attrs) {
+          const value = el.getAttribute && el.getAttribute(attr);
+          if (value && I18N[value]) el.setAttribute(attr, I18N[value]);
+        }
+        for (const child of Array.from(el.childNodes || [])) {
+          if (child.nodeType === 3) {
+            const raw = child.nodeValue;
+            const trimmed = raw.trim();
+            if (trimmed && I18N[trimmed]) child.nodeValue = raw.replace(trimmed, I18N[trimmed]);
+          }
+        }
+      };
+      if (scope.nodeType === 1) visitElement(scope);
+      for (const el of Array.from((scope.querySelectorAll ? scope.querySelectorAll('*') : []))) visitElement(el);
+    }
+    function startLocalization() {
+      localizeStatic(document);
+      if (window.localeObserver) return;
+      window.localeObserver = new MutationObserver((records) => {
+        for (const rec of records) {
+          if (rec.type === 'attributes') localizeStatic(rec.target);
+          for (const node of Array.from(rec.addedNodes || [])) {
+            if (node.nodeType === 1) localizeStatic(node);
+          }
+        }
+      });
+      window.localeObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['placeholder', 'title', 'aria-label'] });
+    }
+
     function keyOf(type, id) { return `${type}:${id}`; }
     function saveSet(name, set) { localStorage.setItem(name, JSON.stringify([...set])); }
-    function toast(text) { $('toast').textContent = text; $('toast').classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2400); }
+    function toast(text) { $('toast').textContent = zh(text); $('toast').classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2400); }
     function html(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function color(v) { const a = ['#315efb','#00a884','#7c3aed','#b7791f','#e14d6d','#0891b2']; let n = 0; for (const c of String(v || '6nr')) n = (n + c.charCodeAt(0)) % a.length; return a[n]; }
     function initial(u) { return String(u?.nickname || u?.username || u?.name || '?').slice(0,1).toUpperCase(); }
     function avatarStyle(u) { return u?.avatar ? `background-image:url(${html(u.avatar)});background-color:transparent` : `background:${color(u?.nickname || u?.username || u?.name)}`; }
-    function time(v) { if (!v) return ''; const d = new Date(v); const diff = Date.now() - d.getTime(); if (diff < 60000) return 'Just now'; if (diff < 3600000) return `${Math.floor(diff/60000)}  min ago`; if (diff < 86400000) return `${Math.floor(diff/3600000)}  hr ago`; return d.toLocaleDateString('zh-CN',{month:'short',day:'numeric'}); }
+    function time(v) {
+      if (!v) return zh('Just now');
+      const d = new Date(v);
+      if (Number.isNaN(d.getTime())) return '';
+      const now = new Date();
+      const diff = Math.max(0, now.getTime() - d.getTime());
+      const clock = d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit', hour12:false});
+      if (diff < 60000) return zh('Just now');
+      if (diff < 3600000) return `${Math.floor(diff / 60000)} ${zh('min ago')}`;
+      const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+      if (day === today) return clock;
+      if (today - day === 86400000) return `${zh('Yesterday')} ${clock}`;
+      return `${d.toLocaleDateString('zh-CN', {month:'short', day:'numeric'})} ${clock}`;
+    }
     function highlight(text, q) { const safe = html(text); if (!q) return safe; return safe.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`); }
     function safeJson(t){ try{return JSON.parse(t)}catch{return{type:'text',text:t}} }
 
@@ -719,7 +1052,7 @@
       async exportAes(key){ const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key)); return btoa(String.fromCharCode(...raw)); },
       async importAes(raw){ const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0)); return crypto.subtle.importKey('raw', bytes, {name:'AES-GCM'}, false, ['encrypt','decrypt']); },
       async encryptText(text,key){ const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, enc.encode(text))); const all = new Uint8Array(iv.length + ct.length); all.set(iv); all.set(ct, iv.length); return btoa(String.fromCharCode(...all)); },
-      async decryptText(cipher,key){ try { const all = Uint8Array.from(atob(cipher), c => c.charCodeAt(0)); const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key, all.slice(12)); return dec.decode(pt); } catch { return JSON.stringify({type:'text', text:'[Decrypt failed]'}); } }
+      async decryptText(cipher,key){ try { const all = Uint8Array.from(atob(cipher), c => c.charCodeAt(0)); const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key, all.slice(12)); return dec.decode(pt); } catch { return JSON.stringify({type:'text', text:zh('[Decrypt failed]')}); } }
     };
     async function getKeyPair() { const k = `ecdh_private_jwk_${currentUser.id}`; const stored = localStorage.getItem(k); if (stored) { try { const privateKey = await Crypto.importPrivateKey(JSON.parse(stored)); return {privateKey, publicKey: await Crypto.exportPublicKey(privateKey)}; } catch {} } const pair = await Crypto.generateKeyPair(); localStorage.setItem(k, JSON.stringify(await crypto.subtle.exportKey('jwk', pair.privateKey))); return {privateKey: pair.privateKey, publicKey: await Crypto.exportPublicKey(pair.publicKey)}; }
     async function friendKey(id) { const d = await api(`/user/${id}/public-key`); return Crypto.derive(keyPair.privateKey, d.public_key); }
@@ -728,12 +1061,12 @@
 
     function toggleAuth(){
       isLogin = !isLogin;
-      $('auth-title').textContent = isLogin ? 'Welcome back' : 'Create account';
-      $('auth-subtitle').textContent = isLogin ? '6nr' : 'Start with a secure account';
+      $('auth-title').textContent = isLogin ? zh('Welcome back') : zh('Create account');
+      $('auth-subtitle').textContent = isLogin ? '6nr' : zh('Start with a secure account');
       $('auth-confirm').classList.toggle('hidden', isLogin);
       $('auth-password').autocomplete = isLogin ? 'current-password' : 'new-password';
-      $('auth-submit').textContent = isLogin ? 'Sign in' : 'Register';
-      $('auth-switch').textContent = isLogin ? 'Create account' : 'Back to sign in';
+      $('auth-submit').textContent = isLogin ? zh('Sign in') : zh('Register');
+      $('auth-switch').textContent = isLogin ? zh('Create account') : zh('Back to sign in');
     }
     async function handleAuth(){
       const username = $('auth-username').value.trim(), password = $('auth-password').value, confirm = $('auth-confirm').value;
@@ -774,11 +1107,11 @@
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
     }
     function sendWs(data){ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data)); }
-    function notify(title, convKey){ if(mutes.has(convKey)) return; if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:title}); }
+    function notify(title, convKey){ if(mutes.has(convKey)) return; if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:zh(title)}); }
     function sendTyping(isTyping=true){ if(!active) return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); }
-    function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? 'Typing...' : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || 'Member'} is typing` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
+    function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? zh('Typing...') : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || zh('Member')} ${zh('is typing')}` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
     async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not support notifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); refreshSettingsState(); toast(p === 'granted' ? 'Notifications enabled' : 'Notifications blocked'); }
-    async function rotateDeviceKey(){ if(!confirm('Rotate this device key? Old messages may be unreadable on this device.')) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
+    async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
 
     async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); renderInspector(); }
     async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
@@ -786,36 +1119,53 @@
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
     function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); }
-    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?'Encrypted message':'No messages'})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:`${g.member_count} members` })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
-    function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?'Muted - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : '<div class="sub" style="padding:14px">No conversations</div>'; updateHeaderButtons(); }
+    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:memberText(g.member_count) })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
+    function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?zh('Muted')+' - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : `<div class="sub" style="padding:14px">${zh('No conversations')}</div>`; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
     function toggleMute(k){ mutes.has(k)?mutes.delete(k):mutes.add(k); saveSet('mutes', mutes); renderConversations(); renderInspector(); }
     function togglePinActive(){ if(active) togglePin(keyOf(active.type, active.id)); }
     function toggleMuteActive(){ if(active) toggleMute(keyOf(active.type, active.id)); }
     function updateHeaderButtons(){ if(!active) return; const k=keyOf(active.type, active.id); $('pin-btn').classList.toggle('pin', pins.has(k)); $('mute-btn').classList.toggle('pin', mutes.has(k)); }
-    async function openConversation(type,id){ const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || 'Direct'} : {type,id, name:data?.name || 'Groups'}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? 'Online' : 'Offline') : `${data?.member_count || 0} members`; $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
-    function renderInspector(){ const body=$('inspector-body'); if(!active){ body.innerHTML='<div class="info-card sub">No conversation selected</div>'; return; } const k=keyOf(active.type,active.id); const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null; const group=active.type==='group'?groups.find(g=>g.id===active.id):null; body.innerHTML = `<div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?'Online':'Offline'):(group?.member_count||0)+' members'}</div></div></div></div><div class="info-card"><div class="kv"><span>Pinned</span><strong>${pins.has(k)?'On':'Off'}</strong></div><div class="kv"><span>Muted</span><strong>${mutes.has(k)?'On':'Off'}</strong></div><div class="kv"><span>Draft</span><strong>${localStorage.getItem('draft:'+k)?'Saved':'None'}</strong></div></div><div class="info-card"><button class="btn" onclick="togglePinActive()">Toggle pin</button><button class="btn" onclick="toggleMuteActive()">Toggle mute</button></div>`; }
+    async function openConversation(type,id){ const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
+    function renderInspector(){
+      const body=$('inspector-body');
+      if(!active){ body.innerHTML=`<div class="info-card sub">${zh('No conversation selected')}</div>`; return; }
+      const k=keyOf(active.type,active.id);
+      const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null;
+      const group=active.type==='group'?groups.find(g=>g.id===active.id):null;
+      body.innerHTML = `
+        <div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?zh('Online'):zh('Offline')):memberText(group?.member_count||0)}</div></div></div></div>
+        <div class="info-card">
+          <div class="settings-head"><div><h3>${zh('Current chat encryption')}</h3><p>${zh('Message body encrypted')}</p></div><span class="setting-status">E2EE</span></div>
+          <div class="kv"><span>${zh('Mode')}</span><strong>${encryptionModeLabel()}</strong></div>
+          <div class="kv"><span>${zh('Key scope')}</span><strong>${encryptionScopeLabel()}</strong></div>
+          <div class="kv"><span>${zh('Local device')}</span><code data-device-fingerprint class="security-value">${shortFingerprint()}</code></div>
+        </div>
+        <div class="info-card"><div class="kv"><span>${zh('Pinned')}</span><strong>${pins.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Muted')}</span><strong>${mutes.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Draft')}</span><strong>${localStorage.getItem('draft:'+k)?zh('Saved'):zh('None')}</strong></div></div>
+        <div class="info-card"><button class="btn" onclick="togglePinActive()">${zh('Toggle pin')}</button><button class="btn" onclick="toggleMuteActive()">${zh('Toggle mute')}</button></div>`;
+      refreshFingerprintViews();
+    }
 
     function payloadText(text){ return JSON.stringify({type:'text', text}); }
     function handleDraftInput(){ if(!active) return; const k=keyOf(active.type, active.id); localStorage.setItem(`draft:${k}`, $('message-input').value); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
     async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; input.value=''; localStorage.removeItem(`draft:${keyOf(active.type, active.id)}`); sendTyping(false); await sendPayload(payloadText(text)); }
     async function sendAttachment(e){ const file=e.target.files[0]; e.target.value=''; if(!active || !file) return; if(file.size > 2.5*1024*1024) return toast('Attachment must be under 2.5MB'); const data = await new Promise(r => { const fr = new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file); }); await sendPayload(JSON.stringify({type:file.type.startsWith('image/')?'image':'file', name:file.name, mime:file.type, size:file.size, data})); }
-    async function sendPayload(payload){ try { if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
+    async function sendPayload(payload){ try { const localTime = new Date().toISOString(); if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
     async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
-    function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML='<div class="empty-chat">No messages</div>'; scrollBottom(); }
-    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:'[Empty message]'}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||'Image')}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||'File')}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||'Member')}</div>`:''}<div class="msg-actions"><button class="mini" title="Copy" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?'Read':'Delivered'}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
+    function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML=`<div class="empty-chat">${zh('No messages')}</div>`; scrollBottom(); }
+    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:zh('[Empty message]')}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||zh('Image'))}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||zh('File'))}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||zh('Member'))}</div>`:''}<div class="msg-actions"><button class="mini" title="${zh('Copy')}" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?zh('Read'):zh('Delivered')}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
     function copyMessage(encoded){ navigator.clipboard?.writeText(decodeURIComponent(escape(atob(encoded)))); toast('Copied'); }
     function scrollBottom(){ setTimeout(()=>{$('messages').scrollTop=$('messages').scrollHeight},20); }
     async function markDirect(id){ try{await api(`/mark-read/${id}`,{method:'POST'}); loadChats();}catch{} }
     async function markGroup(id){ try{await api(`/groups/${id}/mark-read`,{method:'POST'}); loadGroups();}catch{} }
 
-    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">Wants to add you</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">Accept</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">Reject</button></div></div>`).join('') : '<div class="sub">No friend requests.</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar ${onlineIds.has(f.id)?'online':''}" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${onlineIds.has(f.id)?'Online':'Offline'} - ${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">Chat</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'Unblock':'Block'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">Delete</button></div></div>`).join('') : '<div class="sub">No friends yet.</div>'; }
+    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">Wants to add you</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">Accept</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">Reject</button></div></div>`).join('') : '<div class="sub">No friend requests.</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar ${onlineIds.has(f.id)?'online':''}" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${onlineIds.has(f.id)?zh('Online'):zh('Offline')} - ${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">Chat</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'Unblock':'Block'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">Delete</button></div></div>`).join('') : '<div class="sub">No friends yet.</div>'; }
     async function searchUsers(){ const q=$('search-input').value.trim(); if(!q)return; const d=await api(`/search-users?q=${encodeURIComponent(q)}`); $('search-results').innerHTML = d.users.length ? d.users.map(u=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(u)}">${initial(u)}</div><div><div class="title">${html(u.nickname||u.username)}</div><div class="sub">${html(u.bio||u.username)}</div></div><button class="btn primary" onclick="sendFriendRequest(${u.id})">Add</button></div>`).join('') : '<div class="sub">No results.</div>'; }
     async function sendFriendRequest(id){ try{await api('/friend-request',{method:'POST',body:JSON.stringify({to_id:id})}); toast('Friend request sent'); $('search-results').innerHTML='';}catch(e){toast(e.message)} }
     async function handleRequest(id,action){ await api(`/friend-request/${id}`,{method:'POST',body:JSON.stringify({action})}); toast(action==='accept'?'Friend added':'Request rejected'); loadEverything(); }
     async function toggleBlock(id,isBlocked){ await api(`/block/${id}`,{method:isBlocked?'DELETE':'POST'}); toast(isBlocked?'Unblocked':'Blocked'); loadEverything(); }
-    async function deleteFriend(id){ if(!confirm('Delete this friend?'))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('Friend deleted'); loadEverything(); }
+    async function deleteFriend(id){ if(!confirm(zh('Delete this friend?')))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('Friend deleted'); loadEverything(); }
     function openGroupModal(){ $('group-modal').classList.remove('hidden'); renderGroupFriends(); }
     function closeGroupModal(){ $('group-modal').classList.add('hidden'); }
     function renderGroupFriends(){ $('group-friends').innerHTML = friends.length ? friends.map(f=>`<label class="check"><input type="checkbox" value="${f.id}"><span>${html(f.nickname||f.username)}</span></label>`).join('') : '<div class="sub">Add friends before creating a group.</div>'; }
@@ -823,19 +1173,58 @@
 
     async function loadSquare(){ moments=(await api('/moments')).moments||[]; renderSquare(); }
     function renderMomentOptions(){ $('moment-blocked').innerHTML=friends.map(f=>`<option value="${f.id}">${html(f.nickname||f.username)}</option>`).join(''); }
-    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?'Unlike':'Like'} ${m.like_count||0}</button><span class="sub">${(m.comments||[]).length} comments</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="Write a comment"><button class="btn primary" onclick="addComment(${m.id})">Comment</button></div></div>`).join('') : '<div class="card sub">No posts yet.</div>'; }
+    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?zh('Unlike'):zh('Like')} ${m.like_count||0}</button><span class="sub">${commentText((m.comments||[]).length)}</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="${zh('Write a comment')}"><button class="btn primary" onclick="addComment(${m.id})">${zh('Comment')}</button></div></div>`).join('') : `<div class="card sub">${zh('No posts yet.')}</div>`; }
     async function postMoment(){ const content=$('moment-input').value.trim(); const blocked=Array.from($('moment-blocked').selectedOptions).map(o=>Number(o.value)); if(!content)return; await api('/moments',{method:'POST',body:JSON.stringify({content,blocked})}); $('moment-input').value=''; loadSquare(); }
     async function toggleLike(id){ await api(`/moments/${id}/like`,{method:'POST'}); loadSquare(); }
     async function addComment(id){ const input=$(`comment-${id}`); const content=input.value.trim(); if(!content)return; await api(`/moments/${id}/comment`,{method:'POST',body:JSON.stringify({content})}); loadSquare(); }
     function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); refreshSettingsState(); }
+    function publicKeySeed(){
+      return JSON.stringify(keyPair?.publicKey || {});
+    }
+    function shortFingerprint(){
+      const base = publicKeySeed();
+      if (!base || base === '{}') return '--';
+      let h = 0;
+      for (const ch of base) h = ((h << 5) - h + ch.charCodeAt(0)) | 0;
+      const hex = Math.abs(h).toString(16).toUpperCase().padStart(8, '0').slice(0, 8);
+      return `${hex.slice(0, 4)} ${hex.slice(4)}`;
+    }
+    function formatFingerprint(bytes){
+      return Array.from(bytes).map(b=>b.toString(16).padStart(2,'0')).join('').toUpperCase().match(/.{1,4}/g).join(' ');
+    }
+    async function deviceFingerprint(){
+      const base = publicKeySeed();
+      if (!base || base === '{}') return '--';
+      try {
+        const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(base)));
+        return formatFingerprint(hash.slice(0, 8));
+      } catch {
+        return shortFingerprint();
+      }
+    }
+    async function refreshFingerprintViews(){
+      const fp = await deviceFingerprint();
+      document.querySelectorAll('[data-device-fingerprint]').forEach(el => { el.textContent = fp; });
+    }
+    function encryptionModeLabel(){
+      return active?.type === 'group' ? zh('Group E2EE') : zh('Direct E2EE');
+    }
+    function encryptionScopeLabel(){
+      return active?.type === 'group' ? zh('Shared group key') : zh('Per chat key');
+    }
     function refreshSettingsState(){
       if(!$('settings-name')) return;
       $('settings-name').textContent = profile.nickname || currentUser?.username || '6nr';
-      $('settings-bio').textContent = profile.bio || 'No bio';
-      if($('theme-toggle')) $('theme-toggle').textContent = document.body.dataset.theme === 'dark' ? 'Dark' : 'Light';
+      $('settings-bio').textContent = profile.bio || zh('No bio');
+      if($('settings-friend-count')) $('settings-friend-count').textContent = String(friends.length || 0);
+      if($('settings-theme-state')) $('settings-theme-state').textContent = document.body.dataset.theme === 'dark' ? zh('Dark') : zh('Light');
+      if($('settings-key-state')) $('settings-key-state').textContent = keyPair ? zh('Ready') : '--';
+      if($('settings-key-fingerprint')) $('settings-key-fingerprint').textContent = shortFingerprint();
+      refreshFingerprintViews();
+      if($('theme-toggle')) $('theme-toggle').textContent = document.body.dataset.theme === 'dark' ? zh('Dark') : zh('Light');
       if($('notify-toggle')) {
         const on = localStorage.getItem('notify') === '1';
-        $('notify-toggle').textContent = on ? 'Enabled' : 'Enable';
+        $('notify-toggle').textContent = on ? zh('Enabled') : zh('Enable');
         $('notify-toggle').classList.toggle('good', !on);
       }
     }
@@ -847,7 +1236,8 @@
 
     $('auth-submit').addEventListener('click', handleAuth);
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
-    window.addEventListener('load', async()=>{ installIcons(); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
+    startLocalization();
+    window.addEventListener('load', async()=>{ installIcons(); startLocalization(); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
   </script>
 </body>
 </html>
