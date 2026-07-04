@@ -315,63 +315,93 @@
     .moment-head { display: flex; gap: 10px; align-items: center; }
     .comment { padding: 8px 10px; border-radius: 8px; background: var(--panel); margin-top: 6px; }
 
-    .settings-page { padding: 18px; }
+    .settings-page { padding: 18px; background: var(--panel); }
     .settings-shell {
-      max-width: 1080px;
+      max-width: 760px;
       margin: 0 auto;
       display: grid;
-      gap: 14px;
-    }
-    .settings-hero, .settings-panel {
-      border: 1px solid var(--glass-edge);
-      background:
-        linear-gradient(160deg, var(--glass-shine), transparent 34%),
-        var(--glass);
-      backdrop-filter: blur(26px) saturate(150%);
-      box-shadow: var(--shadow-sm);
-      border-radius: 18px;
+      gap: 12px;
     }
     .settings-hero {
-      min-height: 128px;
+      min-height: 96px;
       display: grid;
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
-      gap: 18px;
-      padding: 20px;
+      gap: 14px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
     }
-    .settings-avatar { width: 70px; height: 70px; font-size: 22px; box-shadow: 0 14px 34px rgba(16,20,31,.14); }
-    .settings-title { display: grid; gap: 2px; min-width: 0; }
-    .eyebrow { margin: 0; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
-    .settings-title h2 { font-size: 28px; }
+    .settings-avatar { width: 58px; height: 58px; font-size: 20px; box-shadow: 0 10px 22px rgba(16,20,31,.10); }
+    .settings-title { display: grid; gap: 3px; min-width: 0; }
+    .eyebrow { margin: 0; color: var(--green); font-size: 12px; font-weight: 800; letter-spacing: 0; text-transform: none; }
+    .settings-title h2 { font-size: 22px; }
     .settings-status-grid {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 10px;
+      gap: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-solid);
     }
     .settings-stat {
-      min-height: 76px;
-      padding: 13px;
-      border: 1px solid var(--glass-line);
-      border-radius: 16px;
-      background:
-        linear-gradient(160deg, var(--glass-shine), transparent 44%),
-        var(--glass-strong);
+      min-height: 62px;
+      padding: 12px;
+      border-left: 1px solid var(--line);
+      background: transparent;
       display: grid;
       align-content: center;
       gap: 4px;
+      text-align: center;
     }
-    .settings-stat strong { font-size: 20px; line-height: 1; }
-    .settings-stat span { color: var(--muted); font-size: 12px; font-weight: 800; }
-    .security-list { display: grid; gap: 10px; }
+    .settings-stat:first-child { border-left: 0; }
+    .settings-stat strong { font-size: 18px; line-height: 1; }
+    .settings-stat span { color: var(--muted); font-size: 12px; font-weight: 700; }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .settings-panel {
+      display: grid;
+      gap: 7px;
+    }
+    .settings-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 0 4px;
+      border-bottom: 0;
+    }
+    .settings-head h3 {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .settings-head p { margin: 3px 0 0; color: var(--soft); font-size: 12px; }
+    .settings-list, .settings-form, .security-list {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
+      display: grid;
+      gap: 0;
+    }
     .security-summary {
       display: flex;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
-      padding: 14px;
-      border: 1px solid var(--glass-line);
-      border-radius: 16px;
-      background: var(--surface-solid);
+      min-height: 58px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
     }
     .security-summary strong { display: block; }
     .security-summary span { color: var(--muted); font-size: 12px; margin-top: 3px; }
@@ -380,10 +410,10 @@
       grid-template-columns: auto minmax(0, 1fr) auto;
       align-items: center;
       gap: 12px;
-      padding: 12px;
-      border: 1px solid var(--glass-line);
-      border-radius: 14px;
-      background: var(--glass-strong);
+      min-height: 58px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
     }
     .security-dot {
       width: 10px;
@@ -404,35 +434,30 @@
       font-weight: 900;
       font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
     }
-    .settings-panel {
-      padding: 18px;
+    .field {
       display: grid;
-      gap: 16px;
-    }
-    .settings-grid {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
-      align-items: start;
-    }
-    .settings-head {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
+      grid-template-columns: minmax(92px, 120px) minmax(0, 1fr);
+      align-items: center;
       gap: 12px;
-      border-bottom: 1px solid var(--glass-line);
-      padding-bottom: 12px;
+      min-height: 58px;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--line);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 700;
     }
-    .settings-head p { margin: 4px 0 0; color: var(--muted); }
-    .settings-form { display: grid; gap: 12px; }
-    .field { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .field:last-child { border-bottom: 0; }
     .field input, .field textarea {
       font-size: 14px;
       font-weight: 500;
       color: var(--ink);
-      background: var(--glass-strong);
-      border-color: var(--glass-line);
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 8px 0;
     }
+    .field textarea { min-height: 72px; resize: vertical; }
+    .field input[type="file"] { font-size: 12px; color: var(--muted); }
     .settings-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .settings-actions .btn.primary { min-width: 92px; }
     .setting-row {
@@ -440,9 +465,10 @@
       grid-template-columns: 1fr auto;
       align-items: center;
       gap: 12px;
-      min-height: 52px;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--glass-line);
+      min-height: 58px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: transparent;
     }
     .setting-row:last-child { border-bottom: 0; }
     .setting-row strong { display: block; font-size: 14px; }
@@ -451,14 +477,20 @@
       min-width: 76px;
       text-align: center;
       padding: 6px 10px;
-      border: 1px solid var(--glass-line);
+      border: 1px solid var(--line);
       border-radius: 99px;
-      background: var(--glass-strong);
+      background: var(--panel);
       color: var(--muted);
       font-size: 12px;
       font-weight: 800;
     }
-    .danger-zone { border-color: color-mix(in srgb, var(--rose) 34%, var(--glass-edge)); }
+    .settings-inline-actions {
+      min-height: 56px;
+      padding: 10px 14px;
+      justify-content: flex-end;
+      border-top: 0;
+    }
+    .danger-zone .security-list { border-color: color-mix(in srgb, var(--green) 28%, var(--line)); }
 
     .modal { position: fixed; inset: 0; z-index: 80; background: rgba(8,12,20,.58); display: grid; place-items: center; padding: 18px; }
     .modal-card { width: min(560px, 100%); max-height: 86vh; overflow: auto; border: 1px solid var(--line); background: var(--surface-solid); color: var(--ink); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); display: grid; gap: 12px; }
@@ -490,7 +522,7 @@
       .settings-page { padding: 12px; }
       .settings-hero { grid-template-columns: auto 1fr; }
       .settings-hero .settings-actions { grid-column: 1 / -1; }
-      .settings-status-grid { grid-template-columns: 1fr; }
+      .settings-status-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .settings-grid { grid-template-columns: 1fr; }
     }
   </style>
@@ -606,7 +638,7 @@
         <section class="settings-hero">
           <div id="avatar-preview" class="avatar settings-avatar">6</div>
           <div class="settings-title">
-            <p class="eyebrow">Settings</p>
+            <p class="eyebrow">Account & profile</p>
             <h2 id="settings-name">6nr</h2>
             <div id="settings-bio" class="sub">No bio</div>
           </div>
@@ -626,15 +658,15 @@
           <section class="settings-panel">
             <div class="settings-head">
               <div>
-                <h3>Profile</h3>
-                <p>Public identity</p>
+                <h3>Account & profile</h3>
+                <p>Avatar and nickname</p>
               </div>
             </div>
             <div class="settings-form">
               <label class="field">Nickname<input id="nickname-input" placeholder="Nickname"></label>
               <label class="field">Bio<textarea id="bio-input" maxlength="160" placeholder="Bio"></textarea></label>
               <label class="field">Avatar<input id="avatar-file" type="file" accept="image/*" onchange="previewAvatar(event)"></label>
-              <div class="settings-actions">
+              <div class="settings-actions settings-inline-actions">
                 <button class="btn" onclick="clearAvatar()">Clear avatar</button>
               </div>
             </div>
@@ -643,31 +675,33 @@
           <section class="settings-panel">
             <div class="settings-head">
               <div>
-                <h3>Preferences</h3>
-                <p>Local options</p>
+                <h3>General</h3>
+                <p>Theme and notifications</p>
               </div>
             </div>
-            <div class="setting-row">
-              <div><strong>Theme</strong><span>Current appearance</span></div>
-              <button id="theme-toggle" class="btn" onclick="toggleTheme()">Light</button>
-            </div>
-            <div class="setting-row">
-              <div><strong>Notifications</strong><span>Browser permission</span></div>
-              <button id="notify-toggle" class="btn good" onclick="enableNotifications()">Enable</button>
+            <div class="settings-list">
+              <div class="setting-row">
+                <div><strong>Theme</strong><span>Current appearance</span></div>
+                <button id="theme-toggle" class="btn" onclick="toggleTheme()">Light</button>
+              </div>
+              <div class="setting-row">
+                <div><strong>Notifications</strong><span>Browser permission</span></div>
+                <button id="notify-toggle" class="btn good" onclick="enableNotifications()">Enable</button>
+              </div>
             </div>
           </section>
 
           <section class="settings-panel">
             <div class="settings-head">
               <div>
-                <h3>Password</h3>
-                <p>Account security</p>
+                <h3>Login security</h3>
+                <p>Password management</p>
               </div>
             </div>
             <div class="settings-form">
               <label class="field">Old password<input id="old-password" type="password" placeholder="Old password"></label>
               <label class="field">New password<input id="new-password" type="password" placeholder="New password"></label>
-              <div class="settings-actions">
+              <div class="settings-actions settings-inline-actions">
                 <button class="btn primary" onclick="changePassword()">Change password</button>
               </div>
             </div>
@@ -676,16 +710,16 @@
           <section class="settings-panel danger-zone">
             <div class="settings-head">
               <div>
-                <h3>Encryption info</h3>
-                <p>Device security status</p>
+                <h3>Privacy & encryption</h3>
+                <p>Messages and keys</p>
               </div>
               <span class="setting-status">AES-GCM 256</span>
             </div>
-            <div class="security-summary">
-              <div><strong>Message body encrypted</strong><span>Server stores ciphertext after local encryption</span></div>
-              <span class="setting-status">E2EE</span>
-            </div>
             <div class="security-list">
+              <div class="security-summary">
+                <div><strong>Message body encrypted</strong><span>Server stores ciphertext after local encryption</span></div>
+                <span class="setting-status">E2EE</span>
+              </div>
               <div class="security-item">
                 <span class="security-dot"></span>
                 <div><strong>Message encryption</strong><span>ECDH P-256 derives AES-GCM 256-bit keys</span></div>
@@ -711,10 +745,10 @@
                 <div><strong>Device fingerprint</strong><span>Current encryption identity</span></div>
                 <code id="settings-key-fingerprint" data-device-fingerprint class="security-value">--</code>
               </div>
-            </div>
-            <div class="setting-row">
-              <div><strong>Rotate key</strong><span>New key only decrypts new messages</span></div>
-              <button class="btn danger" onclick="rotateDeviceKey()">Rotate</button>
+              <div class="setting-row">
+                <div><strong>Rotate key</strong><span>New key only decrypts new messages</span></div>
+                <button class="btn danger" onclick="rotateDeviceKey()">Rotate</button>
+              </div>
             </div>
           </section>
         </div>
@@ -836,12 +870,16 @@
       'Friend list': '\u597d\u53cb\u5217\u8868',
       'Profile': '\u4e2a\u4eba\u8d44\u6599',
       'Public identity': '\u516c\u5f00\u8d44\u6599',
+      'Account & profile': '\u8d26\u53f7\u8d44\u6599',
+      'Avatar and nickname': '\u5934\u50cf\u4e0e\u6635\u79f0',
       'Nickname': '\u6635\u79f0',
       'Bio': '\u7b80\u4ecb',
       'Avatar': '\u5934\u50cf',
       'Clear avatar': '\u6e05\u9664\u5934\u50cf',
       'Preferences': '\u504f\u597d',
       'Local options': '\u672c\u5730\u9009\u9879',
+      'General': '\u901a\u7528',
+      'Theme and notifications': '\u4e3b\u9898\u4e0e\u901a\u77e5',
       'Current appearance': '\u5f53\u524d\u5916\u89c2',
       'Light': '\u6d45\u8272',
       'Dark': '\u6df1\u8272',
@@ -850,6 +888,8 @@
       'Enable': '\u5f00\u542f',
       'Enabled': '\u5df2\u5f00\u542f',
       'Account security': '\u8d26\u53f7\u5b89\u5168',
+      'Login security': '\u767b\u5f55\u5b89\u5168',
+      'Password management': '\u5bc6\u7801\u7ba1\u7406',
       'Old password': '\u65e7\u5bc6\u7801',
       'New password': '\u65b0\u5bc6\u7801',
       'Change password': '\u4fee\u6539\u5bc6\u7801',
@@ -860,6 +900,8 @@
       'New key only decrypts new messages': '\u65b0\u5bc6\u94a5\u53ea\u80fd\u89e3\u5bc6\u65b0\u6d88\u606f',
       'Encryption info': '\u52a0\u5bc6\u4fe1\u606f',
       'Device security status': '\u8bbe\u5907\u5b89\u5168\u72b6\u6001',
+      'Privacy & encryption': '\u9690\u79c1\u4e0e\u52a0\u5bc6',
+      'Messages and keys': '\u6d88\u606f\u4e0e\u5bc6\u94a5',
       'Message body encrypted': '\u6d88\u606f\u5185\u5bb9\u5df2\u52a0\u5bc6',
       'Server stores ciphertext after local encryption': '\u672c\u5730\u52a0\u5bc6\u540e\uff0c\u670d\u52a1\u5668\u53ea\u4fdd\u5b58\u5bc6\u6587',
       'Message encryption': '\u6d88\u606f\u52a0\u5bc6',
