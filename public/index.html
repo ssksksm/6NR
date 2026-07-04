@@ -534,6 +534,28 @@
     .setting-row:last-child { border-bottom: 0; }
     .setting-row strong { display: block; font-size: 14px; }
     .setting-row span { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .feature-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0;
+    }
+    .feature-item {
+      min-height: 78px;
+      padding: 14px;
+      border-bottom: 1px solid var(--line);
+      display: grid;
+      align-content: center;
+      gap: 4px;
+    }
+    .feature-item:nth-child(odd) { border-right: 1px solid var(--line); }
+    .feature-item strong { font-size: 14px; }
+    .feature-item span { color: var(--muted); font-size: 12px; }
+    .setting-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+    .support-email {
+      color: var(--ink);
+      font-weight: 800;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    }
     .setting-status {
       min-width: 76px;
       text-align: center;
@@ -585,6 +607,8 @@
       .settings-hero .settings-actions { grid-column: 1 / -1; }
       .settings-status-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .settings-grid { grid-template-columns: 1fr; }
+      .feature-list { grid-template-columns: 1fr; }
+      .feature-item:nth-child(odd) { border-right: 0; }
     }
   </style>
 </head>
@@ -761,6 +785,23 @@
           <section class="settings-panel">
             <div class="settings-head">
               <div>
+                <h3>Feature guide</h3>
+                <p>What 6nr can do</p>
+              </div>
+            </div>
+            <div class="settings-list feature-list">
+              <div class="feature-item"><strong>Encrypted chats</strong><span>Private and group messages are encrypted locally</span></div>
+              <div class="feature-item"><strong>Image compression</strong><span>Large photos compress before sending</span></div>
+              <div class="feature-item"><strong>Moments square</strong><span>Post updates and hide from selected friends</span></div>
+              <div class="feature-item"><strong>Chat tools</strong><span>Search, draft, pin, mute, read status</span></div>
+              <div class="feature-item"><strong>Device fingerprint</strong><span>Check the local encryption identity</span></div>
+              <div class="feature-item"><strong>Friend controls</strong><span>Requests, blocking, online status</span></div>
+            </div>
+          </section>
+
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
                 <h3>Login security</h3>
                 <p>Password management</p>
               </div>
@@ -818,6 +859,32 @@
               </div>
             </div>
           </section>
+
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Feedback & tools</h3>
+                <p>Bug reports and local utilities</p>
+              </div>
+            </div>
+            <div class="settings-list">
+              <div class="setting-row">
+                <div><strong>Bug feedback</strong><span class="support-email">yljylj2026@outlook.com</span></div>
+                <div class="setting-actions">
+                  <button class="btn primary" onclick="openFeedbackEmail()">Email</button>
+                  <button class="btn" onclick="copyFeedbackEmail()">Copy</button>
+                </div>
+              </div>
+              <div class="setting-row">
+                <div><strong>Device fingerprint</strong><span>Copy current encryption identity</span></div>
+                <button class="btn" onclick="copyDeviceFingerprint()">Copy</button>
+              </div>
+              <div class="setting-row">
+                <div><strong>Clear drafts</strong><span>Remove all local unsent drafts</span></div>
+                <button class="btn danger" onclick="clearAllDrafts()">Clear</button>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
@@ -872,6 +939,7 @@
     let draftAvatar = '';
     let typingTimers = {};
     let onlineIds = new Set();
+    const SUPPORT_EMAIL = 'yljylj2026@outlook.com';
     const pins = new Set(JSON.parse(localStorage.getItem('pins') || '[]'));
     const mutes = new Set(JSON.parse(localStorage.getItem('mutes') || '[]'));
 
@@ -947,6 +1015,19 @@
       'Local options': '\u672c\u5730\u9009\u9879',
       'General': '\u901a\u7528',
       'Theme and notifications': '\u4e3b\u9898\u4e0e\u901a\u77e5',
+      'Feature guide': '\u529f\u80fd\u4ecb\u7ecd',
+      'What 6nr can do': '6nr \u80fd\u505a\u4ec0\u4e48',
+      'Encrypted chats': '\u52a0\u5bc6\u804a\u5929',
+      'Private and group messages are encrypted locally': '\u79c1\u804a\u548c\u7fa4\u804a\u6d88\u606f\u90fd\u5728\u672c\u5730\u52a0\u5bc6',
+      'Image compression': '\u56fe\u7247\u538b\u7f29',
+      'Large photos compress before sending': '\u5927\u56fe\u53d1\u9001\u524d\u81ea\u52a8\u538b\u7f29',
+      'Moments square': '\u52a8\u6001\u5e7f\u573a',
+      'Post updates and hide from selected friends': '\u53d1\u5e03\u52a8\u6001\uff0c\u53ef\u5bf9\u90e8\u5206\u597d\u53cb\u9690\u85cf',
+      'Chat tools': '\u804a\u5929\u5de5\u5177',
+      'Search, draft, pin, mute, read status': '\u641c\u7d22\u3001\u8349\u7a3f\u3001\u7f6e\u9876\u3001\u9759\u97f3\u3001\u5df2\u8bfb\u72b6\u6001',
+      'Check the local encryption identity': '\u67e5\u770b\u672c\u673a\u52a0\u5bc6\u8eab\u4efd',
+      'Friend controls': '\u597d\u53cb\u7ba1\u7406',
+      'Requests, blocking, online status': '\u597d\u53cb\u8bf7\u6c42\u3001\u62c9\u9ed1\u3001\u5728\u7ebf\u72b6\u6001',
       'Current appearance': '\u5f53\u524d\u5916\u89c2',
       'Light': '\u6d45\u8272',
       'Dark': '\u6df1\u8272',
@@ -999,6 +1080,18 @@
       'Group E2EE': '\u7fa4\u804a\u7aef\u5230\u7aef',
       'Per chat key': '\u5355\u4e2a\u4f1a\u8bdd\u5bc6\u94a5',
       'Shared group key': '\u7fa4\u804a\u5171\u4eab\u5bc6\u94a5',
+      'Feedback & tools': '\u53cd\u9988\u4e0e\u5de5\u5177',
+      'Bug reports and local utilities': '\u95ee\u9898\u53cd\u9988\u548c\u672c\u5730\u5de5\u5177',
+      'Bug feedback': '\u95ee\u9898\u53cd\u9988',
+      'Email': '\u53d1\u90ae\u4ef6',
+      'Copy current encryption identity': '\u590d\u5236\u5f53\u524d\u52a0\u5bc6\u8eab\u4efd',
+      'Clear drafts': '\u6e05\u7a7a\u8349\u7a3f',
+      'Remove all local unsent drafts': '\u5220\u9664\u672c\u673a\u672a\u53d1\u9001\u8349\u7a3f',
+      'Clear': '\u6e05\u7a7a',
+      'Feedback email copied': '\u53cd\u9988\u90ae\u7bb1\u5df2\u590d\u5236',
+      'Device fingerprint copied': '\u8bbe\u5907\u6307\u7eb9\u5df2\u590d\u5236',
+      'Clear all drafts?': '\u786e\u5b9a\u6e05\u7a7a\u6240\u6709\u8349\u7a3f\uff1f',
+      'Drafts cleared': '\u8349\u7a3f\u5df2\u6e05\u7a7a',
       'Create group': '\u521b\u5efa\u7fa4\u804a',
       'Close': '\u5173\u95ed',
       'Group name': '\u7fa4\u804a\u540d\u79f0',
@@ -1176,6 +1269,24 @@
     function keyOf(type, id) { return `${type}:${id}`; }
     function saveSet(name, set) { localStorage.setItem(name, JSON.stringify([...set])); }
     function toast(text) { $('toast').textContent = zh(text); $('toast').classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2400); }
+    async function copyText(text, message = 'Copied') {
+      try {
+        if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+        else {
+          const area = document.createElement('textarea');
+          area.value = text;
+          area.style.position = 'fixed';
+          area.style.opacity = '0';
+          document.body.appendChild(area);
+          area.select();
+          document.execCommand('copy');
+          area.remove();
+        }
+        toast(message);
+      } catch {
+        toast('Request failed');
+      }
+    }
     function html(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function color(v) { const a = ['#315efb','#00a884','#7c3aed','#b7791f','#e14d6d','#0891b2']; let n = 0; for (const c of String(v || '6nr')) n = (n + c.charCodeAt(0)) % a.length; return a[n]; }
     function initial(u) { return String(u?.nickname || u?.username || u?.name || '?').slice(0,1).toUpperCase(); }
@@ -1343,6 +1454,25 @@
     function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? zh('Typing...') : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || zh('Member')} ${zh('is typing')}` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
     async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not support notifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); refreshSettingsState(); toast(p === 'granted' ? 'Notifications enabled' : 'Notifications blocked'); }
     async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
+    function openFeedbackEmail(){
+      const subject = encodeURIComponent('6nr bug feedback');
+      const body = encodeURIComponent(`Please describe the issue here.\n\nUser: ${profile.nickname || currentUser?.username || ''}\nDevice fingerprint: ${shortFingerprint()}`);
+      location.href = `mailto:${SUPPORT_EMAIL}?subject=${subject}&body=${body}`;
+    }
+    function copyFeedbackEmail(){ copyText(SUPPORT_EMAIL, 'Feedback email copied'); }
+    async function copyDeviceFingerprint(){ copyText(await deviceFingerprint(), 'Device fingerprint copied'); }
+    function clearAllDrafts(){
+      if(!confirm(zh('Clear all drafts?'))) return;
+      const keys = [];
+      for(let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if(key && key.startsWith('draft:')) keys.push(key);
+      }
+      keys.forEach(key => localStorage.removeItem(key));
+      if(active && $('message-input')) $('message-input').value = '';
+      renderInspector();
+      toast('Drafts cleared');
+    }
 
     async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); renderInspector(); }
     async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
@@ -1350,7 +1480,7 @@
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
     function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); applyLiquidGlass(document); }
-    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:memberText(g.member_count) })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
+    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name||zh('Direct'), avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name||zh('Groups'), time:g.last_time, unread:0, sub:memberText(g.member_count) })); return rows.filter(r => String(r.name || '').toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
     function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?zh('Muted')+' - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : `<div class="sub" style="padding:14px">${zh('No conversations')}</div>`; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
     function toggleMute(k){ mutes.has(k)?mutes.delete(k):mutes.add(k); saveSet('mutes', mutes); renderConversations(); renderInspector(); }
@@ -1378,8 +1508,8 @@
     }
 
     function payloadText(text){ return JSON.stringify({type:'text', text}); }
-    function handleDraftInput(){ if(!active) return; const k=keyOf(active.type, active.id); localStorage.setItem(`draft:${k}`, $('message-input').value); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
-    async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; input.value=''; localStorage.removeItem(`draft:${keyOf(active.type, active.id)}`); sendTyping(false); await sendPayload(payloadText(text)); }
+    function handleDraftInput(){ if(!active) return; const k=keyOf(active.type, active.id), value=$('message-input').value; value.trim()?localStorage.setItem(`draft:${k}`, value):localStorage.removeItem(`draft:${k}`); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
+    async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; const k=keyOf(active.type, active.id); input.value=''; sendTyping(false); const ok = await sendPayload(payloadText(text)); if(ok) localStorage.removeItem(`draft:${k}`); else { input.value = text; localStorage.setItem(`draft:${k}`, text); } renderInspector(); }
     async function sendAttachment(e){
       const file=e.target.files[0];
       e.target.value='';
@@ -1399,7 +1529,7 @@
         toast(err.message || 'Image compression failed');
       }
     }
-    async function sendPayload(payload){ try { const localTime = new Date().toISOString(); if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
+    async function sendPayload(payload){ try { const localTime = new Date().toISOString(); if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); if(!g) throw new Error('No conversation selected'); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } return true; } catch(e){ toast(e.message); return false; } }
     async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML=`<div class="empty-chat">${zh('No messages')}</div>`; scrollBottom(); }
