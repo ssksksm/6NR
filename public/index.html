@@ -6,9 +6,9 @@
   <title>6nr</title>
   <style>
     :root {
-      --bg: #eef1f5;
-      --app: #f8fafc;
-      --surface: rgba(255,255,255,.86);
+      --bg: #edf1f6;
+      --app: #f7f9fc;
+      --surface: rgba(255,255,255,.72);
       --surface-solid: #fff;
       --panel: #f2f5f9;
       --ink: #10141f;
@@ -21,7 +21,12 @@
       --rose: #e14d6d;
       --amber: #b7791f;
       --violet: #7c3aed;
-      --shadow: 0 22px 60px rgba(18,24,38,.13);
+      --glass: rgba(255,255,255,.66);
+      --glass-strong: rgba(255,255,255,.82);
+      --glass-edge: rgba(255,255,255,.74);
+      --glass-line: rgba(20,28,45,.09);
+      --glass-shine: rgba(255,255,255,.58);
+      --shadow: 0 22px 60px rgba(18,24,38,.11);
       --shadow-sm: 0 8px 24px rgba(18,24,38,.08);
       --r: 8px;
     }
@@ -36,6 +41,11 @@
       --soft: #778196;
       --line: rgba(236,242,255,.10);
       --line-strong: rgba(236,242,255,.16);
+      --glass: rgba(18,24,35,.70);
+      --glass-strong: rgba(28,36,50,.82);
+      --glass-edge: rgba(255,255,255,.14);
+      --glass-line: rgba(236,242,255,.10);
+      --glass-shine: rgba(255,255,255,.08);
       --shadow: 0 22px 60px rgba(0,0,0,.32);
       --shadow-sm: 0 8px 24px rgba(0,0,0,.24);
     }
@@ -47,10 +57,16 @@
       overflow: hidden;
       color: var(--ink);
       background:
-        linear-gradient(130deg, rgba(49,94,251,.08), transparent 36%),
-        linear-gradient(310deg, rgba(0,168,132,.10), transparent 34%),
+        linear-gradient(180deg, rgba(255,255,255,.64), transparent 46%),
+        linear-gradient(145deg, rgba(49,94,251,.06), rgba(0,168,132,.05) 44%, rgba(225,77,109,.04)),
         var(--bg);
       font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    [data-theme="dark"] body, body[data-theme="dark"] {
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.04), transparent 48%),
+        linear-gradient(145deg, rgba(49,94,251,.10), rgba(0,168,132,.05) 48%, rgba(225,77,109,.05)),
+        var(--bg);
     }
     button, input, textarea, select { font: inherit; }
     button { border: 0; cursor: pointer; }
@@ -93,33 +109,40 @@
     .auth {
       min-height: 100vh;
       display: grid;
-      grid-template-columns: minmax(360px, 500px) 1fr;
-      background: #0d1320;
-      color: #fff;
-    }
-    .auth-form { padding: 54px; display: flex; flex-direction: column; justify-content: center; }
-    .auth-brand { width: 52px; height: 52px; border-radius: 14px; display: grid; place-items: center; background: #fff; color: #111827; font-size: 24px; font-weight: 950; margin-bottom: 34px; }
-    .auth h1 { font-size: 42px; line-height: 1.06; margin: 0 0 12px; letter-spacing: 0; }
-    .auth p { color: #aeb8ca; margin: 0 0 28px; }
-    .auth input { height: 46px; color: #fff; background: rgba(255,255,255,.08); border-color: rgba(255,255,255,.14); }
-    .auth input::placeholder { color: #7f8aa0; }
-    .auth-visual {
-      position: relative;
-      overflow: hidden;
+      place-items: center;
+      padding: 24px;
       background:
-        linear-gradient(125deg, rgba(49,94,251,.34), rgba(0,168,132,.18)),
-        url("https://images.unsplash.com/photo-1550751827-4bd374c3f58b?auto=format&fit=crop&w=1500&q=82") center/cover;
+        linear-gradient(180deg, #f8fafc, #e8edf4);
+      color: var(--ink);
     }
-    .auth-visual::after {
-      content: "";
-      position: absolute;
-      inset: auto 42px 42px 42px;
-      height: 210px;
-      border: 1px solid rgba(255,255,255,.18);
-      border-radius: 18px;
-      background: rgba(8,12,22,.52);
-      backdrop-filter: blur(18px);
-      box-shadow: 0 28px 80px rgba(0,0,0,.35);
+    .auth-form {
+      width: min(420px, 100%);
+      max-height: calc(100vh - 48px);
+      overflow: auto;
+      padding: 30px;
+      display: grid;
+      gap: 18px;
+      border: 1px solid var(--glass-edge);
+      border-radius: 22px;
+      background:
+        linear-gradient(160deg, var(--glass-shine), transparent 34%),
+        var(--glass);
+      backdrop-filter: blur(26px) saturate(150%);
+      box-shadow: var(--shadow);
+    }
+    .auth-brand { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--ink); color: var(--surface-solid); font-size: 22px; font-weight: 950; }
+    .auth h1 { font-size: 34px; line-height: 1.08; margin: 0; letter-spacing: 0; }
+    .auth p { color: var(--muted); margin: -8px 0 4px; }
+    .auth-stack { display: grid; gap: 10px; }
+    .auth input { height: 46px; color: var(--ink); background: var(--glass-strong); border-color: var(--glass-line); }
+    .auth input::placeholder { color: var(--soft); }
+    .auth-actions { display: grid; gap: 10px; }
+    .auth-actions .btn { width: 100%; height: 44px; }
+    .auth-link { color: var(--ink); border-color: transparent; }
+    .auth-visual { display: none; }
+    body[data-theme="dark"] .auth {
+      background:
+        linear-gradient(180deg, #111722, #0b0e14);
     }
 
     .app {
@@ -130,9 +153,11 @@
       gap: 12px;
     }
     .rail, .sidebar, .chat, .inspector, .page {
-      border: 1px solid var(--line);
-      background: var(--surface);
-      backdrop-filter: blur(18px);
+      border: 1px solid var(--glass-edge);
+      background:
+        linear-gradient(160deg, var(--glass-shine), transparent 32%),
+        var(--surface);
+      backdrop-filter: blur(24px) saturate(145%);
       box-shadow: var(--shadow);
       border-radius: 14px;
       overflow: hidden;
@@ -290,6 +315,89 @@
     .moment-head { display: flex; gap: 10px; align-items: center; }
     .comment { padding: 8px 10px; border-radius: 8px; background: var(--panel); margin-top: 6px; }
 
+    .settings-page { padding: 18px; }
+    .settings-shell {
+      max-width: 1040px;
+      margin: 0 auto;
+      display: grid;
+      gap: 14px;
+    }
+    .settings-hero, .settings-panel {
+      border: 1px solid var(--glass-edge);
+      background:
+        linear-gradient(160deg, var(--glass-shine), transparent 34%),
+        var(--glass);
+      backdrop-filter: blur(26px) saturate(150%);
+      box-shadow: var(--shadow-sm);
+      border-radius: 18px;
+    }
+    .settings-hero {
+      min-height: 116px;
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 16px;
+      padding: 18px;
+    }
+    .settings-avatar { width: 62px; height: 62px; font-size: 20px; }
+    .settings-title { display: grid; gap: 2px; min-width: 0; }
+    .eyebrow { margin: 0; color: var(--muted); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; }
+    .settings-title h2 { font-size: 28px; }
+    .settings-panel {
+      padding: 18px;
+      display: grid;
+      gap: 16px;
+    }
+    .settings-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      align-items: start;
+    }
+    .settings-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--glass-line);
+      padding-bottom: 12px;
+    }
+    .settings-head p { margin: 4px 0 0; color: var(--muted); }
+    .settings-form { display: grid; gap: 12px; }
+    .field { display: grid; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 800; }
+    .field input, .field textarea {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--ink);
+      background: var(--glass-strong);
+      border-color: var(--glass-line);
+    }
+    .settings-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+    .setting-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 12px;
+      min-height: 52px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--glass-line);
+    }
+    .setting-row:last-child { border-bottom: 0; }
+    .setting-row strong { display: block; font-size: 14px; }
+    .setting-row span { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+    .setting-status {
+      min-width: 76px;
+      text-align: center;
+      padding: 6px 10px;
+      border: 1px solid var(--glass-line);
+      border-radius: 99px;
+      background: var(--glass-strong);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+    }
+    .danger-zone { border-color: color-mix(in srgb, var(--rose) 34%, var(--glass-edge)); }
+
     .modal { position: fixed; inset: 0; z-index: 80; background: rgba(8,12,20,.58); display: grid; place-items: center; padding: 18px; }
     .modal-card { width: min(560px, 100%); max-height: 86vh; overflow: auto; border: 1px solid var(--line); background: var(--surface-solid); color: var(--ink); border-radius: 14px; padding: 18px; box-shadow: var(--shadow); display: grid; gap: 12px; }
     .check-list { display: grid; gap: 8px; }
@@ -317,6 +425,10 @@
       .bubble-wrap { max-width: 94%; }
       .page { grid-column: 1; border-radius: 0; box-shadow: none; padding: 12px; }
       .page-grid { grid-template-columns: 1fr; }
+      .settings-page { padding: 12px; }
+      .settings-hero { grid-template-columns: auto 1fr; }
+      .settings-hero .settings-actions { grid-column: 1 / -1; }
+      .settings-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -327,15 +439,15 @@
       <div class="auth-brand">6</div>
       <h1 id="auth-title">Welcome back</h1>
       <p id="auth-subtitle">6nr</p>
-      <input id="auth-username" placeholder="Username" autocomplete="username">
-      <div style="height:10px"></div>
-      <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
-      <div style="height:10px"></div>
-      <input id="auth-confirm" class="hidden" type="password" placeholder="ConfirmPassword" autocomplete="new-password">
-      <div style="height:14px"></div>
-      <button id="auth-submit" class="btn primary" type="button">Sign in</button>
-      <div style="height:16px"></div>
-      <button id="auth-switch" class="btn ghost" type="button" onclick="toggleAuth()">Create account</button>
+      <div class="auth-stack">
+        <input id="auth-username" placeholder="Username" autocomplete="username">
+        <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
+        <input id="auth-confirm" class="hidden" type="password" placeholder="Confirm password" autocomplete="new-password">
+      </div>
+      <div class="auth-actions">
+        <button id="auth-submit" class="btn primary" type="button">Sign in</button>
+        <button id="auth-switch" class="btn ghost auth-link" type="button" onclick="toggleAuth()">Create account</button>
+      </div>
     </div>
     <div class="auth-visual"></div>
   </section>
@@ -378,7 +490,7 @@
           <div id="chat-avatar" class="avatar">6</div>
           <div><h3 id="chat-title">Select conversation</h3><div id="chat-sub" class="sub"> </div></div>
         </div>
-        <div class="search-box"><span data-i="search"></span><input id="message-search" placeholder="SearchCurrentChats" oninput="renderLoadedMessages()"></div>
+        <div class="search-box"><span data-i="search"></span><input id="message-search" placeholder="Search messages" oninput="renderLoadedMessages()"></div>
         <div class="chat-tools">
           <button id="pin-btn" class="btn icon-only" title="Pin conversation" onclick="togglePinActive()"></button>
           <button id="mute-btn" class="btn icon-only" title="Mute conversation" onclick="toggleMuteActive()"></button>
@@ -390,7 +502,7 @@
       <div class="composer">
         <label class="btn icon-only" for="file-input" title="Attach file"></label>
         <input id="file-input" type="file" onchange="sendAttachment(event)">
-        <input id="message-input" placeholder="TypeMessages" oninput="handleDraftInput()" onkeydown="if(event.key==='Enter')sendMessage()">
+        <input id="message-input" placeholder="Type a message" oninput="handleDraftInput()" onkeydown="if(event.key==='Enter')sendMessage()">
         <button class="btn primary" onclick="sendMessage()"><span data-i="send"></span>Send</button>
       </div>
     </main>
@@ -405,7 +517,7 @@
         <div class="card">
           <h2>Square</h2>
           <textarea id="moment-input" placeholder="Write a post"></textarea>
-          <select id="moment-blocked" multiple title="HiddenFriends"></select>
+          <select id="moment-blocked" multiple title="Hidden friends"></select>
           <button class="btn primary" onclick="postMoment()">Post</button>
         </div>
         <div id="square-list"></div>
@@ -420,40 +532,91 @@
             <div class="actions"><input id="search-input" placeholder="Search users"><button class="btn primary" onclick="searchUsers()">Search</button></div>
             <div id="search-results"></div>
           </div>
-          <div class="card"><h3>FriendsRequest</h3><div id="request-list"></div></div>
+          <div class="card"><h3>Friend requests</h3><div id="request-list"></div></div>
         </div>
-        <div class="card"><h3>FriendsList</h3><div id="friend-list"></div></div>
+        <div class="card"><h3>Friend list</h3><div id="friend-list"></div></div>
       </div>
     </main>
 
-    <main id="settings-page" class="page">
-      <div class="page-grid">
-        <div>
-          <div class="card">
-            <h2>Profile</h2>
-            <input id="nickname-input" placeholder="Nickname">
-            <textarea id="bio-input" maxlength="160" placeholder="Bio"></textarea>
-            <input id="avatar-file" type="file" accept="image/*" onchange="previewAvatar(event)">
-            <div class="actions"><div id="avatar-preview" class="avatar">6</div><button class="btn primary" onclick="saveProfile()">Save</button><button class="btn" onclick="clearAvatar()">Clear avatar</button></div>
+    <main id="settings-page" class="page settings-page">
+      <div class="settings-shell">
+        <section class="settings-hero">
+          <div id="avatar-preview" class="avatar settings-avatar">6</div>
+          <div class="settings-title">
+            <p class="eyebrow">Settings</p>
+            <h2 id="settings-name">6nr</h2>
+            <div id="settings-bio" class="sub">No bio</div>
           </div>
-          <div class="card">
-            <h3>Password</h3>
-            <input id="old-password" type="password" placeholder="OldPassword">
-            <input id="new-password" type="password" placeholder="NewPassword">
-            <button class="btn primary" onclick="changePassword()">ChangePassword</button>
+          <div class="settings-actions">
+            <button class="btn primary" onclick="saveProfile()">Save</button>
+            <button class="btn" onclick="logout()">Log out</button>
           </div>
-        </div>
-        <div>
-          <div class="card">
-            <h3>Notifications</h3>
-            <button class="btn good" onclick="enableNotifications()">Enable browserNotifications</button>
-            <button class="btn" onclick="toggleTheme()">Theme</button>
-          </div>
-          <div class="card">
-            <h3>Device key</h3>
-            <button class="btn danger" onclick="rotateDeviceKey()">ReNewgenerateThisDevice key</button>
-            <div class="sub">Newdevice can only decryptNewMessages.</div>
-          </div>
+        </section>
+
+        <div class="settings-grid">
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Profile</h3>
+                <p>Public identity</p>
+              </div>
+            </div>
+            <div class="settings-form">
+              <label class="field">Nickname<input id="nickname-input" placeholder="Nickname"></label>
+              <label class="field">Bio<textarea id="bio-input" maxlength="160" placeholder="Bio"></textarea></label>
+              <label class="field">Avatar<input id="avatar-file" type="file" accept="image/*" onchange="previewAvatar(event)"></label>
+              <div class="settings-actions">
+                <button class="btn" onclick="clearAvatar()">Clear avatar</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Preferences</h3>
+                <p>Local options</p>
+              </div>
+            </div>
+            <div class="setting-row">
+              <div><strong>Theme</strong><span>Current appearance</span></div>
+              <button id="theme-toggle" class="btn" onclick="toggleTheme()">Light</button>
+            </div>
+            <div class="setting-row">
+              <div><strong>Notifications</strong><span>Browser permission</span></div>
+              <button id="notify-toggle" class="btn good" onclick="enableNotifications()">Enable</button>
+            </div>
+          </section>
+
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Password</h3>
+                <p>Account security</p>
+              </div>
+            </div>
+            <div class="settings-form">
+              <label class="field">Old password<input id="old-password" type="password" placeholder="Old password"></label>
+              <label class="field">New password<input id="new-password" type="password" placeholder="New password"></label>
+              <div class="settings-actions">
+                <button class="btn primary" onclick="changePassword()">Change password</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-panel danger-zone">
+            <div class="settings-head">
+              <div>
+                <h3>Device key</h3>
+                <p>Encryption identity</p>
+              </div>
+              <span class="setting-status">Local</span>
+            </div>
+            <div class="setting-row">
+              <div><strong>Rotate key</strong><span>New key only decrypts new messages</span></div>
+              <button class="btn danger" onclick="rotateDeviceKey()">Rotate</button>
+            </div>
+          </section>
         </div>
       </div>
     </main>
@@ -461,7 +624,7 @@
 
   <div id="group-modal" class="modal hidden">
     <div class="modal-card">
-      <div class="actions" style="justify-content:space-between"><h2>CreateGroups</h2><button class="btn" onclick="closeGroupModal()">Close</button></div>
+      <div class="actions" style="justify-content:space-between"><h2>Create group</h2><button class="btn" onclick="closeGroupModal()">Close</button></div>
       <input id="group-name" placeholder="Group name">
       <div id="group-friends" class="check-list"></div>
       <button class="btn primary" onclick="createGroup()">Create</button>
@@ -563,11 +726,20 @@
     async function wrapGroupKey(raw, user) { const k = await Crypto.derive(keyPair.privateKey, user.public_key); return Crypto.encryptText(raw, k); }
     async function unwrapGroupKey(group) { if (groupKeys[group.id]) return groupKeys[group.id]; const k = await Crypto.derive(keyPair.privateKey, group.owner_public_key); const raw = await Crypto.decryptText(group.wrapped_key, k); const key = await Crypto.importAes(raw); groupKeys[group.id] = key; return key; }
 
-    function toggleAuth(){ isLogin = !isLogin; $('auth-title').textContent = isLogin ? 'Welcome back' : 'Create account'; $('auth-confirm').classList.toggle('hidden', isLogin); $('auth-submit').textContent = isLogin ? 'Sign in' : 'Register'; $('auth-switch').textContent = isLogin ? 'Create account' : 'BackSign in'; }
+    function toggleAuth(){
+      isLogin = !isLogin;
+      $('auth-title').textContent = isLogin ? 'Welcome back' : 'Create account';
+      $('auth-subtitle').textContent = isLogin ? '6nr' : 'Start with a secure account';
+      $('auth-confirm').classList.toggle('hidden', isLogin);
+      $('auth-password').autocomplete = isLogin ? 'current-password' : 'new-password';
+      $('auth-submit').textContent = isLogin ? 'Sign in' : 'Register';
+      $('auth-switch').textContent = isLogin ? 'Create account' : 'Back to sign in';
+    }
     async function handleAuth(){
       const username = $('auth-username').value.trim(), password = $('auth-password').value, confirm = $('auth-confirm').value;
-      if (!username || !password) return toast('Enter username andPassword');
-      if (!isLogin && password !== confirm) return toast('BothPassworddo not match');
+      if (!username || !password) return toast('Enter username and password');
+      if (!isLogin && !confirm) return toast('Confirm your password');
+      if (!isLogin && password !== confirm) return toast('Passwords do not match');
       try {
         let data;
         if (isLogin) {
@@ -585,7 +757,7 @@
     async function enter(){ $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); connect(); await loadEverything(); showPage('chat'); }
     function logout(){ if(ws) ws.close(); token=''; currentUser=null; localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
     function renderMe(){ $('me-name').textContent = profile.nickname || currentUser.username; $('me-avatar').textContent = profile.avatar ? '' : initial(profile); $('me-avatar').style.cssText = avatarStyle(profile); }
-    function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; localStorage.setItem('theme', next); }
+    function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; localStorage.setItem('theme', next); refreshSettingsState(); }
 
     function connect(){
       if(ws) ws.close();
@@ -595,8 +767,8 @@
         if(m.type==='presence_snapshot') { onlineIds = new Set((m.online||[]).map(Number)); renderConversations(); renderInspector(); }
         if(m.type==='presence') { m.online ? onlineIds.add(Number(m.user_id)) : onlineIds.delete(Number(m.user_id)); renderConversations(); renderInspector(); }
         if(m.type==='typing') showTyping(m);
-        if(m.type==='new_message'){ notify('NewDirectMessages', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
-        if(m.type==='new_group_message'){ notify('New groupMessages', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
+        if(m.type==='new_message'){ notify('New direct message', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
+        if(m.type==='new_group_message'){ notify('New group message', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
         if(['groups_changed','friends_changed','friend_request','new_moment','read_receipt','group_read_receipt'].includes(m.type)) loadEverything();
       };
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
@@ -605,8 +777,8 @@
     function notify(title, convKey){ if(mutes.has(convKey)) return; if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:title}); }
     function sendTyping(isTyping=true){ if(!active) return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); }
     function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? 'Typing...' : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || 'Member'} is typing` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
-    async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not supportNotifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); toast(p === 'granted' ? 'NotificationsOn' : 'NotificationsNot allowed'); }
-    async function rotateDeviceKey(){ if(!confirm('ReNewgenerateThisDevice key after ,OldMessagesmayNonebe unreadable. Continue?')) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('ThisDevice keyDoneupdateNew'); }
+    async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not support notifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); refreshSettingsState(); toast(p === 'granted' ? 'Notifications enabled' : 'Notifications blocked'); }
+    async function rotateDeviceKey(){ if(!confirm('Rotate this device key? Old messages may be unreadable on this device.')) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
 
     async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); renderInspector(); }
     async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
@@ -614,7 +786,7 @@
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
     function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); }
-    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?'EncryptedMessages':'NoMessages'})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:`${g.member_count} members` })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
+    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?'Encrypted message':'No messages'})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:`${g.member_count} members` })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
     function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?'Muted - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : '<div class="sub" style="padding:14px">No conversations</div>'; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
     function toggleMute(k){ mutes.has(k)?mutes.delete(k):mutes.add(k); saveSet('mutes', mutes); renderConversations(); renderInspector(); }
@@ -622,7 +794,7 @@
     function toggleMuteActive(){ if(active) toggleMute(keyOf(active.type, active.id)); }
     function updateHeaderButtons(){ if(!active) return; const k=keyOf(active.type, active.id); $('pin-btn').classList.toggle('pin', pins.has(k)); $('mute-btn').classList.toggle('pin', mutes.has(k)); }
     async function openConversation(type,id){ const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || 'Direct'} : {type,id, name:data?.name || 'Groups'}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? 'Online' : 'Offline') : `${data?.member_count || 0} members`; $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
-    function renderInspector(){ const body=$('inspector-body'); if(!active){ body.innerHTML='<div class="info-card sub">NoSelect conversation</div>'; return; } const k=keyOf(active.type,active.id); const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null; const group=active.type==='group'?groups.find(g=>g.id===active.id):null; body.innerHTML = `<div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?'Online':'Offline'):(group?.member_count||0)+' members'}</div></div></div></div><div class="info-card"><div class="kv"><span>Pinned</span><strong>${pins.has(k)?'On':'Close'}</strong></div><div class="kv"><span>Muted</span><strong>${mutes.has(k)?'On':'Close'}</strong></div><div class="kv"><span>Draft</span><strong>${localStorage.getItem('draft:'+k)?'DoneSave':'None'}</strong></div></div><div class="info-card"><button class="btn" onclick="togglePinActive()">TogglePinned</button><button class="btn" onclick="toggleMuteActive()">ToggleMuted</button></div>`; }
+    function renderInspector(){ const body=$('inspector-body'); if(!active){ body.innerHTML='<div class="info-card sub">No conversation selected</div>'; return; } const k=keyOf(active.type,active.id); const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null; const group=active.type==='group'?groups.find(g=>g.id===active.id):null; body.innerHTML = `<div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?'Online':'Offline'):(group?.member_count||0)+' members'}</div></div></div></div><div class="info-card"><div class="kv"><span>Pinned</span><strong>${pins.has(k)?'On':'Off'}</strong></div><div class="kv"><span>Muted</span><strong>${mutes.has(k)?'On':'Off'}</strong></div><div class="kv"><span>Draft</span><strong>${localStorage.getItem('draft:'+k)?'Saved':'None'}</strong></div></div><div class="info-card"><button class="btn" onclick="togglePinActive()">Toggle pin</button><button class="btn" onclick="toggleMuteActive()">Toggle mute</button></div>`; }
 
     function payloadText(text){ return JSON.stringify({type:'text', text}); }
     function handleDraftInput(){ if(!active) return; const k=keyOf(active.type, active.id); localStorage.setItem(`draft:${k}`, $('message-input').value); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
@@ -631,36 +803,47 @@
     async function sendPayload(payload){ try { if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
     async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
-    function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML='<div class="empty-chat">NoMessages</div>'; scrollBottom(); }
-    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:'[EmptyMessages]'}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||'Image')}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||'File')}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||'Member')}</div>`:''}<div class="msg-actions"><button class="mini" title="Copy" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?'Read':'Delivered'}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
-    function copyMessage(encoded){ navigator.clipboard?.writeText(decodeURIComponent(escape(atob(encoded)))); toast('DoneCopy'); }
+    function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML='<div class="empty-chat">No messages</div>'; scrollBottom(); }
+    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:'[Empty message]'}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||'Image')}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||'File')}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||'Member')}</div>`:''}<div class="msg-actions"><button class="mini" title="Copy" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?'Read':'Delivered'}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
+    function copyMessage(encoded){ navigator.clipboard?.writeText(decodeURIComponent(escape(atob(encoded)))); toast('Copied'); }
     function scrollBottom(){ setTimeout(()=>{$('messages').scrollTop=$('messages').scrollHeight},20); }
     async function markDirect(id){ try{await api(`/mark-read/${id}`,{method:'POST'}); loadChats();}catch{} }
     async function markGroup(id){ try{await api(`/groups/${id}/mark-read`,{method:'POST'}); loadGroups();}catch{} }
 
-    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">RequestAddyou asFriends</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">Accept</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">Reject</button></div></div>`).join('') : '<div class="sub">NoNoneFriendsRequest.</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar ${onlineIds.has(f.id)?'online':''}" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${onlineIds.has(f.id)?'Online':'Offline'} - ${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">Chats</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'Unblock':'Block'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">Delete</button></div></div>`).join('') : '<div class="sub">NoNoneFriends.</div>'; }
+    function renderFriends(){ $('request-list').innerHTML = requests.length ? requests.map(r=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${html(r.nickname||r.username)}</div><div class="sub">Wants to add you</div></div><div class="actions"><button class="btn good" onclick="handleRequest(${r.from_id},'accept')">Accept</button><button class="btn" onclick="handleRequest(${r.from_id},'reject')">Reject</button></div></div>`).join('') : '<div class="sub">No friend requests.</div>'; $('friend-list').innerHTML = friends.length ? friends.map(f=>`<div class="friend-row"><div class="avatar ${onlineIds.has(f.id)?'online':''}" style="${avatarStyle(f)}">${initial(f)}</div><div><div class="title">${html(f.nickname||f.username)}</div><div class="sub">${onlineIds.has(f.id)?'Online':'Offline'} - ${html(f.bio||f.username)}</div></div><div class="actions"><button class="btn primary" onclick="setChatTab('direct');openConversation('direct',${f.id});showPage('chat')">Chat</button><button class="btn" onclick="toggleBlock(${f.id},${Number(f.is_blocked)})">${Number(f.is_blocked)?'Unblock':'Block'}</button><button class="btn danger" onclick="deleteFriend(${f.id})">Delete</button></div></div>`).join('') : '<div class="sub">No friends yet.</div>'; }
     async function searchUsers(){ const q=$('search-input').value.trim(); if(!q)return; const d=await api(`/search-users?q=${encodeURIComponent(q)}`); $('search-results').innerHTML = d.users.length ? d.users.map(u=>`<div class="friend-row"><div class="avatar" style="${avatarStyle(u)}">${initial(u)}</div><div><div class="title">${html(u.nickname||u.username)}</div><div class="sub">${html(u.bio||u.username)}</div></div><button class="btn primary" onclick="sendFriendRequest(${u.id})">Add</button></div>`).join('') : '<div class="sub">No results.</div>'; }
-    async function sendFriendRequest(id){ try{await api('/friend-request',{method:'POST',body:JSON.stringify({to_id:id})}); toast('DoneSendFriendsRequest'); $('search-results').innerHTML='';}catch(e){toast(e.message)} }
-    async function handleRequest(id,action){ await api(`/friend-request/${id}`,{method:'POST',body:JSON.stringify({action})}); toast(action==='accept'?'DoneAddFriends':'DoneReject'); loadEverything(); }
-    async function toggleBlock(id,isBlocked){ await api(`/block/${id}`,{method:isBlocked?'DELETE':'POST'}); toast(isBlocked?'DoneUnblock':'DoneBlock'); loadEverything(); }
-    async function deleteFriend(id){ if(!confirm('ConfirmDeleteFriends?'))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('DoneDelete'); loadEverything(); }
+    async function sendFriendRequest(id){ try{await api('/friend-request',{method:'POST',body:JSON.stringify({to_id:id})}); toast('Friend request sent'); $('search-results').innerHTML='';}catch(e){toast(e.message)} }
+    async function handleRequest(id,action){ await api(`/friend-request/${id}`,{method:'POST',body:JSON.stringify({action})}); toast(action==='accept'?'Friend added':'Request rejected'); loadEverything(); }
+    async function toggleBlock(id,isBlocked){ await api(`/block/${id}`,{method:isBlocked?'DELETE':'POST'}); toast(isBlocked?'Unblocked':'Blocked'); loadEverything(); }
+    async function deleteFriend(id){ if(!confirm('Delete this friend?'))return; await api(`/friends/${id}`,{method:'DELETE'}); toast('Friend deleted'); loadEverything(); }
     function openGroupModal(){ $('group-modal').classList.remove('hidden'); renderGroupFriends(); }
     function closeGroupModal(){ $('group-modal').classList.add('hidden'); }
-    function renderGroupFriends(){ $('group-friends').innerHTML = friends.length ? friends.map(f=>`<label class="check"><input type="checkbox" value="${f.id}"><span>${html(f.nickname||f.username)}</span></label>`).join('') : '<div class="sub">FirstAddFriendsbefore creating a group.</div>'; }
-    async function createGroup(){ const name=$('group-name').value.trim(); const picked=Array.from($('group-friends').querySelectorAll('input:checked')).map(i=>Number(i.value)); if(!name||!picked.length)return toast('Enter group name and selectFriends'); const aes=await Crypto.aesKey(); const raw=await Crypto.exportAes(aes); const all=[{id:currentUser.id, public_key:keyPair.publicKey}, ...friends.filter(f=>picked.includes(f.id))]; const members=[]; for(const u of all) members.push({user_id:u.id, wrapped_key:await wrapGroupKey(raw,u)}); await api('/groups',{method:'POST',body:JSON.stringify({name,members})}); closeGroupModal(); $('group-name').value=''; toast('GroupsDoneCreate'); await loadGroups(); setChatTab('group'); }
+    function renderGroupFriends(){ $('group-friends').innerHTML = friends.length ? friends.map(f=>`<label class="check"><input type="checkbox" value="${f.id}"><span>${html(f.nickname||f.username)}</span></label>`).join('') : '<div class="sub">Add friends before creating a group.</div>'; }
+    async function createGroup(){ const name=$('group-name').value.trim(); const picked=Array.from($('group-friends').querySelectorAll('input:checked')).map(i=>Number(i.value)); if(!name||!picked.length)return toast('Enter group name and select friends'); const aes=await Crypto.aesKey(); const raw=await Crypto.exportAes(aes); const all=[{id:currentUser.id, public_key:keyPair.publicKey}, ...friends.filter(f=>picked.includes(f.id))]; const members=[]; for(const u of all) members.push({user_id:u.id, wrapped_key:await wrapGroupKey(raw,u)}); await api('/groups',{method:'POST',body:JSON.stringify({name,members})}); closeGroupModal(); $('group-name').value=''; toast('Group created'); await loadGroups(); setChatTab('group'); }
 
     async function loadSquare(){ moments=(await api('/moments')).moments||[]; renderSquare(); }
     function renderMomentOptions(){ $('moment-blocked').innerHTML=friends.map(f=>`<option value="${f.id}">${html(f.nickname||f.username)}</option>`).join(''); }
-    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?'Unlike':'Like'} ${m.like_count||0}</button><span class="sub">${(m.comments||[]).length} comments</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="Write a comment"><button class="btn primary" onclick="addComment(${m.id})">Comment</button></div></div>`).join('') : '<div class="card sub">NoNoneposts.</div>'; }
+    function renderSquare(){ $('square-list').innerHTML = moments.length ? moments.map(m=>`<div class="card"><div class="moment-head"><div class="avatar" style="${avatarStyle(m)}">${initial(m)}</div><div><div class="title">${html(m.nickname||m.username)}</div><div class="sub">${time(m.created_at)}</div></div></div><div>${html(m.content)}</div><div class="actions"><button class="btn" onclick="toggleLike(${m.id})">${m.likes&&m.likes.includes(currentUser.id)?'Unlike':'Like'} ${m.like_count||0}</button><span class="sub">${(m.comments||[]).length} comments</span></div><div>${(m.comments||[]).map(c=>`<div class="comment"><b>${html(c.nickname||c.username)}:</b> ${html(c.content)}</div>`).join('')}</div><div class="actions"><input id="comment-${m.id}" placeholder="Write a comment"><button class="btn primary" onclick="addComment(${m.id})">Comment</button></div></div>`).join('') : '<div class="card sub">No posts yet.</div>'; }
     async function postMoment(){ const content=$('moment-input').value.trim(); const blocked=Array.from($('moment-blocked').selectedOptions).map(o=>Number(o.value)); if(!content)return; await api('/moments',{method:'POST',body:JSON.stringify({content,blocked})}); $('moment-input').value=''; loadSquare(); }
     async function toggleLike(id){ await api(`/moments/${id}/like`,{method:'POST'}); loadSquare(); }
     async function addComment(id){ const input=$(`comment-${id}`); const content=input.value.trim(); if(!content)return; await api(`/moments/${id}/comment`,{method:'POST',body:JSON.stringify({content})}); loadSquare(); }
-    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); }
-    function updateAvatarPreview(){ $('avatar-preview').textContent=draftAvatar?'':initial(profile); $('avatar-preview').style.cssText=draftAvatar?`background-image:url(${draftAvatar});background-color:transparent`:avatarStyle(profile); }
+    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); refreshSettingsState(); }
+    function refreshSettingsState(){
+      if(!$('settings-name')) return;
+      $('settings-name').textContent = profile.nickname || currentUser?.username || '6nr';
+      $('settings-bio').textContent = profile.bio || 'No bio';
+      if($('theme-toggle')) $('theme-toggle').textContent = document.body.dataset.theme === 'dark' ? 'Dark' : 'Light';
+      if($('notify-toggle')) {
+        const on = localStorage.getItem('notify') === '1';
+        $('notify-toggle').textContent = on ? 'Enabled' : 'Enable';
+        $('notify-toggle').classList.toggle('good', !on);
+      }
+    }
+    function updateAvatarPreview(){ $('avatar-preview').textContent=draftAvatar?'':initial(profile); $('avatar-preview').style.cssText=draftAvatar?`background-image:url(${draftAvatar});background-color:transparent`:avatarStyle(profile); refreshSettingsState(); }
     function previewAvatar(e){ const f=e.target.files[0]; if(!f)return; if(f.size>2.5*1024*1024)return toast('Avatar must be under 2.5MB'); const r=new FileReader(); r.onload=()=>{draftAvatar=r.result;updateAvatarPreview()}; r.readAsDataURL(f); }
     function clearAvatar(){ draftAvatar=''; updateAvatarPreview(); }
-    async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return; await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; renderMe(); toast('DoneSave'); }
-    async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return; await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('PasswordDoneChange'); }
+    async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return toast('Enter a nickname'); await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; renderMe(); loadSettings(); toast('Saved'); }
+    async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return toast('Enter both passwords'); await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('Password changed'); }
 
     $('auth-submit').addEventListener('click', handleAuth);
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
