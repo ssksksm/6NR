@@ -105,6 +105,75 @@
     }
     textarea { resize: vertical; min-height: 88px; }
     input:focus, textarea:focus, select:focus { border-color: color-mix(in srgb, var(--blue) 72%, var(--line)); box-shadow: 0 0 0 3px rgba(49,94,251,.12); }
+    .liquid-glass-defs { position: fixed; width: 0; height: 0; pointer-events: none; opacity: 0; }
+    .liquid-glass {
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
+      backdrop-filter: blur(28px) saturate(168%) contrast(104%);
+      -webkit-backdrop-filter: blur(28px) saturate(168%) contrast(104%);
+      box-shadow:
+        var(--shadow-sm),
+        inset 0 1px 0 rgba(255,255,255,.58),
+        inset 0 -1px 0 rgba(255,255,255,.18);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .liquid-glass > * { position: relative; z-index: 1; }
+    .liquid-glass::before,
+    .liquid-glass::after {
+      content: "";
+      position: absolute;
+      inset: -1px;
+      border-radius: inherit;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .liquid-glass::before {
+      background:
+        radial-gradient(220px 190px at var(--glass-x, 28%) var(--glass-y, 18%), rgba(255,255,255,.62), transparent 58%),
+        linear-gradient(120deg, rgba(255,255,255,.30), transparent 22%, rgba(255,255,255,.16) 44%, transparent 68%),
+        linear-gradient(180deg, rgba(255,255,255,.10), transparent 54%);
+      opacity: var(--glass-o, .58);
+      mix-blend-mode: screen;
+      filter: url(#liquid-glass-distortion);
+      transition: opacity .22s ease;
+    }
+    .liquid-glass::after {
+      border: 1px solid rgba(255,255,255,.44);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.16),
+        inset 12px 16px 32px rgba(255,255,255,.08),
+        inset -18px -18px 34px rgba(49,94,251,.035);
+      background:
+        linear-gradient(150deg, rgba(255,255,255,.36), transparent 28%, rgba(255,255,255,.12) 54%, transparent 78%);
+      opacity: .78;
+    }
+    .liquid-glass:hover { --glass-o: .78; border-color: color-mix(in srgb, var(--glass-edge) 68%, #fff); }
+    body[data-theme="dark"] .liquid-glass::before {
+      background:
+        radial-gradient(220px 190px at var(--glass-x, 28%) var(--glass-y, 18%), rgba(255,255,255,.18), transparent 58%),
+        linear-gradient(120deg, rgba(255,255,255,.12), transparent 24%, rgba(125,160,255,.10) 48%, transparent 70%);
+      opacity: var(--glass-o, .46);
+    }
+    body[data-theme="dark"] .liquid-glass::after {
+      border-color: rgba(255,255,255,.16);
+      box-shadow:
+        inset 0 0 0 1px rgba(255,255,255,.08),
+        inset 14px 16px 34px rgba(255,255,255,.035),
+        inset -16px -18px 34px rgba(49,94,251,.07);
+      opacity: .64;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .liquid-glass::before { animation: liquidGlassSweep 10s ease-in-out infinite alternate; }
+      @keyframes liquidGlassSweep {
+        from { transform: translate3d(-1.5%, -1%, 0) scale(1.01); }
+        to { transform: translate3d(1.5%, 1%, 0) scale(1.03); }
+      }
+    }
+    @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+      .liquid-glass { background: var(--surface-solid); }
+      .liquid-glass::before { display: none; }
+    }
 
     .auth {
       min-height: 100vh;
@@ -529,6 +598,12 @@
 </head>
 <body>
   <div id="toast" class="toast"></div>
+  <svg class="liquid-glass-defs" aria-hidden="true" focusable="false">
+    <filter id="liquid-glass-distortion" x="-20%" y="-20%" width="140%" height="140%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="8" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+  </svg>
   <section id="auth" class="auth">
     <div class="auth-form">
       <div class="auth-brand">6</div>
@@ -1048,6 +1123,60 @@
       });
       window.localeObserver.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['placeholder', 'title', 'aria-label'] });
     }
+    const liquidGlassTargets = [
+      '.auth-form',
+      '.rail',
+      '.sidebar',
+      '.chat',
+      '.inspector',
+      '.page.active',
+      '.card',
+      '.modal-card',
+      '.info-card',
+      '.settings-hero',
+      '.settings-status-grid',
+      '.settings-form',
+      '.settings-list',
+      '.security-list'
+    ].join(',');
+    function bindLiquidGlass(el){
+      if(!el || el.dataset.liquidGlass === '1') return;
+      el.dataset.liquidGlass = '1';
+      el.addEventListener('pointermove', e => {
+        const r = el.getBoundingClientRect();
+        if(!r.width || !r.height) return;
+        el.style.setProperty('--glass-x', `${Math.max(0, Math.min(100, ((e.clientX - r.left) / r.width) * 100))}%`);
+        el.style.setProperty('--glass-y', `${Math.max(0, Math.min(100, ((e.clientY - r.top) / r.height) * 100))}%`);
+        el.style.setProperty('--glass-o', '.86');
+      });
+      el.addEventListener('pointerleave', () => {
+        el.style.removeProperty('--glass-x');
+        el.style.removeProperty('--glass-y');
+        el.style.removeProperty('--glass-o');
+      });
+    }
+    function applyLiquidGlass(root = document){
+      const scope = root.nodeType === 1 || root.nodeType === 9 ? root : document;
+      const nodes = [];
+      if(scope.nodeType === 1 && scope.matches && scope.matches(liquidGlassTargets)) nodes.push(scope);
+      for(const el of Array.from(scope.querySelectorAll ? scope.querySelectorAll(liquidGlassTargets) : [])) nodes.push(el);
+      for(const el of nodes) {
+        el.classList.add('liquid-glass');
+        bindLiquidGlass(el);
+      }
+    }
+    function startLiquidGlass(){
+      applyLiquidGlass(document);
+      if(window.liquidGlassObserver) return;
+      window.liquidGlassObserver = new MutationObserver(records => {
+        for(const rec of records) {
+          for(const node of Array.from(rec.addedNodes || [])) {
+            if(node.nodeType === 1) applyLiquidGlass(node);
+          }
+        }
+      });
+      window.liquidGlassObserver.observe(document.body, { childList: true, subtree: true });
+    }
 
     function keyOf(type, id) { return `${type}:${id}`; }
     function saveSet(name, set) { localStorage.setItem(name, JSON.stringify([...set])); }
@@ -1160,7 +1289,7 @@
     async function loadChats(){ chats = (await api('/chat-list')).chats || []; renderConversations(); }
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
-    function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); }
+    function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); applyLiquidGlass(document); }
     function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name, avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name, time:g.last_time, unread:0, sub:memberText(g.member_count) })); return rows.filter(r => r.name.toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
     function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?zh('Muted')+' - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : `<div class="sub" style="padding:14px">${zh('No conversations')}</div>`; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
@@ -1279,7 +1408,8 @@
     $('auth-submit').addEventListener('click', handleAuth);
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
     startLocalization();
-    window.addEventListener('load', async()=>{ installIcons(); startLocalization(); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
+    startLiquidGlass();
+    window.addEventListener('load', async()=>{ installIcons(); startLocalization(); startLiquidGlass(); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
   </script>
 </body>
 </html>
