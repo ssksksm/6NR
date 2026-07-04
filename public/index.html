@@ -110,13 +110,13 @@
       position: relative;
       isolation: isolate;
       overflow: hidden;
-      backdrop-filter: blur(28px) saturate(168%) contrast(104%);
-      -webkit-backdrop-filter: blur(28px) saturate(168%) contrast(104%);
+      backdrop-filter: blur(18px) saturate(138%) contrast(101%);
+      -webkit-backdrop-filter: blur(18px) saturate(138%) contrast(101%);
       box-shadow:
         var(--shadow-sm),
-        inset 0 1px 0 rgba(255,255,255,.58),
-        inset 0 -1px 0 rgba(255,255,255,.18);
-      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+        inset 0 1px 0 rgba(255,255,255,.42),
+        inset 0 -1px 0 rgba(255,255,255,.12);
+      transition: border-color .2s ease, box-shadow .2s ease;
     }
     .liquid-glass > * { position: relative; z-index: 1; }
     .liquid-glass::before,
@@ -130,30 +130,29 @@
     }
     .liquid-glass::before {
       background:
-        radial-gradient(220px 190px at var(--glass-x, 28%) var(--glass-y, 18%), rgba(255,255,255,.62), transparent 58%),
-        linear-gradient(120deg, rgba(255,255,255,.30), transparent 22%, rgba(255,255,255,.16) 44%, transparent 68%),
-        linear-gradient(180deg, rgba(255,255,255,.10), transparent 54%);
-      opacity: var(--glass-o, .58);
+        radial-gradient(150px 120px at var(--glass-x, 24%) var(--glass-y, 18%), rgba(255,255,255,.38), transparent 62%),
+        linear-gradient(128deg, rgba(255,255,255,.18), transparent 26%, rgba(255,255,255,.08) 48%, transparent 76%);
+      opacity: var(--glass-o, .34);
       mix-blend-mode: screen;
       filter: url(#liquid-glass-distortion);
       transition: opacity .22s ease;
     }
     .liquid-glass::after {
-      border: 1px solid rgba(255,255,255,.44);
+      border: 1px solid rgba(255,255,255,.32);
       box-shadow:
-        inset 0 0 0 1px rgba(255,255,255,.16),
-        inset 12px 16px 32px rgba(255,255,255,.08),
-        inset -18px -18px 34px rgba(49,94,251,.035);
+        inset 0 0 0 1px rgba(255,255,255,.10),
+        inset 10px 14px 26px rgba(255,255,255,.045),
+        inset -14px -16px 28px rgba(49,94,251,.026);
       background:
-        linear-gradient(150deg, rgba(255,255,255,.36), transparent 28%, rgba(255,255,255,.12) 54%, transparent 78%);
-      opacity: .78;
+        linear-gradient(150deg, rgba(255,255,255,.24), transparent 30%, rgba(255,255,255,.07) 58%, transparent 80%);
+      opacity: .64;
     }
-    .liquid-glass:hover { --glass-o: .78; border-color: color-mix(in srgb, var(--glass-edge) 68%, #fff); }
+    .liquid-glass:hover { --glass-o: .48; border-color: color-mix(in srgb, var(--glass-edge) 74%, #fff); }
     body[data-theme="dark"] .liquid-glass::before {
       background:
         radial-gradient(220px 190px at var(--glass-x, 28%) var(--glass-y, 18%), rgba(255,255,255,.18), transparent 58%),
         linear-gradient(120deg, rgba(255,255,255,.12), transparent 24%, rgba(125,160,255,.10) 48%, transparent 70%);
-      opacity: var(--glass-o, .46);
+      opacity: var(--glass-o, .28);
     }
     body[data-theme="dark"] .liquid-glass::after {
       border-color: rgba(255,255,255,.16);
@@ -161,14 +160,7 @@
         inset 0 0 0 1px rgba(255,255,255,.08),
         inset 14px 16px 34px rgba(255,255,255,.035),
         inset -16px -18px 34px rgba(49,94,251,.07);
-      opacity: .64;
-    }
-    @media (prefers-reduced-motion: no-preference) {
-      .liquid-glass::before { animation: liquidGlassSweep 10s ease-in-out infinite alternate; }
-      @keyframes liquidGlassSweep {
-        from { transform: translate3d(-1.5%, -1%, 0) scale(1.01); }
-        to { transform: translate3d(1.5%, 1%, 0) scale(1.03); }
-      }
+      opacity: .46;
     }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
       .liquid-glass { background: var(--surface-solid); }
@@ -600,8 +592,8 @@
   <div id="toast" class="toast"></div>
   <svg class="liquid-glass-defs" aria-hidden="true" focusable="false">
     <filter id="liquid-glass-distortion" x="-20%" y="-20%" width="140%" height="140%">
-      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="2" seed="8" result="noise"/>
-      <feDisplacementMap in="SourceGraphic" in2="noise" scale="10" xChannelSelector="R" yChannelSelector="G"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.008 0.012" numOctaves="2" seed="8" result="noise"/>
+      <feDisplacementMap in="SourceGraphic" in2="noise" scale="3" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </svg>
   <section id="auth" class="auth">
@@ -1051,6 +1043,10 @@
       'Delivered': '\u5df2\u9001\u8fbe',
       'Copied': '\u5df2\u590d\u5236',
       'Attachment must be under 2.5MB': '\u9644\u4ef6\u4e0d\u80fd\u8d85\u8fc7 2.5MB',
+      'Compressing image...': '\u6b63\u5728\u538b\u7f29\u56fe\u7247...',
+      'Image compressed': '\u56fe\u7247\u5df2\u538b\u7f29',
+      'Image compression failed': '\u56fe\u7247\u538b\u7f29\u5931\u8d25',
+      'Please choose an image': '\u8bf7\u9009\u62e9\u56fe\u7247',
       'Wants to add you': '\u60f3\u6dfb\u52a0\u4f60\u4e3a\u597d\u53cb',
       'Accept': '\u63a5\u53d7',
       'Reject': '\u62d2\u7edd',
@@ -1130,7 +1126,6 @@
       '.chat',
       '.inspector',
       '.page.active',
-      '.card',
       '.modal-card',
       '.info-card',
       '.settings-hero',
@@ -1185,6 +1180,71 @@
     function color(v) { const a = ['#315efb','#00a884','#7c3aed','#b7791f','#e14d6d','#0891b2']; let n = 0; for (const c of String(v || '6nr')) n = (n + c.charCodeAt(0)) % a.length; return a[n]; }
     function initial(u) { return String(u?.nickname || u?.username || u?.name || '?').slice(0,1).toUpperCase(); }
     function avatarStyle(u) { return u?.avatar ? `background-image:url(${html(u.avatar)});background-color:transparent` : `background:${color(u?.nickname || u?.username || u?.name)}`; }
+    function niceSize(bytes){
+      if(bytes >= 1024 * 1024) return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+      return `${Math.max(1, Math.round(bytes / 1024))}KB`;
+    }
+    function fileToDataUrl(file){
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error || new Error('Image compression failed'));
+        reader.readAsDataURL(file);
+      });
+    }
+    function dataUrlBytes(dataUrl){
+      const base64 = String(dataUrl).split(',')[1] || '';
+      return Math.ceil(base64.length * 3 / 4);
+    }
+    function loadImageData(dataUrl){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve(img);
+        img.onerror = () => reject(new Error('Image compression failed'));
+        img.src = dataUrl;
+      });
+    }
+    function imageOutputName(name){
+      const base = String(name || 'image').replace(/\.[^.]+$/, '');
+      return `${base || 'image'}.jpg`;
+    }
+    function drawCompressedImage(img, width, height, quality){
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      return canvas.toDataURL('image/jpeg', quality);
+    }
+    async function prepareImageUpload(file, options = {}){
+      const maxSide = options.maxSide || 1800;
+      const maxBytes = options.maxBytes || Math.round(1.6 * 1024 * 1024);
+      const minSide = options.minSide || 720;
+      const minQuality = options.minQuality || .54;
+      const originalData = await fileToDataUrl(file);
+      const img = await loadImageData(originalData);
+      const needsResize = Math.max(img.width, img.height) > maxSide;
+      if(file.size <= maxBytes && !needsResize) {
+        return { data: originalData, size: file.size, mime: file.type || 'image/jpeg', name: file.name || 'image', compressed: false };
+      }
+      let scale = Math.min(1, maxSide / Math.max(img.width, img.height));
+      let width = Math.max(1, Math.round(img.width * scale));
+      let height = Math.max(1, Math.round(img.height * scale));
+      let quality = options.quality || .82;
+      let data = drawCompressedImage(img, width, height, quality);
+      while(dataUrlBytes(data) > maxBytes && quality > minQuality) {
+        quality = Math.max(minQuality, quality - .08);
+        data = drawCompressedImage(img, width, height, quality);
+      }
+      while(dataUrlBytes(data) > maxBytes && Math.max(width, height) > minSide) {
+        width = Math.max(1, Math.round(width * .86));
+        height = Math.max(1, Math.round(height * .86));
+        data = drawCompressedImage(img, width, height, quality);
+      }
+      return { data, size: dataUrlBytes(data), mime: 'image/jpeg', name: imageOutputName(file.name), compressed: true };
+    }
     function time(v) {
       if (!v) return zh('Just now');
       const d = new Date(v);
@@ -1320,7 +1380,25 @@
     function payloadText(text){ return JSON.stringify({type:'text', text}); }
     function handleDraftInput(){ if(!active) return; const k=keyOf(active.type, active.id); localStorage.setItem(`draft:${k}`, $('message-input').value); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
     async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; input.value=''; localStorage.removeItem(`draft:${keyOf(active.type, active.id)}`); sendTyping(false); await sendPayload(payloadText(text)); }
-    async function sendAttachment(e){ const file=e.target.files[0]; e.target.value=''; if(!active || !file) return; if(file.size > 2.5*1024*1024) return toast('Attachment must be under 2.5MB'); const data = await new Promise(r => { const fr = new FileReader(); fr.onload=()=>r(fr.result); fr.readAsDataURL(file); }); await sendPayload(JSON.stringify({type:file.type.startsWith('image/')?'image':'file', name:file.name, mime:file.type, size:file.size, data})); }
+    async function sendAttachment(e){
+      const file=e.target.files[0];
+      e.target.value='';
+      if(!active || !file) return;
+      try {
+        if(file.type.startsWith('image/')){
+          if(file.size > 1.6*1024*1024) toast('Compressing image...');
+          const image = await prepareImageUpload(file, { maxSide: 1800, maxBytes: Math.round(1.6 * 1024 * 1024), minSide: 760, quality: .82, minQuality: .54 });
+          if(image.compressed) toast(`${zh('Image compressed')} ${niceSize(file.size)} -> ${niceSize(image.size)}`);
+          await sendPayload(JSON.stringify({type:'image', name:image.name, mime:image.mime, size:image.size, data:image.data}));
+          return;
+        }
+        if(file.size > 2.5*1024*1024) return toast('Attachment must be under 2.5MB');
+        const data = await fileToDataUrl(file);
+        await sendPayload(JSON.stringify({type:'file', name:file.name, mime:file.type, size:file.size, data}));
+      } catch(err) {
+        toast(err.message || 'Image compression failed');
+      }
+    }
     async function sendPayload(payload){ try { const localTime = new Date().toISOString(); if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } } catch(e){ toast(e.message); } }
     async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
@@ -1400,7 +1478,21 @@
       }
     }
     function updateAvatarPreview(){ $('avatar-preview').textContent=draftAvatar?'':initial(profile); $('avatar-preview').style.cssText=draftAvatar?`background-image:url(${draftAvatar});background-color:transparent`:avatarStyle(profile); refreshSettingsState(); }
-    function previewAvatar(e){ const f=e.target.files[0]; if(!f)return; if(f.size>2.5*1024*1024)return toast('Avatar must be under 2.5MB'); const r=new FileReader(); r.onload=()=>{draftAvatar=r.result;updateAvatarPreview()}; r.readAsDataURL(f); }
+    async function previewAvatar(e){
+      const f=e.target.files[0];
+      e.target.value='';
+      if(!f)return;
+      if(!f.type.startsWith('image/')) return toast('Please choose an image');
+      try {
+        if(f.size > 420*1024) toast('Compressing image...');
+        const image = await prepareImageUpload(f, { maxSide: 720, maxBytes: 420 * 1024, minSide: 360, quality: .84, minQuality: .52 });
+        draftAvatar = image.data;
+        updateAvatarPreview();
+        if(image.compressed) toast(`${zh('Image compressed')} ${niceSize(f.size)} -> ${niceSize(image.size)}`);
+      } catch(err) {
+        toast(err.message || 'Image compression failed');
+      }
+    }
     function clearAvatar(){ draftAvatar=''; updateAvatarPreview(); }
     async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return toast('Enter a nickname'); await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; renderMe(); loadSettings(); toast('Saved'); }
     async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return toast('Enter both passwords'); await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('Password changed'); }
