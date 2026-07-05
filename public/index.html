@@ -669,6 +669,37 @@
     .feature-item span { color: var(--muted); font-size: 12px; }
     .server-status-list .feature-item { min-height: 72px; }
     .server-status-list .feature-item strong { font-size: 20px; line-height: 1; }
+    .server-backend-panel { margin-top: 8px; }
+    .server-backend-panel .settings-head h3 { color: var(--soft); }
+    .compact-lock .lock-intro { min-height: 58px; padding: 11px 12px; }
+    .compact-lock .lock-badge { width: 36px; height: 36px; border-radius: 12px; }
+    .server-admin-panel {
+      display: grid;
+      gap: 10px;
+    }
+    .server-admin-panel.hidden { display: none; }
+    .compact-status {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .compact-status .feature-item {
+      min-height: 58px;
+      padding: 10px;
+    }
+    .compact-status .feature-item strong { font-size: 17px; }
+    .announcement-editor textarea { min-height: 90px; }
+    #settings-announcement-content {
+      white-space: normal;
+      line-height: 1.45;
+    }
+    .announcement-modal-card {
+      width: min(500px, 100%);
+      gap: 14px;
+    }
+    .announcement-modal-card .announcement-content {
+      white-space: pre-wrap;
+      color: var(--ink);
+      line-height: 1.65;
+    }
     .server-lock {
       overflow: hidden;
       border: 1px solid var(--line);
@@ -845,6 +876,7 @@
       .settings-grid { grid-template-columns: 1fr; }
       .feature-list { grid-template-columns: 1fr; }
       .feature-item:nth-child(odd) { border-right: 0; }
+      .compact-status { grid-template-columns: repeat(2, minmax(0, 1fr)); }
     }
   </style>
 </head>
@@ -1100,36 +1132,6 @@
           <section class="settings-panel">
             <div class="settings-head">
               <div>
-                <h3>Server backend</h3>
-                <p>Password protected runtime statistics</p>
-              </div>
-              <button id="server-refresh-btn" class="btn" onclick="loadServerStatus(true)">Refresh status</button>
-            </div>
-            <div id="server-lock" class="server-lock">
-              <div class="lock-intro">
-                <div class="lock-badge"><span data-i="lock"></span></div>
-                <div><strong>Backend locked</strong><span>Enter admin password to view server data</span></div>
-              </div>
-              <label class="field">Admin password<input id="server-password" type="password" placeholder="Admin password" onkeydown="if(event.key==='Enter')unlockServerStatus()"></label>
-              <div class="settings-actions settings-inline-actions">
-                <button class="btn primary" onclick="unlockServerStatus()">Unlock backend</button>
-              </div>
-            </div>
-            <div id="server-status-area" class="settings-list feature-list server-status-list locked">
-              <div class="feature-item"><strong id="server-online">--</strong><span>Online users</span></div>
-              <div class="feature-item"><strong id="server-users">--</strong><span>Users</span></div>
-              <div class="feature-item"><strong id="server-direct">--</strong><span>Direct messages</span></div>
-              <div class="feature-item"><strong id="server-groups">--</strong><span>Groups</span></div>
-              <div class="feature-item"><strong id="server-group-messages">--</strong><span>Group messages</span></div>
-              <div class="feature-item"><strong id="server-public">--</strong><span>Public messages</span></div>
-              <div class="feature-item"><strong id="server-moments">--</strong><span>Moments</span></div>
-              <div class="feature-item"><strong id="server-uptime">--</strong><span>Uptime</span></div>
-            </div>
-          </section>
-
-          <section class="settings-panel">
-            <div class="settings-head">
-              <div>
                 <h3>Login security</h3>
                 <p>Password management</p>
               </div>
@@ -1213,6 +1215,62 @@
               </div>
             </div>
           </section>
+
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Site announcement</h3>
+                <p>Latest message from the server</p>
+              </div>
+              <button class="btn" onclick="loadAnnouncement(true)">Refresh</button>
+            </div>
+            <div class="settings-list">
+              <div class="setting-row">
+                <div><strong id="settings-announcement-title">No announcement</strong><span id="settings-announcement-content">Nothing to show right now</span></div>
+                <span id="settings-announcement-time" class="setting-status">--</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="settings-panel server-backend-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Server backend</h3>
+                <p>Unlock to manage server stats and announcements</p>
+              </div>
+              <button id="server-refresh-btn" class="btn hidden" onclick="loadServerStatus(true)">Refresh</button>
+            </div>
+            <div id="server-lock" class="server-lock compact-lock">
+              <div class="lock-intro">
+                <div class="lock-badge"><span data-i="lock"></span></div>
+                <div><strong>Backend locked</strong><span>Enter admin password to activate backend</span></div>
+              </div>
+              <label class="field">Admin password<input id="server-password" type="password" placeholder="Admin password" onkeydown="if(event.key==='Enter')unlockServerStatus()"></label>
+              <div class="settings-actions settings-inline-actions">
+                <button class="btn primary" onclick="unlockServerStatus()">Unlock backend</button>
+              </div>
+            </div>
+            <div id="server-admin-panel" class="server-admin-panel hidden">
+              <div id="server-status-area" class="settings-list feature-list server-status-list compact-status">
+                <div class="feature-item"><strong id="server-online">--</strong><span>Online</span></div>
+                <div class="feature-item"><strong id="server-users">--</strong><span>Users</span></div>
+                <div class="feature-item"><strong id="server-direct">--</strong><span>Direct</span></div>
+                <div class="feature-item"><strong id="server-groups">--</strong><span>Groups</span></div>
+                <div class="feature-item"><strong id="server-group-messages">--</strong><span>Group msg</span></div>
+                <div class="feature-item"><strong id="server-public">--</strong><span>Public msg</span></div>
+                <div class="feature-item"><strong id="server-moments">--</strong><span>Moments</span></div>
+                <div class="feature-item"><strong id="server-uptime">--</strong><span>Uptime</span></div>
+              </div>
+              <div class="settings-list announcement-editor">
+                <label class="field">Announcement title<input id="announcement-title" maxlength="80" placeholder="Announcement title"></label>
+                <label class="field">Announcement content<textarea id="announcement-content" maxlength="1000" placeholder="Announcement content"></textarea></label>
+                <div class="settings-actions settings-inline-actions">
+                  <button class="btn primary" onclick="publishAnnouncement()">Publish announcement</button>
+                  <button class="btn danger" onclick="clearAnnouncement()">Clear announcement</button>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
@@ -1242,6 +1300,14 @@
       </div>
       <input id="privacy-password" type="password" placeholder="Account password" onkeydown="if(event.key==='Enter')unlockPrivacy()">
       <button class="btn primary" onclick="unlockPrivacy()">Unlock app</button>
+    </div>
+  </div>
+
+  <div id="announcement-modal" class="modal hidden" onclick="closeAnnouncementModal()">
+    <div class="modal-card announcement-modal-card" onclick="event.stopPropagation()">
+      <div class="actions" style="justify-content:space-between"><h2 id="announcement-modal-title">Announcement</h2><button class="btn" onclick="closeAnnouncementModal()">Close</button></div>
+      <div id="announcement-modal-content" class="announcement-content"></div>
+      <button class="btn primary" onclick="closeAnnouncementModal()">Got it</button>
     </div>
   </div>
 
@@ -1292,6 +1358,7 @@
     let onlineIds = new Set();
     let serverStats = null;
     let serverAdminPassword = sessionStorage.getItem('server_admin_password') || '';
+    let currentAnnouncement = null;
     let replyDraft = null;
     let unreadOnly = localStorage.getItem('unread_only') === '1';
     let favorites = JSON.parse(localStorage.getItem('message_favorites') || '{}');
@@ -1463,11 +1530,19 @@
       'Chat visibility': '\u4f1a\u8bdd\u53ef\u89c1\u6027',
       'Not encrypted': '\u672a\u52a0\u5bc6',
       'Public': '\u516c\u5171',
+      'Site announcement': '\u7ad9\u70b9\u516c\u544a',
+      'Latest message from the server': '\u670d\u52a1\u5668\u6700\u65b0\u516c\u544a',
+      'No announcement': '\u6682\u65e0\u516c\u544a',
+      'Nothing to show right now': '\u5f53\u524d\u6ca1\u6709\u516c\u544a',
+      'Announcement': '\u516c\u544a',
+      'Got it': '\u77e5\u9053\u4e86',
       'Server backend': '\u670d\u52a1\u5668\u540e\u53f0',
       'Runtime statistics': '\u8fd0\u884c\u7edf\u8ba1',
       'Password protected runtime statistics': '\u53d7\u5bc6\u7801\u4fdd\u62a4\u7684\u8fd0\u884c\u7edf\u8ba1',
+      'Unlock to manage server stats and announcements': '\u89e3\u9501\u540e\u7ba1\u7406\u670d\u52a1\u5668\u72b6\u6001\u548c\u516c\u544a',
       'Backend locked': '\u540e\u53f0\u5df2\u9501\u5b9a',
       'Enter admin password to view server data': '\u8f93\u5165\u540e\u53f0\u5bc6\u7801\u540e\u624d\u80fd\u67e5\u770b\u670d\u52a1\u5668\u6570\u636e',
+      'Enter admin password to activate backend': '\u8f93\u5165\u540e\u53f0\u5bc6\u7801\u540e\u6fc0\u6d3b\u540e\u53f0',
       'Admin password': '\u540e\u53f0\u5bc6\u7801',
       'Unlock backend': '\u89e3\u9501\u540e\u53f0',
       'Refresh status': '\u5237\u65b0\u72b6\u6001',
@@ -1476,6 +1551,8 @@
       'Direct messages': '\u79c1\u804a\u6d88\u606f',
       'Group messages': '\u7fa4\u804a\u6d88\u606f',
       'Public messages': '\u516c\u5171\u6d88\u606f',
+      'Group msg': '\u7fa4\u804a\u6d88\u606f',
+      'Public msg': '\u5927\u5385\u6d88\u606f',
       'Moments': '\u52a8\u6001',
       'Uptime': '\u8fd0\u884c\u65f6\u957f',
       'Server status loaded': '\u670d\u52a1\u5668\u72b6\u6001\u5df2\u66f4\u65b0',
@@ -1483,6 +1560,15 @@
       'Backend unlocked': '\u540e\u53f0\u5df2\u89e3\u9501',
       'Admin password required': '\u9700\u8981\u540e\u53f0\u5bc6\u7801',
       'Enter admin password': '\u8bf7\u8f93\u5165\u540e\u53f0\u5bc6\u7801',
+      'Announcement title': '\u516c\u544a\u6807\u9898',
+      'Announcement content': '\u516c\u544a\u5185\u5bb9',
+      'Publish announcement': '\u53d1\u5e03\u516c\u544a',
+      'Clear announcement': '\u6e05\u7a7a\u516c\u544a',
+      'Announcement loaded': '\u516c\u544a\u5df2\u66f4\u65b0',
+      'Announcement unavailable': '\u516c\u544a\u6682\u65f6\u65e0\u6cd5\u83b7\u53d6',
+      'Announcement cannot be empty': '\u516c\u544a\u5185\u5bb9\u4e0d\u80fd\u4e3a\u7a7a',
+      'Announcement published': '\u516c\u544a\u5df2\u53d1\u5e03',
+      'Announcement cleared': '\u516c\u544a\u5df2\u6e05\u7a7a',
       'd': '\u5929',
       'h': '\u5c0f\u65f6',
       'm': '\u5206\u949f',
@@ -1890,6 +1976,63 @@
       $('image-preview-modal').classList.add('hidden');
       $('image-preview-img').removeAttribute('src');
     }
+    function renderAnnouncementSettings(){
+      const a = currentAnnouncement;
+      if($('settings-announcement-title')) $('settings-announcement-title').textContent = a?.title || zh('No announcement');
+      if($('settings-announcement-content')) $('settings-announcement-content').textContent = a?.content || zh('Nothing to show right now');
+      if($('settings-announcement-time')) $('settings-announcement-time').textContent = a?.created_at ? time(a.created_at) : '--';
+      if($('announcement-title') && a && !$('announcement-title').value) $('announcement-title').value = a.title || '';
+      if($('announcement-content') && a && !$('announcement-content').value) $('announcement-content').value = a.content || '';
+    }
+    function showAnnouncementModal(announcement, force=false){
+      if(!announcement?.id || !announcement.content) return;
+      const seenKey = `announcement_seen_${announcement.id}`;
+      if(!force && localStorage.getItem(seenKey) === '1') return;
+      $('announcement-modal-title').textContent = announcement.title || zh('Announcement');
+      $('announcement-modal-content').textContent = announcement.content;
+      $('announcement-modal').dataset.announcementId = String(announcement.id);
+      $('announcement-modal').classList.remove('hidden');
+    }
+    function closeAnnouncementModal(){
+      const id = $('announcement-modal')?.dataset.announcementId;
+      if(id) localStorage.setItem(`announcement_seen_${id}`, '1');
+      $('announcement-modal').classList.add('hidden');
+    }
+    async function loadAnnouncement(showToast=false, showPopup=false){
+      try {
+        const data = await api('/server/announcement');
+        currentAnnouncement = data.announcement || null;
+        renderAnnouncementSettings();
+        if(currentAnnouncement) showAnnouncementModal(currentAnnouncement, showPopup);
+        if(showToast) toast(currentAnnouncement ? 'Announcement loaded' : 'No announcement');
+        return currentAnnouncement;
+      } catch {
+        if(showToast) toast('Announcement unavailable');
+        return null;
+      }
+    }
+    async function publishAnnouncement(){
+      if(!serverAdminPassword) return toast('Admin password required');
+      const title = $('announcement-title').value.trim();
+      const content = $('announcement-content').value.trim();
+      if(!content) return toast('Announcement cannot be empty');
+      const data = await api('/server/announcement', { method:'POST', headers:{'X-Admin-Password':serverAdminPassword}, body:JSON.stringify({title, content, active:true}) });
+      currentAnnouncement = data.announcement || null;
+      if(currentAnnouncement) localStorage.removeItem(`announcement_seen_${currentAnnouncement.id}`);
+      renderAnnouncementSettings();
+      showAnnouncementModal(currentAnnouncement, true);
+      toast('Announcement published');
+    }
+    async function clearAnnouncement(){
+      if(!serverAdminPassword) return toast('Admin password required');
+      await api('/server/announcement', { method:'POST', headers:{'X-Admin-Password':serverAdminPassword}, body:JSON.stringify({active:false}) });
+      currentAnnouncement = null;
+      if($('announcement-title')) $('announcement-title').value = '';
+      if($('announcement-content')) $('announcement-content').value = '';
+      renderAnnouncementSettings();
+      closeAnnouncementModal();
+      toast('Announcement cleared');
+    }
     function toggleUnreadOnly() {
       unreadOnly = !unreadOnly;
       localStorage.setItem('unread_only', unreadOnly ? '1' : '0');
@@ -1929,8 +2072,8 @@
     function renderServerLock() {
       const unlocked = Boolean(serverAdminPassword);
       if ($('server-lock')) $('server-lock').classList.toggle('hidden', unlocked);
-      if ($('server-status-area')) $('server-status-area').classList.toggle('locked', !unlocked);
-      if ($('server-refresh-btn')) $('server-refresh-btn').disabled = !unlocked;
+      if ($('server-admin-panel')) $('server-admin-panel').classList.toggle('hidden', !unlocked);
+      if ($('server-refresh-btn')) $('server-refresh-btn').classList.toggle('hidden', !unlocked);
     }
     async function unlockServerStatus() {
       const password = $('server-password').value.trim();
@@ -1938,7 +2081,10 @@
       serverAdminPassword = password;
       sessionStorage.setItem('server_admin_password', password);
       const ok = await loadServerStatus(true);
-      if (ok) toast('Backend unlocked');
+      if (ok) {
+        await loadAnnouncement(false, false);
+        toast('Backend unlocked');
+      }
     }
     function html(v) { return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
     function color(v) { const a = ['#315efb','#00a884','#7c3aed','#b7791f','#e14d6d','#0891b2']; let n = 0; for (const c of String(v || '6nr')) n = (n + c.charCodeAt(0)) % a.length; return a[n]; }
@@ -2101,6 +2247,7 @@
         if(m.type==='new_message'){ notify('New direct message', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
         if(m.type==='new_group_message'){ notify('New group message', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
         if(m.type==='new_public_message'){ notify('New public message', keyOf('public', 0)); if(active?.type==='public'){ loadedMessages.push({...m.message, payload:safeJson(m.message.content), mine:Number(m.message.from_id)===Number(currentUser.id)}); renderLoadedMessages(); } }
+        if(m.type==='server_announcement'){ currentAnnouncement = m.announcement || null; renderAnnouncementSettings(); if(currentAnnouncement) showAnnouncementModal(currentAnnouncement, true); }
         if(['groups_changed','friends_changed','friend_request','new_moment','read_receipt','group_read_receipt'].includes(m.type)) loadEverything();
       };
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
@@ -2308,7 +2455,7 @@
     async function postMoment(){ const content=$('moment-input').value.trim(); const blocked=selectedMomentBlocked(); if(!content)return; await api('/moments',{method:'POST',body:JSON.stringify({content,blocked})}); $('moment-input').value=''; clearMomentBlocked(); updateMomentComposer(); loadSquare(); }
     async function toggleLike(id){ await api(`/moments/${id}/like`,{method:'POST'}); loadSquare(); }
     async function addComment(id){ const input=$(`comment-${id}`); const content=input.value.trim(); if(!content)return; await api(`/moments/${id}/comment`,{method:'POST',body:JSON.stringify({content})}); loadSquare(); }
-    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); refreshSettingsState(); renderServerLock(); if(serverAdminPassword) loadServerStatus(false); }
+    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); refreshSettingsState(); renderServerLock(); loadAnnouncement(false, false); if(serverAdminPassword) loadServerStatus(false); }
     function metric(id, value){ const el=$(id); if(el) el.textContent = value ?? '--'; }
     function formatUptime(seconds){
       const total = Math.max(0, Number(seconds) || 0);
@@ -2434,7 +2581,7 @@
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
     startLocalization();
     startLiquidGlass();
-    window.addEventListener('load', async()=>{ installIcons(); applyDisplayPrefs(); startLocalization(); startLiquidGlass(); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
+    window.addEventListener('load', async()=>{ installIcons(); applyDisplayPrefs(); startLocalization(); startLiquidGlass(); await loadAnnouncement(false, true); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
   </script>
 </body>
 </html>
