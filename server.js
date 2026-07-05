@@ -111,6 +111,12 @@ db.serialize(() => {
     read_by TEXT DEFAULT '[]',
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS public_messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    from_id INTEGER NOT NULL,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
   addColumn('users', "nickname TEXT");
   addColumn('users', "avatar TEXT DEFAULT ''");
   addColumn('users', "bio TEXT DEFAULT ''");
@@ -161,6 +167,12 @@ function broadcastGroup(groupId, payload, exceptUserId) {
       if (Number(row.user_id) !== Number(exceptUserId)) sendToUser(row.user_id, payload);
     }
   });
+}
+
+function broadcastAll(payload, exceptUserId) {
+  for (const [userId] of clients) {
+    if (Number(userId) !== Number(exceptUserId)) sendToUser(userId, payload);
+  }
 }
 
 function getPresencePeers(userId, cb) {
@@ -223,6 +235,9 @@ wss.on('connection', (ws, req) => {
         if (event.target_type === 'group') {
           const groupId = intParam(event.group_id);
           if (groupId) broadcastGroup(groupId, { ...payload, group_id: groupId }, user.id);
+        }
+        if (event.target_type === 'public') {
+          broadcastAll({ ...payload, target_type: 'public' }, user.id);
         }
       } catch {}
     });
@@ -628,6 +643,56 @@ app.post('/api/groups/:groupId/mark-read', authenticateToken, (req, res) => {
       res.json({ success: true, updated });
     });
   });
+});
+
+app.get('/api/public/messages', authenticateToken, (req, res) => {
+  db.all(`SELECT pm.*, u.username, u.nickname, u.avatar
+     FROM public_messages pm
+     JOIN users u ON u.id = pm.from_id
+     ORDER BY pm.created_at DESC, pm.id DESC
+     LIMIT 120`, [], (err, rows) => {
+    if (err) return res.status(500).json({ error: 'Query failed' });
+    res.json({ messages: (rows || []).reverse() });
+  });
+});
+
+app.post('/api/public/messages', authenticateToken, (req, res) => {
+  const content = String(req.body.content || '');
+  if (!content) return res.status(400).json({ error: 'Missing message data' });
+  if (content.length > 10 * 1024 * 1024) return res.status(400).json({ error: 'Message is too large' });
+  db.run('INSERT INTO public_messages (from_id, content) VALUES (?, ?)', [req.user.id, content], function onInsert(err) {
+    if (err) return res.status(500).json({ error: 'Send failed' });
+    const message = { id: this.lastID, from_id: req.user.id, content, created_at: new Date().toISOString() };
+    db.get('SELECT username, nickname, avatar FROM users WHERE id = ?', [req.user.id], (userErr, user) => {
+      const enriched = { ...message, username: user?.username, nickname: user?.nickname, avatar: user?.avatar };
+      broadcastAll({ type: 'new_public_message', message: enriched }, req.user.id);
+      res.json({ message: enriched });
+    });
+  });
+});
+
+app.get('/api/server/status', authenticateToken, (req, res) => {
+  const stats = {
+    online_users: clients.size,
+    uptime_seconds: Math.floor(process.uptime())
+  };
+  const queries = [
+    ['users', 'SELECT COUNT(*) AS count FROM users'],
+    ['friends', 'SELECT COUNT(*) AS count FROM friends'],
+    ['direct_messages', 'SELECT COUNT(*) AS count FROM messages'],
+    ['groups', 'SELECT COUNT(*) AS count FROM groups'],
+    ['group_messages', 'SELECT COUNT(*) AS count FROM group_messages'],
+    ['public_messages', 'SELECT COUNT(*) AS count FROM public_messages'],
+    ['moments', 'SELECT COUNT(*) AS count FROM moments']
+  ];
+  let pending = queries.length;
+  for (const [key, sql] of queries) {
+    db.get(sql, [], (err, row) => {
+      stats[key] = err ? 0 : Number(row?.count || 0);
+      pending -= 1;
+      if (pending === 0) res.json({ stats });
+    });
+  }
 });
 
 app.post('/api/moments', authenticateToken, (req, res) => {
