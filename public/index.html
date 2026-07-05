@@ -550,6 +550,8 @@
     .feature-item:nth-child(odd) { border-right: 1px solid var(--line); }
     .feature-item strong { font-size: 14px; }
     .feature-item span { color: var(--muted); font-size: 12px; }
+    .server-status-list .feature-item { min-height: 72px; }
+    .server-status-list .feature-item strong { font-size: 20px; line-height: 1; }
     .setting-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     .support-email {
       color: var(--ink);
@@ -662,7 +664,8 @@
           <button class="btn good" type="button" onclick="openGroupModal()"><span data-i="plus"></span>New group</button>
         </div>
         <div class="seg">
-          <button id="tab-direct" class="active" onclick="setChatTab('direct')">Direct</button>
+          <button id="tab-public" class="active" onclick="setChatTab('public')">Lobby</button>
+          <button id="tab-direct" onclick="setChatTab('direct')">Direct</button>
           <button id="tab-group" onclick="setChatTab('group')">Groups</button>
         </div>
         <div class="search-box"><span data-i="search"></span><input id="conversation-search" placeholder="Search conversations" oninput="renderConversations()"></div>
@@ -792,10 +795,31 @@
             <div class="settings-list feature-list">
               <div class="feature-item"><strong>Encrypted chats</strong><span>Private and group messages are encrypted locally</span></div>
               <div class="feature-item"><strong>Image compression</strong><span>Large photos compress before sending</span></div>
+              <div class="feature-item"><strong>Public chat</strong><span>Everyone can send messages</span></div>
               <div class="feature-item"><strong>Moments square</strong><span>Post updates and hide from selected friends</span></div>
               <div class="feature-item"><strong>Chat tools</strong><span>Search, draft, pin, mute, read status</span></div>
               <div class="feature-item"><strong>Device fingerprint</strong><span>Check the local encryption identity</span></div>
               <div class="feature-item"><strong>Friend controls</strong><span>Requests, blocking, online status</span></div>
+            </div>
+          </section>
+
+          <section class="settings-panel">
+            <div class="settings-head">
+              <div>
+                <h3>Server backend</h3>
+                <p>Runtime statistics</p>
+              </div>
+              <button class="btn" onclick="loadServerStatus(true)">Refresh status</button>
+            </div>
+            <div class="settings-list feature-list server-status-list">
+              <div class="feature-item"><strong id="server-online">--</strong><span>Online users</span></div>
+              <div class="feature-item"><strong id="server-users">--</strong><span>Users</span></div>
+              <div class="feature-item"><strong id="server-direct">--</strong><span>Direct messages</span></div>
+              <div class="feature-item"><strong id="server-groups">--</strong><span>Groups</span></div>
+              <div class="feature-item"><strong id="server-group-messages">--</strong><span>Group messages</span></div>
+              <div class="feature-item"><strong id="server-public">--</strong><span>Public messages</span></div>
+              <div class="feature-item"><strong id="server-moments">--</strong><span>Moments</span></div>
+              <div class="feature-item"><strong id="server-uptime">--</strong><span>Uptime</span></div>
             </div>
           </section>
 
@@ -933,12 +957,13 @@
     let groups = [];
     let moments = [];
     let groupKeys = {};
-    let chatTab = 'direct';
+    let chatTab = 'public';
     let active = null;
     let loadedMessages = [];
     let draftAvatar = '';
     let typingTimers = {};
     let onlineIds = new Set();
+    let serverStats = null;
     const SUPPORT_EMAIL = 'yljylj2026@outlook.com';
     const pins = new Set(JSON.parse(localStorage.getItem('pins') || '[]'));
     const mutes = new Set(JSON.parse(localStorage.getItem('mutes') || '[]'));
@@ -982,8 +1007,12 @@
       'Offline': '\u79bb\u7ebf',
       'Messages': '\u6d88\u606f',
       'New group': '\u65b0\u7fa4\u804a',
+      'Lobby': '\u5927\u5385',
       'Direct': '\u79c1\u804a',
       'Groups': '\u7fa4\u804a',
+      'Public room': '\u516c\u5171\u5927\u5385',
+      'Everyone can send messages': '\u6240\u6709\u7528\u6237\u90fd\u53ef\u4ee5\u53d1\u6d88\u606f',
+      'Public messages are visible to everyone': '\u516c\u5171\u6d88\u606f\u5bf9\u6240\u6709\u7528\u6237\u53ef\u89c1',
       'Search conversations': '\u641c\u7d22\u4f1a\u8bdd',
       'Select conversation': '\u9009\u62e9\u4f1a\u8bdd',
       'Search messages': '\u641c\u7d22\u6d88\u606f',
@@ -1021,6 +1050,7 @@
       'Private and group messages are encrypted locally': '\u79c1\u804a\u548c\u7fa4\u804a\u6d88\u606f\u90fd\u5728\u672c\u5730\u52a0\u5bc6',
       'Image compression': '\u56fe\u7247\u538b\u7f29',
       'Large photos compress before sending': '\u5927\u56fe\u53d1\u9001\u524d\u81ea\u52a8\u538b\u7f29',
+      'Public chat': '\u5168\u5458\u804a\u5929',
       'Moments square': '\u52a8\u6001\u5e7f\u573a',
       'Post updates and hide from selected friends': '\u53d1\u5e03\u52a8\u6001\uff0c\u53ef\u5bf9\u90e8\u5206\u597d\u53cb\u9690\u85cf',
       'Chat tools': '\u804a\u5929\u5de5\u5177',
@@ -1080,6 +1110,24 @@
       'Group E2EE': '\u7fa4\u804a\u7aef\u5230\u7aef',
       'Per chat key': '\u5355\u4e2a\u4f1a\u8bdd\u5bc6\u94a5',
       'Shared group key': '\u7fa4\u804a\u5171\u4eab\u5bc6\u94a5',
+      'Chat visibility': '\u4f1a\u8bdd\u53ef\u89c1\u6027',
+      'Not encrypted': '\u672a\u52a0\u5bc6',
+      'Public': '\u516c\u5171',
+      'Server backend': '\u670d\u52a1\u5668\u540e\u53f0',
+      'Runtime statistics': '\u8fd0\u884c\u7edf\u8ba1',
+      'Refresh status': '\u5237\u65b0\u72b6\u6001',
+      'Online users': '\u5728\u7ebf\u7528\u6237',
+      'Users': '\u7528\u6237',
+      'Direct messages': '\u79c1\u804a\u6d88\u606f',
+      'Group messages': '\u7fa4\u804a\u6d88\u606f',
+      'Public messages': '\u516c\u5171\u6d88\u606f',
+      'Moments': '\u52a8\u6001',
+      'Uptime': '\u8fd0\u884c\u65f6\u957f',
+      'Server status loaded': '\u670d\u52a1\u5668\u72b6\u6001\u5df2\u66f4\u65b0',
+      'Server status unavailable': '\u670d\u52a1\u5668\u72b6\u6001\u6682\u65e0\u6cd5\u83b7\u53d6',
+      'd': '\u5929',
+      'h': '\u5c0f\u65f6',
+      'm': '\u5206\u949f',
       'Feedback & tools': '\u53cd\u9988\u4e0e\u5de5\u5177',
       'Bug reports and local utilities': '\u95ee\u9898\u53cd\u9988\u548c\u672c\u5730\u5de5\u5177',
       'Bug feedback': '\u95ee\u9898\u53cd\u9988',
@@ -1114,6 +1162,7 @@
       'Device key updated': '\u8bbe\u5907\u5bc6\u94a5\u5df2\u66f4\u65b0',
       'Encrypted message': '\u52a0\u5bc6\u6d88\u606f',
       'Encrypted': '\u5df2\u52a0\u5bc6',
+      'New public message': '\u516c\u5171\u5927\u5385\u65b0\u6d88\u606f',
       'No messages': '\u6682\u65e0\u6d88\u606f',
       'No conversations': '\u6682\u65e0\u4f1a\u8bdd',
       'No conversation selected': '\u672a\u9009\u62e9\u4f1a\u8bdd',
@@ -1444,14 +1493,15 @@
         if(m.type==='typing') showTyping(m);
         if(m.type==='new_message'){ notify('New direct message', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
         if(m.type==='new_group_message'){ notify('New group message', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
+        if(m.type==='new_public_message'){ notify('New public message', keyOf('public', 0)); if(active?.type==='public'){ loadedMessages.push({...m.message, payload:safeJson(m.message.content), mine:Number(m.message.from_id)===Number(currentUser.id)}); renderLoadedMessages(); } }
         if(['groups_changed','friends_changed','friend_request','new_moment','read_receipt','group_read_receipt'].includes(m.type)) loadEverything();
       };
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
     }
     function sendWs(data){ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data)); }
     function notify(title, convKey){ if(mutes.has(convKey)) return; if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:zh(title)}); }
-    function sendTyping(isTyping=true){ if(!active) return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); }
-    function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? zh('Typing...') : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || zh('Member')} ${zh('is typing')}` : ''; } clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
+    function sendTyping(isTyping=true){ if(!active) return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else if(active.type==='group') sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'public', is_typing:isTyping}); }
+    function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? zh('Typing...') : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || zh('Member')} ${zh('is typing')}` : ''; } if(m.target_type==='public' && active.type==='public' && Number(m.from_id)!==Number(currentUser.id)) $('typing-line').textContent = m.is_typing ? `${zh('Member')} ${zh('is typing')}` : ''; clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
     async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not support notifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); refreshSettingsState(); toast(p === 'granted' ? 'Notifications enabled' : 'Notifications blocked'); }
     async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
     function openFeedbackEmail(){
@@ -1474,32 +1524,40 @@
       toast('Drafts cleared');
     }
 
-    async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); renderInspector(); }
+    async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); if(!active && chatTab==='public') await openConversation('public', 0); renderInspector(); }
     async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
     async function loadChats(){ chats = (await api('/chat-list')).chats || []; renderConversations(); }
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
-    function setChatTab(t){ chatTab=t; $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); }
+    function setChatTab(t){ chatTab=t; $('tab-public').classList.toggle('active',t==='public'); $('tab-direct').classList.toggle('active',t==='direct'); $('tab-group').classList.toggle('active',t==='group'); renderConversations(); if(t==='public') openConversation('public', 0); }
     function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); applyLiquidGlass(document); }
-    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name||zh('Direct'), avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name||zh('Groups'), time:g.last_time, unread:0, sub:memberText(g.member_count) })); return rows.filter(r => String(r.name || '').toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
+    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='public' ? [{type:'public', id:0, name:zh('Public room'), time:null, unread:0, sub:zh('Everyone can send messages')}] : chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name||zh('Direct'), avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name||zh('Groups'), time:g.last_time, unread:0, sub:memberText(g.member_count) })); return rows.filter(r => String(r.name || '').toLowerCase().includes(q) || String(r.sub || '').toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
     function renderConversations(){ const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?zh('Muted')+' - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : `<div class="sub" style="padding:14px">${zh('No conversations')}</div>`; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
     function toggleMute(k){ mutes.has(k)?mutes.delete(k):mutes.add(k); saveSet('mutes', mutes); renderConversations(); renderInspector(); }
     function togglePinActive(){ if(active) togglePin(keyOf(active.type, active.id)); }
     function toggleMuteActive(){ if(active) toggleMute(keyOf(active.type, active.id)); }
     function updateHeaderButtons(){ if(!active) return; const k=keyOf(active.type, active.id); $('pin-btn').classList.toggle('pin', pins.has(k)); $('mute-btn').classList.toggle('pin', mutes.has(k)); }
-    async function openConversation(type,id){ const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
+    async function openConversation(type,id){ if(type==='public'){ active = {type:'public', id:0, name:zh('Public room')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Everyone can send messages'); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.remove('online'); $('message-input').value = localStorage.getItem(`draft:${keyOf('public',0)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); await loadPublicMessages(); return; } const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
     function renderInspector(){
       const body=$('inspector-body');
       if(!active){ body.innerHTML=`<div class="info-card sub">${zh('No conversation selected')}</div>`; return; }
       const k=keyOf(active.type,active.id);
       const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null;
       const group=active.type==='group'?groups.find(g=>g.id===active.id):null;
+      const isPublic=active.type==='public';
+      const entity=friend||group||active;
+      const statusText=isPublic?zh('Public messages are visible to everyone'):(active.type==='direct'?(onlineIds.has(active.id)?zh('Online'):zh('Offline')):memberText(group?.member_count||0));
+      const encTitle=isPublic?zh('Chat visibility'):zh('Current chat encryption');
+      const encSummary=isPublic?zh('Public messages are visible to everyone'):zh('Message body encrypted');
+      const encMode=isPublic?zh('Public chat'):encryptionModeLabel();
+      const encScope=isPublic?zh('Not encrypted'):encryptionScopeLabel();
+      const encStatus=isPublic?zh('Public'):'E2EE';
       body.innerHTML = `
-        <div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(friend||group||active)}">${initial(friend||group||active)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${active.type==='direct'?(onlineIds.has(active.id)?zh('Online'):zh('Offline')):memberText(group?.member_count||0)}</div></div></div></div>
+        <div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(entity)}">${initial(entity)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${statusText}</div></div></div></div>
         <div class="info-card">
-          <div class="settings-head"><div><h3>${zh('Current chat encryption')}</h3><p>${zh('Message body encrypted')}</p></div><span class="setting-status">E2EE</span></div>
-          <div class="kv"><span>${zh('Mode')}</span><strong>${encryptionModeLabel()}</strong></div>
-          <div class="kv"><span>${zh('Key scope')}</span><strong>${encryptionScopeLabel()}</strong></div>
+          <div class="settings-head"><div><h3>${encTitle}</h3><p>${encSummary}</p></div><span class="setting-status">${encStatus}</span></div>
+          <div class="kv"><span>${zh('Mode')}</span><strong>${encMode}</strong></div>
+          <div class="kv"><span>${zh('Key scope')}</span><strong>${encScope}</strong></div>
           <div class="kv"><span>${zh('Local device')}</span><code data-device-fingerprint class="security-value">${shortFingerprint()}</code></div>
         </div>
         <div class="info-card"><div class="kv"><span>${zh('Pinned')}</span><strong>${pins.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Muted')}</span><strong>${mutes.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Draft')}</span><strong>${localStorage.getItem('draft:'+k)?zh('Saved'):zh('None')}</strong></div></div>
@@ -1529,11 +1587,12 @@
         toast(err.message || 'Image compression failed');
       }
     }
-    async function sendPayload(payload){ try { const localTime = new Date().toISOString(); if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); if(!g) throw new Error('No conversation selected'); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } return true; } catch(e){ toast(e.message); return false; } }
+    async function sendPayload(payload){ try { const localTime = new Date().toISOString(); if(active.type==='public'){ const d=await api('/public/messages',{method:'POST',body:JSON.stringify({content:payload})}); const sent={...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), mine:true, nickname:profile.nickname||currentUser.username, username:currentUser.username}; loadedMessages.push(sent); renderLoadedMessages(); return true; } if(active.type==='direct'){ const k=await friendKey(active.id); const content=await Crypto.encryptText(payload,k); const d=await api('/messages',{method:'POST',body:JSON.stringify({to_id:active.id,content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload)}, true); loadChats(); } else { const g=groups.find(x=>x.id===active.id); if(!g) throw new Error('No conversation selected'); const k=await unwrapGroupKey(g); const content=await Crypto.encryptText(payload,k); const d=await api(`/groups/${active.id}/messages`,{method:'POST',body:JSON.stringify({content})}); appendBubble({...d.message, created_at:d.message?.created_at || localTime, payload:JSON.parse(payload), nickname:profile.nickname||currentUser.username}, true); loadGroups(); } return true; } catch(e){ toast(e.message); return false; } }
     async function loadDirectMessages(id){ const d=await api(`/messages/${id}`); const k=await friendKey(id); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
     async function loadGroupMessages(id){ const g=groups.find(x=>x.id===id); const k=await unwrapGroupKey(g); const d=await api(`/groups/${id}/messages`); loadedMessages=[]; for(const m of d.messages||[]){ const txt=await Crypto.decryptText(m.content,k); loadedMessages.push({...m,payload:safeJson(txt), mine:m.from_id===currentUser.id}); } renderLoadedMessages(); }
+    async function loadPublicMessages(){ const d=await api('/public/messages'); loadedMessages=(d.messages||[]).map(m=>({...m,payload:safeJson(m.content), mine:Number(m.from_id)===Number(currentUser.id)})); renderLoadedMessages(); }
     function renderLoadedMessages(){ const q=$('message-search').value.trim(); const list=q?loadedMessages.filter(m=>JSON.stringify(m.payload).toLowerCase().includes(q.toLowerCase())):loadedMessages; $('messages').innerHTML=''; for(const m of list) appendBubble(m, m.mine, q); if(!list.length) $('messages').innerHTML=`<div class="empty-chat">${zh('No messages')}</div>`; scrollBottom(); }
-    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:zh('[Empty message]')}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||zh('Image'))}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||zh('File'))}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && active?.type==='group'?`<div class="sender">${html(m.nickname||m.username||zh('Member'))}</div>`:''}<div class="msg-actions"><button class="mini" title="${zh('Copy')}" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?zh('Read'):zh('Delivered')}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
+    function appendBubble(m,mine,q=''){ const p=m.payload||{type:'text',text:zh('[Empty message]')}; const wrap=document.createElement('div'); wrap.className=`bubble-wrap ${mine?'mine':'theirs'}`; let body = p.type==='image' ? `${html(p.name||zh('Image'))}<img src="${p.data}" alt="${html(p.name||'image')}">` : p.type==='file' ? `<div>${html(p.name||zh('File'))}</div><a class="file-card" href="${p.data}" download="${html(p.name||'file')}"><span>${icons.attach}</span><span>${html(p.name||'file')}</span><strong>${Math.ceil((p.size||0)/1024)}KB</strong></a>` : highlight(p.text,q); const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : ''; wrap.innerHTML = `${avatar}<div class="bubble">${!mine && (active?.type==='group'||active?.type==='public')?`<div class="sender">${html(m.nickname||m.username||zh('Member'))}</div>`:''}<div class="msg-actions"><button class="mini" title="${zh('Copy')}" onclick="copyMessage('${btoa(unescape(encodeURIComponent(p.type==='text'?p.text:(p.name||''))))}')">${icons.copy}</button></div>${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${m.read_at||Array.isArray(m.read_by)&&m.read_by.length>1?zh('Read'):zh('Delivered')}</span>`:''}</div></div>`; $('messages').appendChild(wrap); scrollBottom(); }
     function copyMessage(encoded){ navigator.clipboard?.writeText(decodeURIComponent(escape(atob(encoded)))); toast('Copied'); }
     function scrollBottom(){ setTimeout(()=>{$('messages').scrollTop=$('messages').scrollHeight},20); }
     async function markDirect(id){ try{await api(`/mark-read/${id}`,{method:'POST'}); loadChats();}catch{} }
@@ -1556,7 +1615,34 @@
     async function postMoment(){ const content=$('moment-input').value.trim(); const blocked=Array.from($('moment-blocked').selectedOptions).map(o=>Number(o.value)); if(!content)return; await api('/moments',{method:'POST',body:JSON.stringify({content,blocked})}); $('moment-input').value=''; loadSquare(); }
     async function toggleLike(id){ await api(`/moments/${id}/like`,{method:'POST'}); loadSquare(); }
     async function addComment(id){ const input=$(`comment-${id}`); const content=input.value.trim(); if(!content)return; await api(`/moments/${id}/comment`,{method:'POST',body:JSON.stringify({content})}); loadSquare(); }
-    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); refreshSettingsState(); }
+    function loadSettings(){ $('nickname-input').value=profile.nickname||currentUser.username; $('bio-input').value=profile.bio||''; draftAvatar=profile.avatar||''; updateAvatarPreview(); refreshSettingsState(); loadServerStatus(false); }
+    function metric(id, value){ const el=$(id); if(el) el.textContent = value ?? '--'; }
+    function formatUptime(seconds){
+      const total = Math.max(0, Number(seconds) || 0);
+      const days = Math.floor(total / 86400);
+      const hours = Math.floor((total % 86400) / 3600);
+      const minutes = Math.floor((total % 3600) / 60);
+      if(days) return `${days}${zh('d')} ${hours}${zh('h')}`;
+      if(hours) return `${hours}${zh('h')} ${minutes}${zh('m')}`;
+      return `${minutes}${zh('m')}`;
+    }
+    async function loadServerStatus(showToast=false){
+      try {
+        const data = await api('/server/status');
+        serverStats = data.stats || {};
+        metric('server-online', serverStats.online_users);
+        metric('server-users', serverStats.users);
+        metric('server-direct', serverStats.direct_messages);
+        metric('server-groups', serverStats.groups);
+        metric('server-group-messages', serverStats.group_messages);
+        metric('server-public', serverStats.public_messages);
+        metric('server-moments', serverStats.moments);
+        metric('server-uptime', formatUptime(serverStats.uptime_seconds));
+        if(showToast) toast('Server status loaded');
+      } catch {
+        if(showToast) toast('Server status unavailable');
+      }
+    }
     function publicKeySeed(){
       return JSON.stringify(keyPair?.publicKey || {});
     }
