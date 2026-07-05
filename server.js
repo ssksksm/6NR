@@ -14,6 +14,7 @@ const wss = new WebSocketServer({ server });
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production-with-a-long-random-secret';
 const SALT_ROUNDS = 10;
 const PORT = process.env.PORT || 3000;
+const ADMIN_PASSWORD = process.env.SERVER_ADMIN_PASSWORD || '9178wde';
 
 app.use(cors());
 app.use(express.json({ limit: '12mb' }));
@@ -672,6 +673,10 @@ app.post('/api/public/messages', authenticateToken, (req, res) => {
 });
 
 app.get('/api/server/status', authenticateToken, (req, res) => {
+  const password = String(req.get('X-Admin-Password') || '');
+  if (!password || password !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Admin password required' });
+  }
   const stats = {
     online_users: clients.size,
     uptime_seconds: Math.floor(process.uptime())
