@@ -53,7 +53,7 @@
     body {
       margin: 0;
       width: 100vw;
-      height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
       overflow: hidden;
       color: var(--ink);
       background:
@@ -169,6 +169,35 @@
       .liquid-glass { background: var(--surface-solid); }
       .liquid-glass::before { display: none; }
     }
+    .no-backdrop .liquid-glass { background: var(--surface-solid); }
+    .no-backdrop .liquid-glass::before { display: none; }
+    @supports not (background: color-mix(in srgb, #000 50%, #fff)) {
+      .btn.danger { background: rgba(225,77,109,.10); }
+      input:focus, textarea:focus, select:focus { border-color: var(--blue); }
+      .lobby-entry, .announcement-entry { background: var(--surface-solid); }
+      .chat-head, .quick-tools, .reply-bar, .privacy-box { background: var(--surface-solid); }
+      mark { background: rgba(183,121,31,.25); }
+      .security-dot { box-shadow: 0 0 0 4px rgba(0,168,132,.14); }
+      .danger-zone .security-list { border-color: var(--line); }
+    }
+    .no-color-mix .btn.danger { background: rgba(225,77,109,.10); }
+    .no-color-mix .lobby-entry, .no-color-mix .announcement-entry { background: var(--surface-solid); }
+    .no-color-mix .chat-head, .no-color-mix .quick-tools, .no-color-mix .reply-bar, .no-color-mix .privacy-box { background: var(--surface-solid); }
+    @supports (height: 100dvh) {
+      body, .app { height: 100dvh; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        transition-duration: .01ms !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+      }
+    }
+    @media (forced-colors: active) {
+      .liquid-glass::before, .liquid-glass::after { display: none; }
+      .btn, input, textarea, select, .conv, .card, .settings-list { border: 1px solid CanvasText; }
+    }
 
     .auth {
       min-height: 100vh;
@@ -210,7 +239,7 @@
     }
 
     .app {
-      height: 100vh;
+      height: calc(var(--vh, 1vh) * 100);
       display: grid;
       grid-template-columns: 76px minmax(310px, 390px) minmax(0, 1fr) minmax(260px, 320px);
       padding: 14px;
@@ -301,6 +330,14 @@
       background: linear-gradient(135deg, var(--green), var(--blue));
       box-shadow: 0 8px 18px rgba(49,94,251,.16);
     }
+    .announcement-entry {
+      background: linear-gradient(135deg, rgba(183,121,31,.10), var(--surface-solid));
+      border-color: var(--line);
+    }
+    .announcement-entry .avatar {
+      background: linear-gradient(135deg, var(--amber), var(--rose));
+      box-shadow: 0 8px 18px rgba(183,121,31,.16);
+    }
     .conv-actions { display: flex; align-items: center; justify-content: flex-end; gap: 4px; }
     .mini { width: 28px; height: 28px; border-radius: 8px; background: transparent; color: var(--soft); display: grid; place-items: center; }
     .mini:hover { color: var(--ink); background: var(--panel); }
@@ -362,6 +399,25 @@
     .bubble:hover .msg-actions { opacity: 1; }
     mark { border-radius: 4px; background: color-mix(in srgb, var(--amber) 32%, transparent); color: inherit; padding: 0 2px; }
     .typing-line { min-height: 20px; padding: 0 24px 8px; color: var(--muted); font-size: 12px; background: var(--app); }
+    .system-message {
+      width: min(680px, 100%);
+      align-self: center;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
+      padding: 16px;
+      display: grid;
+      gap: 10px;
+      line-height: 1.65;
+    }
+    .system-message h3 { font-size: 18px; }
+    .system-message .body { white-space: pre-wrap; color: var(--ink); }
+    .system-message .meta { color: var(--muted); font-size: 12px; font-weight: 800; }
+    .btn.disabled, .composer.disabled label, .composer.disabled button {
+      opacity: .52;
+      pointer-events: none;
+    }
     .composer {
       border-top: 1px solid var(--line);
       background: var(--surface-solid);
@@ -798,7 +854,7 @@
       .auth { grid-template-columns: 1fr; }
       .auth-visual { display: none; }
       .auth-form { padding: 34px 22px; }
-      .app { height: 100vh; padding: 0; gap: 0; grid-template-columns: 1fr; grid-template-rows: 1fr 62px; }
+      .app { height: calc(var(--vh, 1vh) * 100); padding: 0; gap: 0; grid-template-columns: 1fr; grid-template-rows: 1fr 62px; }
       .rail { grid-row: 2; flex-direction: row; justify-content: space-around; border-radius: 0; padding: 7px 8px; }
       .rail-logo, .rail-bottom { display: none; }
       .mobile-only { display: inline-flex; }
@@ -939,6 +995,11 @@
           <div><div class="title">Public room</div><div class="sub">Everyone can send messages</div></div>
           <div class="conv-actions"><span class="setting-status">Lobby</span></div>
         </div>
+        <div id="announcement-entry" class="conv announcement-entry" onclick="openAnnouncementConversation()">
+          <div class="avatar">!</div>
+          <div><div class="title">Site announcement</div><div id="announcement-entry-sub" class="sub">No announcement</div></div>
+          <div class="conv-actions"><span class="setting-status">Notice</span></div>
+        </div>
         <div class="seg">
           <button id="tab-direct" class="active" onclick="setChatTab('direct')">Direct</button>
           <button id="tab-group" onclick="setChatTab('group')">Groups</button>
@@ -986,7 +1047,7 @@
         <label class="btn icon-only" for="file-input" title="Attach file"></label>
         <input id="file-input" type="file" onchange="sendAttachment(event)">
         <input id="message-input" maxlength="2000" placeholder="Type a message" oninput="handleDraftInput()" onkeydown="if(event.key==='Enter')sendMessage()">
-        <button class="btn primary" onclick="sendMessage()"><span data-i="send"></span>Send</button>
+        <button id="send-button" class="btn primary" onclick="sendMessage()"><span data-i="send"></span>Send</button>
       </div>
     </main>
 
@@ -1363,6 +1424,9 @@
     let unreadOnly = localStorage.getItem('unread_only') === '1';
     let favorites = JSON.parse(localStorage.getItem('message_favorites') || '{}');
     let favoriteOnly = false;
+    let originalTitle = document.title;
+    let titleNotifyTimer = null;
+    let browserCompatInstalled = false;
     const SUPPORT_EMAIL = 'yljylj2026@outlook.com';
     const pins = new Set(JSON.parse(localStorage.getItem('pins') || '[]'));
     const mutes = new Set(JSON.parse(localStorage.getItem('mutes') || '[]'));
@@ -1386,6 +1450,24 @@
       document.querySelectorAll('.chat-tools .btn.icon-only, .inspector-head .btn.icon-only').forEach(btn => { if(!btn.innerHTML.trim()) btn.innerHTML = icons.refresh; });
       const fileLabel = document.querySelector('label[for="file-input"]');
       if(fileLabel) fileLabel.innerHTML = icons.attach;
+    }
+
+    function applyBrowserCompat(){
+      const root = document.documentElement;
+      const supports = window.CSS && CSS.supports ? (prop, value) => CSS.supports(prop, value) : () => false;
+      root.classList.toggle('no-color-mix', !supports('background', 'color-mix(in srgb, #000 50%, #fff)'));
+      root.classList.toggle('no-backdrop', !(supports('backdrop-filter', 'blur(1px)') || supports('-webkit-backdrop-filter', 'blur(1px)')));
+      const setViewportHeight = () => root.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
+      const addCompatListener = (name, fn) => {
+        try { window.addEventListener(name, fn, {passive:true}); }
+        catch { window.addEventListener(name, fn); }
+      };
+      setViewportHeight();
+      if(!browserCompatInstalled) {
+        browserCompatInstalled = true;
+        addCompatListener('resize', setViewportHeight);
+        addCompatListener('orientationchange', () => setTimeout(setViewportHeight, 250));
+      }
     }
 
     const I18N = {
@@ -1535,6 +1617,10 @@
       'No announcement': '\u6682\u65e0\u516c\u544a',
       'Nothing to show right now': '\u5f53\u524d\u6ca1\u6709\u516c\u544a',
       'Announcement': '\u516c\u544a',
+      'Notice': '\u516c\u544a',
+      'Status': '\u72b6\u6001',
+      'New announcement': '\u65b0\u516c\u544a',
+      'Announcement is read only': '\u516c\u544a\u4ec5\u53ef\u67e5\u770b',
       'Got it': '\u77e5\u9053\u4e86',
       'Server backend': '\u670d\u52a1\u5668\u540e\u53f0',
       'Runtime statistics': '\u8fd0\u884c\u7edf\u8ba1',
@@ -1983,6 +2069,35 @@
       if($('settings-announcement-time')) $('settings-announcement-time').textContent = a?.created_at ? time(a.created_at) : '--';
       if($('announcement-title') && a && !$('announcement-title').value) $('announcement-title').value = a.title || '';
       if($('announcement-content') && a && !$('announcement-content').value) $('announcement-content').value = a.content || '';
+      renderAnnouncementEntry();
+      if(active?.type === 'announcement') renderAnnouncementConversation();
+    }
+    function renderAnnouncementEntry(){
+      const entry = $('announcement-entry');
+      if(!entry) return;
+      entry.classList.toggle('active', active?.type === 'announcement');
+      const sub = $('announcement-entry-sub');
+      if(sub) sub.textContent = currentAnnouncement?.content ? String(currentAnnouncement.content).slice(0, 42) : zh('No announcement');
+    }
+    function renderAnnouncementConversation(){
+      const a = currentAnnouncement;
+      const title = a?.title || zh('Site announcement');
+      const content = a?.content || zh('Nothing to show right now');
+      $('messages').innerHTML = `<div class="system-message"><div class="meta">${zh('Announcement')}</div><h3>${html(title)}</h3><div class="body">${html(content)}</div><div class="meta">${a?.created_at ? time(a.created_at) : '--'}</div></div>`;
+      scrollBottom();
+    }
+    function setComposerEnabled(enabled, placeholder='Type a message'){
+      const input = $('message-input');
+      const file = $('file-input');
+      const send = $('send-button');
+      const composer = document.querySelector('.composer');
+      if(input) {
+        input.disabled = !enabled;
+        input.placeholder = zh(placeholder);
+      }
+      if(file) file.disabled = !enabled;
+      if(send) send.disabled = !enabled;
+      if(composer) composer.classList.toggle('disabled', !enabled);
     }
     function showAnnouncementModal(announcement, force=false){
       if(!announcement?.id || !announcement.content) return;
@@ -2155,20 +2270,35 @@
       }
       return { data, size: dataUrlBytes(data), mime: 'image/jpeg', name: imageOutputName(file.name), compressed: true };
     }
+    function parseServerTime(v) {
+      if (!v) return null;
+      if (v instanceof Date) return v;
+      const raw = String(v).trim();
+      if (!raw) return null;
+      if (/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(raw)) {
+        return new Date(raw.replace(' ', 'T') + 'Z');
+      }
+      return new Date(raw);
+    }
     function time(v) {
       if (!v) return zh('Just now');
-      const d = new Date(v);
-      if (Number.isNaN(d.getTime())) return '';
+      const d = parseServerTime(v);
+      if (!d || Number.isNaN(d.getTime())) return '';
       const now = new Date();
       const diff = Math.max(0, now.getTime() - d.getTime());
-      const clock = d.toLocaleTimeString('zh-CN', {hour:'2-digit', minute:'2-digit', hour12:false});
+      const locale = navigator.language || undefined;
+      const clock = d.toLocaleTimeString(locale, {hour:'2-digit', minute:'2-digit', hour12:false});
       if (diff < 60000) return zh('Just now');
       if (diff < 3600000) return `${Math.floor(diff / 60000)} ${zh('min ago')}`;
       const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
       if (day === today) return clock;
       if (today - day === 86400000) return `${zh('Yesterday')} ${clock}`;
-      return `${d.toLocaleDateString('zh-CN', {month:'short', day:'numeric'})} ${clock}`;
+      return `${d.toLocaleDateString(locale, {month:'short', day:'numeric'})} ${clock}`;
+    }
+    function timeValue(v){
+      const d = parseServerTime(v);
+      return d && !Number.isNaN(d.getTime()) ? d.getTime() : 0;
     }
     function highlight(text, q) { const safe = html(text); if (!q) return safe; return safe.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi'), m => `<mark>${m}</mark>`); }
     function safeJson(t){ try{return JSON.parse(t)}catch{return{type:'text',text:t}} }
@@ -2247,16 +2377,86 @@
         if(m.type==='new_message'){ notify('New direct message', keyOf('direct', m.message.from_id)); if(active?.type==='direct' && active.id === (m.message.from_id === currentUser.id ? m.message.to_id : m.message.from_id)) { await loadDirectMessages(active.id); await markDirect(active.id); } await loadChats(); }
         if(m.type==='new_group_message'){ notify('New group message', keyOf('group', m.group_id)); if(active?.type==='group' && active.id===m.group_id){ await loadGroupMessages(active.id); await markGroup(active.id); } await loadGroups(); }
         if(m.type==='new_public_message'){ notify('New public message', keyOf('public', 0)); if(active?.type==='public'){ loadedMessages.push({...m.message, payload:safeJson(m.message.content), mine:Number(m.message.from_id)===Number(currentUser.id)}); renderLoadedMessages(); } }
-        if(m.type==='server_announcement'){ currentAnnouncement = m.announcement || null; renderAnnouncementSettings(); if(currentAnnouncement) showAnnouncementModal(currentAnnouncement, true); }
+        if(m.type==='server_announcement'){
+          currentAnnouncement = m.announcement || null;
+          renderAnnouncementSettings();
+          if(currentAnnouncement) {
+            notify('New announcement', keyOf('announcement', 0));
+            showAnnouncementModal(currentAnnouncement, true);
+          }
+        }
         if(['groups_changed','friends_changed','friend_request','new_moment','read_receipt','group_read_receipt'].includes(m.type)) loadEverything();
       };
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
     }
     function sendWs(data){ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data)); }
-    function notify(title, convKey){ if(mutes.has(convKey)) return; if(localStorage.getItem('notify')==='1' && document.hidden && 'Notification' in window && Notification.permission==='granted') new Notification('6nr', {body:zh(title)}); }
-    function sendTyping(isTyping=true){ if(!active) return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else if(active.type==='group') sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'public', is_typing:isTyping}); }
+    function notificationApi(){ return typeof window !== 'undefined' && 'Notification' in window ? window.Notification : null; }
+    function resetTitleNotice(){ clearTimeout(titleNotifyTimer); document.title = originalTitle; }
+    function setTitleNotice(text){
+      if(!document.hidden) return;
+      clearTimeout(titleNotifyTimer);
+      document.title = `* ${zh(text)} - 6nr`;
+      titleNotifyTimer = setTimeout(()=>{ if(document.hidden) document.title = originalTitle; }, 4000);
+    }
+    function requestNotificationPermission(){
+      const N = notificationApi();
+      if(!N || !N.requestPermission) return Promise.resolve('unsupported');
+      if(N.permission === 'granted' || N.permission === 'denied') return Promise.resolve(N.permission);
+      return new Promise(resolve => {
+        let settled = false;
+        const done = value => {
+          if(settled) return;
+          settled = true;
+          resolve(value || N.permission || 'default');
+        };
+        try {
+          const result = N.requestPermission(done);
+          if(result && typeof result.then === 'function') result.then(done).catch(()=>done('denied'));
+        } catch {
+          done('denied');
+        }
+        setTimeout(()=>done(N.permission || 'default'), 2500);
+      });
+    }
+    async function showBrowserNotification(title, body){
+      const N = notificationApi();
+      if(!N || N.permission !== 'granted') return false;
+      try {
+        if(navigator.serviceWorker && navigator.serviceWorker.ready) {
+          const ready = await Promise.race([
+            navigator.serviceWorker.ready,
+            new Promise(resolve => setTimeout(()=>resolve(null), 700))
+          ]);
+          if(ready && ready.showNotification) {
+            await ready.showNotification(title, {body, tag:'6nr-message', renotify:true});
+            return true;
+          }
+        }
+        if(typeof N === 'function') {
+          new N(title, {body});
+          return true;
+        }
+      } catch {}
+      return false;
+    }
+    function notify(title, convKey){
+      if(mutes.has(convKey)) return;
+      const body = zh(title);
+      if(document.hidden) {
+        setTitleNotice(body);
+        if(localStorage.getItem('notify') === '1') showBrowserNotification('6nr', body);
+      }
+    }
+    function sendTyping(isTyping=true){ if(!active || active.type==='announcement') return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else if(active.type==='group') sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'public', is_typing:isTyping}); }
     function showTyping(m){ if(!active) return; if(m.target_type==='direct' && active.type==='direct' && m.from_id===active.id) $('typing-line').textContent = m.is_typing ? zh('Typing...') : ''; if(m.target_type==='group' && active.type==='group' && m.group_id===active.id) { const f = friends.find(x=>x.id===m.from_id); $('typing-line').textContent = m.is_typing ? `${f?.nickname || f?.username || zh('Member')} ${zh('is typing')}` : ''; } if(m.target_type==='public' && active.type==='public' && Number(m.from_id)!==Number(currentUser.id)) $('typing-line').textContent = m.is_typing ? `${zh('Member')} ${zh('is typing')}` : ''; clearTimeout(typingTimers[m.from_id]); typingTimers[m.from_id] = setTimeout(()=>{$('typing-line').textContent=''}, 1800); }
-    async function enableNotifications(){ if(!('Notification' in window)) return toast('Browser does not support notifications'); const p = await Notification.requestPermission(); localStorage.setItem('notify', p === 'granted' ? '1' : '0'); refreshSettingsState(); toast(p === 'granted' ? 'Notifications enabled' : 'Notifications blocked'); }
+    async function enableNotifications(){
+      const p = await requestNotificationPermission();
+      const ok = p === 'granted';
+      localStorage.setItem('notify', ok ? '1' : '0');
+      refreshSettingsState();
+      if(p === 'unsupported') return toast('Browser does not support notifications');
+      toast(ok ? 'Notifications enabled' : 'Notifications blocked');
+    }
     async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
     function openFeedbackEmail(){
       const subject = encodeURIComponent('6nr bug feedback');
@@ -2284,6 +2484,7 @@
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     async function openInitialConversation(){
       const last = JSON.parse(localStorage.getItem('last_active_chat') || 'null');
+      if(last?.type === 'announcement') return openAnnouncementConversation();
       if(last?.type === 'direct' && chats.some(c => Number(c.friend_id) === Number(last.id))) return openConversation('direct', Number(last.id));
       if(last?.type === 'group' && groups.some(g => Number(g.id) === Number(last.id))) return openConversation('group', Number(last.id));
       return openConversation('public', 0);
@@ -2291,18 +2492,23 @@
     function setChatTab(t){ chatTab=t === 'group' ? 'group' : 'direct'; $('tab-direct')?.classList.toggle('active',chatTab==='direct'); $('tab-group')?.classList.toggle('active',chatTab==='group'); renderConversations(); }
     function toggleMobileSidebar(open){ $('sidebar')?.classList.toggle('mobile-open', Boolean(open)); $('mobile-sidebar-backdrop')?.classList.toggle('hidden', !open); }
     function showPage(p){ document.querySelectorAll('.rail button[data-page]').forEach(b=>b.classList.toggle('active', b.dataset.page===p)); document.querySelectorAll('.page').forEach(x=>x.classList.remove('active')); $('chat-page').classList.toggle('hidden', p!=='chat'); $('sidebar').classList.toggle('hidden', p!=='chat'); $('inspector').classList.toggle('hidden', p!=='chat'); if(p!=='chat') toggleMobileSidebar(false); if(p!=='chat') $(`${p}-page`).classList.add('active'); if(p==='settings') loadSettings(); applyLiquidGlass(document); }
-    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name||zh('Direct'), avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name||zh('Groups'), time:g.last_time, unread:0, sub:memberText(g.member_count) })); if(unreadOnly) rows = rows.filter(r => Number(r.unread || 0) > 0); return rows.filter(r => String(r.name || '').toLowerCase().includes(q) || String(r.sub || '').toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || new Date(b.time||0)-new Date(a.time||0)); }
+    function conversationRows(){ const q = $('conversation-search').value.toLowerCase(); let rows = chatTab==='direct' ? chats.map(c=>({type:'direct', id:c.friend_id, name:c.friend_nickname||c.friend_name||zh('Direct'), avatar:c.friend_avatar, time:c.last_time, unread:c.unread_count, sub:c.last_time?zh('Encrypted message'):zh('No messages')})) : groups.map(g=>({type:'group', id:g.id, name:g.name||zh('Groups'), time:g.last_time, unread:0, sub:memberText(g.member_count) })); if(unreadOnly) rows = rows.filter(r => Number(r.unread || 0) > 0); return rows.filter(r => String(r.name || '').toLowerCase().includes(q) || String(r.sub || '').toLowerCase().includes(q)).sort((a,b) => Number(pins.has(keyOf(b.type,b.id))) - Number(pins.has(keyOf(a.type,a.id))) || timeValue(b.time)-timeValue(a.time)); }
     function renderLobbyEntry(){ const lobby=$('lobby-entry'); if(!lobby) return; lobby.classList.toggle('active', active?.type==='public'); const k=keyOf('public',0); const muted=mutes.has(k); lobby.querySelector('.sub').textContent = muted ? `${zh('Muted')} - ${zh('Everyone can send messages')}` : zh('Everyone can send messages'); }
-    function renderConversations(){ renderLobbyEntry(); const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?zh('Muted')+' - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : `<div class="sub" style="padding:14px">${chatTab==='direct'?zh('No direct chats yet'):zh('No groups yet')}</div>`; updateHeaderButtons(); }
+    function renderConversations(){ renderLobbyEntry(); renderAnnouncementEntry(); const rows = conversationRows(); $('conversation-list').innerHTML = rows.length ? rows.map(r => { const k=keyOf(r.type,r.id), pinned=pins.has(k), muted=mutes.has(k), online=r.type==='direct'&&onlineIds.has(r.id); return `<div class="conv ${active?.type===r.type&&active?.id===r.id?'active':''}" onclick="openConversation('${r.type}',${r.id})"><div class="avatar ${online?'online':''}" style="${avatarStyle(r)}">${initial(r)}</div><div><div class="title">${pinned?'<span class="pin">*</span> ':''}${html(r.name)}</div><div class="sub">${muted?zh('Muted')+' - ':''}${html(r.sub)}</div></div><div class="conv-actions">${r.unread?`<span class="badge">${r.unread}</span>`:''}<button class="mini" onclick="event.stopPropagation();togglePin('${k}')">${icons.pin}</button><button class="mini" onclick="event.stopPropagation();toggleMute('${k}')">${icons.bell}</button></div></div>` }).join('') : `<div class="sub" style="padding:14px">${chatTab==='direct'?zh('No direct chats yet'):zh('No groups yet')}</div>`; updateHeaderButtons(); }
     function togglePin(k){ pins.has(k)?pins.delete(k):pins.add(k); saveSet('pins', pins); renderConversations(); renderInspector(); }
     function toggleMute(k){ mutes.has(k)?mutes.delete(k):mutes.add(k); saveSet('mutes', mutes); renderConversations(); renderInspector(); }
     function togglePinActive(){ if(active) togglePin(keyOf(active.type, active.id)); }
     function toggleMuteActive(){ if(active) toggleMute(keyOf(active.type, active.id)); }
     function updateHeaderButtons(){ if(!active) return; const k=keyOf(active.type, active.id); $('pin-btn').classList.toggle('pin', pins.has(k)); $('mute-btn').classList.toggle('pin', mutes.has(k)); }
-    async function openConversation(type,id){ toggleMobileSidebar(false); localStorage.setItem('last_active_chat', JSON.stringify({type,id})); if(type==='public'){ active = {type:'public', id:0, name:zh('Public room')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Everyone can send messages'); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.remove('online'); $('message-input').value = localStorage.getItem(`draft:${keyOf('public',0)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); await loadPublicMessages(); return; } const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
+    async function openAnnouncementConversation(){ toggleMobileSidebar(false); active = {type:'announcement', id:0, name:zh('Site announcement')}; localStorage.setItem('last_active_chat', JSON.stringify({type:'announcement',id:0})); $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Latest message from the server'); $('chat-avatar').textContent = '!'; $('chat-avatar').style.cssText = 'background:linear-gradient(135deg,var(--amber),var(--rose))'; $('chat-avatar').classList.remove('online'); $('message-search').value=''; $('typing-line').textContent=''; clearReply(); setComposerEnabled(false, 'Announcement is read only'); updateHeaderButtons(); renderConversations(); renderInspector(); await loadAnnouncement(false, false); renderAnnouncementConversation(); }
+    async function openConversation(type,id){ toggleMobileSidebar(false); setComposerEnabled(true); localStorage.setItem('last_active_chat', JSON.stringify({type,id})); if(type==='public'){ active = {type:'public', id:0, name:zh('Public room')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Everyone can send messages'); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.remove('online'); $('message-input').value = localStorage.getItem(`draft:${keyOf('public',0)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); await loadPublicMessages(); return; } const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
     function renderInspector(){
       const body=$('inspector-body');
       if(!active){ body.innerHTML=`<div class="info-card sub">${zh('No conversation selected')}</div>`; return; }
+      if(active.type === 'announcement'){
+        body.innerHTML = `<div class="info-card"><div class="settings-head"><div><h3>${zh('Site announcement')}</h3><p>${zh('Latest message from the server')}</p></div><span class="setting-status">${currentAnnouncement ? time(currentAnnouncement.created_at) : '--'}</span></div><div class="kv"><span>${zh('Status')}</span><strong>${currentAnnouncement ? zh('On') : zh('Off')}</strong></div></div>`;
+        return;
+      }
       const k=keyOf(active.type,active.id);
       const friend=active.type==='direct'?friends.find(f=>f.id===active.id):null;
       const group=active.type==='group'?groups.find(g=>g.id===active.id):null;
@@ -2329,11 +2535,12 @@
 
     function payloadText(text){ return JSON.stringify({type:'text', text, reply: replyDraft}); }
     function handleDraftInput(){ updateMessageCounter(); if(!active) return; const k=keyOf(active.type, active.id), value=$('message-input').value; value.trim()?localStorage.setItem(`draft:${k}`, value):localStorage.removeItem(`draft:${k}`); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
-    async function sendMessage(){ const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; const k=keyOf(active.type, active.id); input.value=''; updateMessageCounter(); sendTyping(false); const ok = await sendPayload(payloadText(text)); if(ok) { localStorage.removeItem(`draft:${k}`); clearReply(); } else { input.value = text; localStorage.setItem(`draft:${k}`, text); updateMessageCounter(); } renderInspector(); }
+    async function sendMessage(){ if(active?.type === 'announcement') return toast('Announcement is read only'); const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; const k=keyOf(active.type, active.id); input.value=''; updateMessageCounter(); sendTyping(false); const ok = await sendPayload(payloadText(text)); if(ok) { localStorage.removeItem(`draft:${k}`); clearReply(); } else { input.value = text; localStorage.setItem(`draft:${k}`, text); updateMessageCounter(); } renderInspector(); }
     async function sendAttachment(e){
       const file=e.target.files[0];
       e.target.value='';
       if(!active || !file) return;
+      if(active.type === 'announcement') return toast('Announcement is read only');
       try {
         if(file.type.startsWith('image/')){
           if(file.size > 1.6*1024*1024) toast('Compressing image...');
@@ -2579,9 +2786,12 @@
 
     $('auth-submit').addEventListener('click', handleAuth);
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
+    window.addEventListener('focus', resetTitleNotice);
+    document.addEventListener('visibilitychange', () => { if(!document.hidden) resetTitleNotice(); });
+    applyBrowserCompat();
     startLocalization();
     startLiquidGlass();
-    window.addEventListener('load', async()=>{ installIcons(); applyDisplayPrefs(); startLocalization(); startLiquidGlass(); await loadAnnouncement(false, true); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
+    window.addEventListener('load', async()=>{ applyBrowserCompat(); installIcons(); applyDisplayPrefs(); startLocalization(); startLiquidGlass(); await loadAnnouncement(false, true); if(token&&currentUser){ try{ await enter(); } catch { logout(); } } });
   </script>
 </body>
 </html>
