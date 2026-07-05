@@ -118,6 +118,14 @@ db.serialize(() => {
     content TEXT NOT NULL,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
   )`);
+  db.run(`CREATE TABLE IF NOT EXISTS server_announcements (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT DEFAULT '',
+    content TEXT NOT NULL,
+    active INTEGER DEFAULT 1,
+    created_by INTEGER,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )`);
   addColumn('users', "nickname TEXT");
   addColumn('users', "avatar TEXT DEFAULT ''");
   addColumn('users', "bio TEXT DEFAULT ''");
@@ -136,6 +144,24 @@ function authenticateToken(req, res, next) {
     req.user = user;
     next();
   });
+}
+
+function requireAdminPassword(req, res, next) {
+  const password = String(req.get('X-Admin-Password') || '');
+  if (!password || password !== ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Admin password required' });
+  }
+  next();
+}
+
+function publicAnnouncement(row) {
+  if (!row || !Number(row.active)) return null;
+  return {
+    id: row.id,
+    title: row.title || '',
+    content: row.content || '',
+    created_at: row.created_at
+  };
 }
 
 function intParam(value) {
@@ -672,11 +698,7 @@ app.post('/api/public/messages', authenticateToken, (req, res) => {
   });
 });
 
-app.get('/api/server/status', authenticateToken, (req, res) => {
-  const password = String(req.get('X-Admin-Password') || '');
-  if (!password || password !== ADMIN_PASSWORD) {
-    return res.status(403).json({ error: 'Admin password required' });
-  }
+app.get('/api/server/status', authenticateToken, requireAdminPassword, (req, res) => {
   const stats = {
     online_users: clients.size,
     uptime_seconds: Math.floor(process.uptime())
@@ -698,6 +720,41 @@ app.get('/api/server/status', authenticateToken, (req, res) => {
       if (pending === 0) res.json({ stats });
     });
   }
+});
+
+app.get('/api/server/announcement', (req, res) => {
+  db.get('SELECT * FROM server_announcements WHERE active = 1 ORDER BY id DESC LIMIT 1', [], (err, row) => {
+    if (err) return res.status(500).json({ error: 'Query failed' });
+    res.json({ announcement: publicAnnouncement(row) });
+  });
+});
+
+app.post('/api/server/announcement', authenticateToken, requireAdminPassword, (req, res) => {
+  const title = String(req.body.title || '').trim().slice(0, 80);
+  const content = String(req.body.content || '').trim();
+  const active = req.body.active === false ? 0 : 1;
+  if (active && !content) return res.status(400).json({ error: 'Announcement cannot be empty' });
+  if (content.length > 1000) return res.status(400).json({ error: 'Announcement is too long' });
+  if (!active) {
+    db.run('UPDATE server_announcements SET active = 0 WHERE active = 1', [], (err) => {
+      if (err) return res.status(500).json({ error: 'Announcement update failed' });
+      broadcastAll({ type: 'server_announcement', announcement: null });
+      res.json({ success: true, announcement: null });
+    });
+    return;
+  }
+  db.run('UPDATE server_announcements SET active = 0 WHERE active = 1', [], (clearErr) => {
+    if (clearErr) return res.status(500).json({ error: 'Announcement update failed' });
+    db.run('INSERT INTO server_announcements (title, content, active, created_by) VALUES (?, ?, 1, ?)', [title, content, req.user.id], function onInsert(err) {
+      if (err) return res.status(500).json({ error: 'Announcement update failed' });
+      db.get('SELECT * FROM server_announcements WHERE id = ?', [this.lastID], (getErr, row) => {
+        if (getErr) return res.status(500).json({ error: 'Announcement update failed' });
+        const announcement = publicAnnouncement(row);
+        broadcastAll({ type: 'server_announcement', announcement });
+        res.json({ success: true, announcement });
+      });
+    });
+  });
 });
 
 app.post('/api/moments', authenticateToken, (req, res) => {
