@@ -61,6 +61,8 @@
         linear-gradient(145deg, rgba(49,94,251,.06), rgba(0,168,132,.05) 44%, rgba(225,77,109,.04)),
         var(--bg);
       font: 14px/1.45 Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
     }
     [data-theme="dark"] body, body[data-theme="dark"] {
       background:
@@ -395,8 +397,8 @@
     .bubble img { display: block; max-width: min(380px, 100%); border-radius: 10px; margin-top: 8px; border: 1px solid rgba(255,255,255,.24); }
     .file-card { margin-top: 8px; display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; padding: 10px; border-radius: 10px; background: rgba(0,0,0,.05); color: inherit; text-decoration: none; }
     .msg-meta { margin-top: 7px; display: flex; gap: 8px; align-items: center; justify-content: flex-end; font-size: 11px; opacity: .72; }
-    .msg-actions { opacity: 0; transition: .15s; position: absolute; top: -17px; right: 8px; display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-solid); box-shadow: var(--shadow-sm); }
-    .bubble:hover .msg-actions { opacity: 1; }
+    .msg-actions { opacity: 0; pointer-events: none; transform: translateY(-3px); transition: opacity .15s ease, transform .15s ease; position: absolute; top: -17px; right: 8px; display: flex; gap: 3px; padding: 3px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-solid); box-shadow: var(--shadow-sm); }
+    .bubble:hover .msg-actions, .bubble:focus-within .msg-actions, .bubble.action-open .msg-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
     mark { border-radius: 4px; background: color-mix(in srgb, var(--amber) 32%, transparent); color: inherit; padding: 0 2px; }
     .typing-line { min-height: 20px; padding: 0 24px 8px; color: var(--muted); font-size: 12px; background: var(--app); }
     .system-message {
@@ -850,10 +852,10 @@
       .inspector { display: none; }
     }
     @media (max-width: 760px) {
-      body { background: var(--app); }
+      body { background: var(--app); font-size: 15px; }
       .auth { grid-template-columns: 1fr; }
       .auth-visual { display: none; }
-      .auth-form { padding: 34px 22px; }
+      .auth-form { padding: max(26px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom)); }
       .app { height: calc(var(--vh, 1vh) * 100); padding: 0; gap: 0; grid-template-columns: 1fr; grid-template-rows: 1fr 62px; }
       .rail { grid-row: 2; flex-direction: row; justify-content: space-around; border-radius: 0; padding: 7px 8px; }
       .rail-logo, .rail-bottom { display: none; }
@@ -895,18 +897,32 @@
       .chat-tools .btn.icon-only { width: 34px; height: 34px; }
       .chat-id { grid-template-columns: 38px minmax(0, 1fr); gap: 9px; }
       .chat-id .avatar { width: 38px; height: 38px; }
-      .messages { padding: 16px 10px; gap: 10px; }
+      .messages { padding: 16px 10px 20px; gap: 10px; color: var(--ink); }
       .bubble-wrap { max-width: 94%; }
-      .bubble { border-radius: 14px; padding: 9px 11px; }
-      .msg-actions { opacity: 1; top: -16px; }
+      .bubble { border-radius: 14px; padding: 10px 12px; font-size: 15px; line-height: 1.6; box-shadow: 0 4px 14px rgba(16,20,31,.06); }
+      .msg-actions {
+        opacity: 0;
+        pointer-events: none;
+        top: auto;
+        bottom: calc(100% + 5px);
+        right: 4px;
+        transform: translateY(4px);
+        background: var(--surface-solid);
+      }
+      .bubble:hover .msg-actions { opacity: 0; pointer-events: none; }
+      .bubble.action-open .msg-actions, .bubble:focus-within .msg-actions { opacity: 1; pointer-events: auto; transform: translateY(0); }
       .quick-tools {
         overflow-x: auto;
         flex-wrap: nowrap;
         align-items: center;
         padding: 7px 10px;
+        scrollbar-width: none;
       }
-      .quick-phrases, .quick-actions { flex-wrap: nowrap; }
-      .chip { flex: 0 0 auto; }
+      .quick-tools::-webkit-scrollbar { display: none; }
+      .quick-phrases { display: none; }
+      .quick-actions { flex-wrap: nowrap; width: 100%; overflow-x: auto; scrollbar-width: none; }
+      .quick-actions::-webkit-scrollbar { display: none; }
+      .chip { flex: 0 0 auto; height: 28px; font-size: 11px; }
       .composer {
         grid-template-columns: auto minmax(0, 1fr) auto;
         padding: 10px 10px calc(10px + env(safe-area-inset-bottom));
@@ -1484,6 +1500,14 @@
       'Enter username and password': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
       'Confirm your password': '\u8bf7\u786e\u8ba4\u5bc6\u7801',
       'Passwords do not match': '\u4e24\u6b21\u5bc6\u7801\u4e0d\u4e00\u81f4',
+      'Secure crypto requires HTTPS or a modern browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u5b89\u5168\u52a0\u5bc6\uff0c\u8bf7\u4f7f\u7528 HTTPS \u6216\u65b0\u7248\u6d4f\u89c8\u5668',
+      'Server API is not responding': '\u670d\u52a1\u5668\u63a5\u53e3\u6ca1\u6709\u6b63\u5e38\u54cd\u5e94\uff0c\u8bf7\u68c0\u67e5\u90e8\u7f72\u662f\u5426\u6b63\u5e38',
+      'Failed to fetch': '\u7f51\u7edc\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u670d\u52a1\u5668\u6216\u7f51\u7edc',
+      'Username, password and public key are required': '\u6ce8\u518c\u9700\u8981\u6d4f\u89c8\u5668\u652f\u6301\u5b89\u5168\u52a0\u5bc6',
+      'Username and password are required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
+      'Incorrect username or password': '\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef',
+      'Password must be at least 4 characters': '\u5bc6\u7801\u81f3\u5c11 4 \u4f4d',
+      'Username already exists': '\u7528\u6237\u540d\u5df2\u5b58\u5728',
       'Chats': '\u804a\u5929',
       'Conversations': '\u4f1a\u8bdd',
       'Square': '\u5e7f\u573a',
@@ -1901,6 +1925,23 @@
         toast('Request failed');
       }
     }
+    function isTouchLayout(){
+      return window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse), (max-width: 760px)').matches;
+    }
+    function closeMessageActionBars(except=null){
+      document.querySelectorAll('.bubble.action-open').forEach(el => {
+        if(el !== except) el.classList.remove('action-open');
+      });
+    }
+    function toggleMessageActions(event){
+      if(!isTouchLayout()) return;
+      if(event.target.closest('.msg-actions, button, a, img')) return;
+      const bubble = event.currentTarget;
+      const willOpen = !bubble.classList.contains('action-open');
+      closeMessageActionBars(bubble);
+      bubble.classList.toggle('action-open', willOpen);
+      event.stopPropagation();
+    }
     function encodeData(value) {
       return btoa(unescape(encodeURIComponent(JSON.stringify(value))));
     }
@@ -2309,9 +2350,26 @@
       const r = await fetch(API + path, {...opt, headers});
       const t = await r.text();
       let data = {};
-      try { data = t ? JSON.parse(t) : {}; } catch { data = { error: t || 'Request failed' }; }
+      try {
+        data = t ? JSON.parse(t) : {};
+      } catch {
+        data = { error: t && t.trim().startsWith('<') ? 'Server API is not responding' : (t || 'Request failed') };
+      }
       if (!r.ok) throw new Error(data.error || 'Request failed');
       return data;
+    }
+    function hasSecureCrypto(){
+      return Boolean(window.crypto && crypto.subtle && typeof crypto.subtle.generateKey === 'function');
+    }
+    function ensureSecureCrypto(){
+      if(hasSecureCrypto()) return true;
+      toast('Secure crypto requires HTTPS or a modern browser');
+      return false;
+    }
+    function closeBlockingModals(){
+      $('privacy-lock')?.classList.add('hidden');
+      $('group-modal')?.classList.add('hidden');
+      $('image-preview-modal')?.classList.add('hidden');
     }
     const Crypto = {
       async generateKeyPair(){ return crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
@@ -2344,6 +2402,7 @@
       if (!username || !password) return toast('Enter username and password');
       if (!isLogin && !confirm) return toast('Confirm your password');
       if (!isLogin && password !== confirm) return toast('Passwords do not match');
+      if (!ensureSecureCrypto()) return;
       try {
         let data;
         if (isLogin) {
@@ -2358,7 +2417,7 @@
         token = data.token; profile = data.user; localStorage.setItem('securechat_token', token); localStorage.setItem('securechat_user', JSON.stringify(currentUser)); await enter();
       } catch(e) { toast(e.message); }
     }
-    async function enter(){ $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); connect(); await loadEverything(); showPage('chat'); }
+    async function enter(){ if(!ensureSecureCrypto()) { logout(); return; } closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); connect(); await loadEverything(); showPage('chat'); }
     function logout(){ if(ws) ws.close(); token=''; currentUser=null; serverAdminPassword=''; sessionStorage.removeItem('server_admin_password'); localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('privacy-lock')?.classList.add('hidden'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
     function renderMe(){ $('me-name').textContent = profile.nickname || currentUser.username; $('me-avatar').textContent = profile.avatar ? '' : initial(profile); $('me-avatar').style.cssText = avatarStyle(profile); }
     function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; localStorage.setItem('theme', next); refreshSettingsState(); }
@@ -2615,7 +2674,7 @@
       const avatar = !mine ? `<div class="avatar" style="${avatarStyle({username:m.username,nickname:m.nickname})}">${initial({username:m.username,nickname:m.nickname})}</div>` : '';
       const favoriteTitle = favorites[key] ? zh('Unfavorite') : zh('Favorite');
       const readText = (m.read_at || (Array.isArray(m.read_by) && m.read_by.length > 1)) ? zh('Read') : zh('Delivered');
-      wrap.innerHTML = `${avatar}<div class="bubble">${!mine && (active?.type==='group'||active?.type==='public')?`<div class="sender">${html(m.nickname||m.username||zh('Member'))}</div>`:''}<div class="msg-actions"><button class="mini${favorites[key]?' favorite-on':''}" title="${favoriteTitle}" onclick="toggleFavorite('${actionData}')">${icons.star}</button><button class="mini" title="${zh('Reply')}" onclick="setReply('${replyData}')">${icons.reply}</button><button class="mini" title="${zh('Copy')}" onclick="copyMessage('${copyData}')">${icons.copy}</button></div>${replyPreview}${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${readText}</span>`:''}</div></div>`;
+      wrap.innerHTML = `${avatar}<div class="bubble" tabindex="0" onclick="toggleMessageActions(event)">${!mine && (active?.type==='group'||active?.type==='public')?`<div class="sender">${html(m.nickname||m.username||zh('Member'))}</div>`:''}<div class="msg-actions"><button class="mini${favorites[key]?' favorite-on':''}" title="${favoriteTitle}" onclick="toggleFavorite('${actionData}')">${icons.star}</button><button class="mini" title="${zh('Reply')}" onclick="setReply('${replyData}')">${icons.reply}</button><button class="mini" title="${zh('Copy')}" onclick="copyMessage('${copyData}')">${icons.copy}</button></div>${replyPreview}${body}<div class="msg-meta"><span>${time(m.created_at)}</span>${mine?`<span>${readText}</span>`:''}</div></div>`;
       $('messages').appendChild(wrap);
       scrollBottom();
     }
@@ -2786,6 +2845,7 @@
 
     $('auth-submit').addEventListener('click', handleAuth);
     ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
+    document.addEventListener('click', e => { if(!e.target.closest('.bubble')) closeMessageActionBars(); });
     window.addEventListener('focus', resetTitleNotice);
     document.addEventListener('visibilitychange', () => { if(!document.hidden) resetTitleNotice(); });
     applyBrowserCompat();
