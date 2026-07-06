@@ -1503,6 +1503,8 @@
       'Secure crypto requires HTTPS or a modern browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u5b89\u5168\u52a0\u5bc6\uff0c\u8bf7\u4f7f\u7528 HTTPS \u6216\u65b0\u7248\u6d4f\u89c8\u5668',
       'Server API is not responding': '\u670d\u52a1\u5668\u63a5\u53e3\u6ca1\u6709\u6b63\u5e38\u54cd\u5e94\uff0c\u8bf7\u68c0\u67e5\u90e8\u7f72\u662f\u5426\u6b63\u5e38',
       'Failed to fetch': '\u7f51\u7edc\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u670d\u52a1\u5668\u6216\u7f51\u7edc',
+      'Missing token': '\u767b\u5f55\u72b6\u6001\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55',
+      'Invalid or expired token': '\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55',
       'Username, password and public key are required': '\u6ce8\u518c\u9700\u8981\u6d4f\u89c8\u5668\u652f\u6301\u5b89\u5168\u52a0\u5bc6',
       'Username and password are required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
       'Incorrect username or password': '\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef',
@@ -2407,7 +2409,13 @@
         let data;
         if (isLogin) {
           data = await api('/login', {method:'POST', body:JSON.stringify({username,password})});
-          currentUser = data.user; keyPair = await getKeyPair(); await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})});
+          token = data.token;
+          currentUser = data.user;
+          profile = data.user;
+          localStorage.setItem('securechat_token', token);
+          localStorage.setItem('securechat_user', JSON.stringify(currentUser));
+          keyPair = await getKeyPair();
+          await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})});
         } else {
           currentUser = {id:'temp'}; const pair = await Crypto.generateKeyPair(); const publicKey = await Crypto.exportPublicKey(pair.publicKey);
           data = await api('/register', {method:'POST', body:JSON.stringify({username,password,public_key:publicKey})});
