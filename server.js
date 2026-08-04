@@ -10,7 +10,7 @@ const { PostgresDatabase } = require('./postgres-db');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
-const IS_SERVERLESS = process.env.VERCEL === '1';
+const IS_SERVERLESS = process.env.VERCEL === '1' || process.env.NETLIFY === 'true';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'local-development-secret-change-before-deploying';
 const SALT_ROUNDS = 10;
