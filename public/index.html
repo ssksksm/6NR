@@ -1228,7 +1228,7 @@
                 <h3>Privacy & encryption</h3>
                 <p>Messages and keys</p>
               </div>
-              <span class="setting-status">AES-GCM 256</span>
+              <span class="setting-status">双轨加密</span>
             </div>
             <div class="security-list">
               <div class="security-summary">
@@ -1237,7 +1237,7 @@
               </div>
               <div class="security-item">
                 <span class="security-dot"></span>
-                <div><strong>Message encryption</strong><span>ECDH P-256 derives AES-GCM 256-bit keys</span></div>
+                <div><strong>Message encryption</strong><span>X25519 authenticated encryption with legacy message support</span></div>
                 <span class="setting-status">On</span>
               </div>
               <div class="security-item">
@@ -1388,6 +1388,8 @@
     </div>
   </div>
 
+  <script src="/vendor/nacl-fast.min.js"></script>
+  <script src="/vendor/nacl-util.min.js"></script>
   <script>
     const $ = (id) => document.getElementById(id);
     const API = '/api';
@@ -1413,8 +1415,26 @@
       download:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>',
       lock:'<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
     };
-    const enc = new TextEncoder();
-    const dec = new TextDecoder();
+    const utf8ToBytes = (value) => {
+      const text = String(value ?? '');
+      if (window.TextEncoder) return new TextEncoder().encode(text);
+      if (window.nacl?.util) return nacl.util.decodeUTF8(text);
+      const raw = unescape(encodeURIComponent(text));
+      return Uint8Array.from(raw, char => char.charCodeAt(0));
+    };
+    const bytesToUtf8 = (bytes) => {
+      if (window.TextDecoder) return new TextDecoder().decode(bytes);
+      if (window.nacl?.util) return nacl.util.encodeUTF8(bytes);
+      let raw = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) raw += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return decodeURIComponent(escape(raw));
+    };
+    const bytesToBase64 = (bytes) => {
+      let raw = '';
+      for (let i = 0; i < bytes.length; i += 0x8000) raw += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+      return btoa(raw);
+    };
+    const base64ToBytes = (value) => Uint8Array.from(atob(value), char => char.charCodeAt(0));
     let token = localStorage.getItem('securechat_token') || '';
     let currentUser = JSON.parse(localStorage.getItem('securechat_user') || 'null');
     let profile = {};
@@ -1505,11 +1525,14 @@
       'Confirm your password': '\u8bf7\u786e\u8ba4\u5bc6\u7801',
       'Passwords do not match': '\u4e24\u6b21\u5bc6\u7801\u4e0d\u4e00\u81f4',
       'Secure crypto requires HTTPS or a modern browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u5b89\u5168\u52a0\u5bc6\uff0c\u8bf7\u4f7f\u7528 HTTPS \u6216\u65b0\u7248\u6d4f\u89c8\u5668',
+      'Encrypted chat is unavailable in this browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u53ef\u6b63\u5e38\u6ce8\u518c\u548c\u4f7f\u7528\u5927\u5385\uff0c\u4f46\u65e0\u6cd5\u5b89\u5168\u4f7f\u7528\u79c1\u804a\u548c\u7fa4\u804a',
+      'No compatible encryption key for this conversation': '\u53cc\u65b9\u52a0\u5bc6\u5bc6\u94a5\u4e0d\u517c\u5bb9\uff0c\u8bf7\u8ba9\u5bf9\u65b9\u91cd\u65b0\u767b\u5f55\u540e\u518d\u8bd5',
+      'Lobby compatibility': '\u5927\u5385\u517c\u5bb9',
       'Server API is not responding': '\u670d\u52a1\u5668\u63a5\u53e3\u6ca1\u6709\u6b63\u5e38\u54cd\u5e94\uff0c\u8bf7\u68c0\u67e5\u90e8\u7f72\u662f\u5426\u6b63\u5e38',
       'Failed to fetch': '\u7f51\u7edc\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u670d\u52a1\u5668\u6216\u7f51\u7edc',
       'Missing token': '\u767b\u5f55\u72b6\u6001\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55',
       'Invalid or expired token': '\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55',
-      'Username, password and public key are required': '\u6ce8\u518c\u9700\u8981\u6d4f\u89c8\u5668\u652f\u6301\u5b89\u5168\u52a0\u5bc6',
+      'Username, password and public key are required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
       'Username and password are required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
       'Incorrect username or password': '\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef',
       'Password must be at least 4 characters': '\u5bc6\u7801\u81f3\u5c11 4 \u4f4d',
@@ -1613,6 +1636,7 @@
       'Server stores ciphertext after local encryption': '\u672c\u5730\u52a0\u5bc6\u540e\uff0c\u670d\u52a1\u5668\u53ea\u4fdd\u5b58\u5bc6\u6587',
       'Message encryption': '\u6d88\u606f\u52a0\u5bc6',
       'ECDH P-256 derives AES-GCM 256-bit keys': '\u4f7f\u7528 ECDH P-256 \u6d3e\u751f AES-GCM 256 \u4f4d\u5bc6\u94a5',
+      'X25519 authenticated encryption with legacy message support': '\u65b0\u6d88\u606f\u4f7f\u7528 X25519 \u8ba4\u8bc1\u52a0\u5bc6\uff0c\u540c\u65f6\u517c\u5bb9\u65e7\u6d88\u606f',
       'Private key storage': '\u79c1\u94a5\u5b58\u50a8',
       'Private key never uploads to server': '\u79c1\u94a5\u4e0d\u4f1a\u4e0a\u4f20\u5230\u670d\u52a1\u5668',
       'Browser only': '\u4ec5\u5f53\u524d\u6d4f\u89c8\u5668',
@@ -2367,10 +2391,9 @@
     function hasSecureCrypto(){
       return Boolean(window.crypto && crypto.subtle && typeof crypto.subtle.generateKey === 'function');
     }
-    function ensureSecureCrypto(){
-      if(hasSecureCrypto()) return true;
-      toast('Secure crypto requires HTTPS or a modern browser');
-      return false;
+    function hasSafeRandom(){
+      const provider = window.crypto || window.msCrypto;
+      return Boolean(provider && typeof provider.getRandomValues === 'function');
     }
     function closeBlockingModals(){
       $('privacy-lock')?.classList.add('hidden');
@@ -2378,21 +2401,173 @@
       $('image-preview-modal')?.classList.add('hidden');
     }
     const Crypto = {
-      async generateKeyPair(){ return crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
-      async exportPublicKey(k){ const jwk = await crypto.subtle.exportKey('jwk', k); return {kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y}; },
-      async importPrivateKey(jwk){ return crypto.subtle.importKey('jwk', jwk, {name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
-      async importPublicKey(jwk){ return crypto.subtle.importKey('jwk', {kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y}, {name:'ECDH',namedCurve:'P-256'}, true, []); },
-      async derive(priv,pub){ const p = await this.importPublicKey(pub); return crypto.subtle.deriveKey({name:'ECDH',public:p}, priv, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']); },
-      async aesKey(){ return crypto.subtle.generateKey({name:'AES-GCM',length:256}, true, ['encrypt','decrypt']); },
-      async exportAes(key){ const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key)); return btoa(String.fromCharCode(...raw)); },
-      async importAes(raw){ const bytes = Uint8Array.from(atob(raw), c => c.charCodeAt(0)); return crypto.subtle.importKey('raw', bytes, {name:'AES-GCM'}, false, ['encrypt','decrypt']); },
-      async encryptText(text,key){ const iv = crypto.getRandomValues(new Uint8Array(12)); const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, key, enc.encode(text))); const all = new Uint8Array(iv.length + ct.length); all.set(iv); all.set(ct, iv.length); return btoa(String.fromCharCode(...all)); },
-      async decryptText(cipher,key){ try { const all = Uint8Array.from(atob(cipher), c => c.charCodeAt(0)); const pt = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key, all.slice(12)); return dec.decode(pt); } catch { return JSON.stringify({type:'text', text:zh('[Decrypt failed]')}); } }
+      normalizePublicKey(value){
+        if (!value || typeof value !== 'object') return {};
+        const p256 = value.p256 || (value.kty === 'EC' && value.crv === 'P-256' ? {kty:value.kty,crv:value.crv,x:value.x,y:value.y} : null);
+        const x25519 = typeof value.x25519 === 'string' ? value.x25519 : null;
+        return {p256, x25519};
+      },
+      buildPublicKey(p256, x25519){
+        if (!p256 && !x25519) return {v:0, alg:'lobby-only'};
+        return {
+          v:3,
+          alg:'6nr-hybrid-v1',
+          ...(p256 || {}),
+          p256: p256 || undefined,
+          x25519: x25519 || undefined
+        };
+      },
+      async generateP256KeyPair(){ return crypto.subtle.generateKey({name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
+      async exportP256Public(k){ const jwk = await crypto.subtle.exportKey('jwk', k); return {kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y}; },
+      async importP256Private(jwk){ return crypto.subtle.importKey('jwk', jwk, {name:'ECDH',namedCurve:'P-256'}, true, ['deriveKey','deriveBits']); },
+      async importP256Public(jwk){ return crypto.subtle.importKey('jwk', {kty:jwk.kty,crv:jwk.crv,x:jwk.x,y:jwk.y}, {name:'ECDH',namedCurve:'P-256'}, true, []); },
+      async deriveLegacy(priv,pub){ const p = await this.importP256Public(pub); return crypto.subtle.deriveKey({name:'ECDH',public:p}, priv, {name:'AES-GCM',length:256}, false, ['encrypt','decrypt']); },
+      async generateIdentity(){
+        let p256Private = null;
+        let p256Public = null;
+        let naclSecret = null;
+        let x25519 = null;
+        if (hasSafeRandom() && window.nacl?.box) {
+          try {
+            const pair = nacl.box.keyPair();
+            naclSecret = pair.secretKey;
+            x25519 = bytesToBase64(pair.publicKey);
+          } catch {}
+        }
+        if (hasSecureCrypto()) {
+          try {
+            const pair = await this.generateP256KeyPair();
+            p256Private = pair.privateKey;
+            p256Public = await this.exportP256Public(pair.publicKey);
+          } catch {}
+        }
+        return {
+          p256Private,
+          naclSecret,
+          publicKey:this.buildPublicKey(p256Public, x25519),
+          compatibilityOnly:!p256Private && !naclSecret
+        };
+      },
+      async storeIdentity(userId, identity){
+        if (identity.p256Private && hasSecureCrypto()) {
+          const jwk = await crypto.subtle.exportKey('jwk', identity.p256Private);
+          localStorage.setItem(`ecdh_private_jwk_${userId}`, JSON.stringify(jwk));
+        }
+        if (identity.naclSecret) localStorage.setItem(`nacl_private_${userId}`, bytesToBase64(identity.naclSecret));
+      },
+      async loadIdentity(userId){
+        let p256Private = null;
+        let p256Public = null;
+        let naclSecret = null;
+        let x25519 = null;
+        const storedNacl = localStorage.getItem(`nacl_private_${userId}`);
+        if (storedNacl && window.nacl?.box) {
+          try {
+            naclSecret = base64ToBytes(storedNacl);
+            const pair = nacl.box.keyPair.fromSecretKey(naclSecret);
+            x25519 = bytesToBase64(pair.publicKey);
+          } catch { naclSecret = null; }
+        }
+        if (!naclSecret && hasSafeRandom() && window.nacl?.box) {
+          try {
+            const pair = nacl.box.keyPair();
+            naclSecret = pair.secretKey;
+            x25519 = bytesToBase64(pair.publicKey);
+          } catch {}
+        }
+        const storedP256 = localStorage.getItem(`ecdh_private_jwk_${userId}`);
+        if (storedP256 && hasSecureCrypto()) {
+          try {
+            p256Private = await this.importP256Private(JSON.parse(storedP256));
+            p256Public = await this.exportP256Public(p256Private);
+          } catch { p256Private = null; }
+        }
+        if (!p256Private && hasSecureCrypto()) {
+          try {
+            const pair = await this.generateP256KeyPair();
+            p256Private = pair.privateKey;
+            p256Public = await this.exportP256Public(pair.publicKey);
+          } catch {}
+        }
+        const identity = {
+          p256Private,
+          naclSecret,
+          publicKey:this.buildPublicKey(p256Public, x25519),
+          compatibilityOnly:!p256Private && !naclSecret
+        };
+        await this.storeIdentity(userId, identity);
+        return identity;
+      },
+      async deriveSession(peerPublicKey){
+        const peer = this.normalizePublicKey(peerPublicKey);
+        const session = {};
+        if (peer.x25519 && keyPair?.naclSecret && window.nacl?.box) {
+          try {
+            const peerBytes = base64ToBytes(peer.x25519);
+            if (peerBytes.length === nacl.box.publicKeyLength) session.naclKey = nacl.box.before(peerBytes, keyPair.naclSecret);
+          } catch {}
+        }
+        if (peer.p256 && keyPair?.p256Private && hasSecureCrypto()) {
+          try { session.legacyKey = await this.deriveLegacy(keyPair.p256Private, peer.p256); } catch {}
+        }
+        if (!session.naclKey && !session.legacyKey) throw new Error(zh(keyPair?.compatibilityOnly ? 'Encrypted chat is unavailable in this browser' : 'No compatible encryption key for this conversation'));
+        return session;
+      },
+      async aesKey(){
+        if (hasSafeRandom() && window.nacl?.randomBytes) return {naclKey:nacl.randomBytes(32)};
+        if (hasSecureCrypto()) return {legacyKey:await crypto.subtle.generateKey({name:'AES-GCM',length:256}, true, ['encrypt','decrypt'])};
+        throw new Error(zh('Encrypted chat is unavailable in this browser'));
+      },
+      async exportAes(key){
+        if (key.naclKey) return `6nr2k.${bytesToBase64(key.naclKey)}`;
+        const raw = new Uint8Array(await crypto.subtle.exportKey('raw', key.legacyKey));
+        return bytesToBase64(raw);
+      },
+      async importAes(raw){
+        if (String(raw).startsWith('6nr2k.')) return {naclKey:base64ToBytes(String(raw).slice(6))};
+        if (!hasSecureCrypto()) throw new Error(zh('Encrypted chat is unavailable in this browser'));
+        const key = await crypto.subtle.importKey('raw', base64ToBytes(raw), {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+        return {legacyKey:key};
+      },
+      async encryptText(text,key){
+        if (key.naclKey && window.nacl?.secretbox) {
+          const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
+          const ciphertext = nacl.secretbox(utf8ToBytes(text), nonce, key.naclKey);
+          return `6nr2.${bytesToBase64(nonce)}.${bytesToBase64(ciphertext)}`;
+        }
+        if (key.legacyKey && hasSecureCrypto()) {
+          const iv = crypto.getRandomValues(new Uint8Array(12));
+          const ct = new Uint8Array(await crypto.subtle.encrypt({name:'AES-GCM',iv}, key.legacyKey, utf8ToBytes(text)));
+          const all = new Uint8Array(iv.length + ct.length);
+          all.set(iv);
+          all.set(ct, iv.length);
+          return bytesToBase64(all);
+        }
+        throw new Error(zh('Encrypted chat is unavailable in this browser'));
+      },
+      async decryptText(cipher,key){
+        try {
+          if (String(cipher).startsWith('6nr2.')) {
+            if (!key.naclKey || !window.nacl?.secretbox) throw new Error('Missing modern key');
+            const parts = String(cipher).split('.');
+            if (parts.length !== 3) throw new Error('Invalid ciphertext');
+            const plain = nacl.secretbox.open(base64ToBytes(parts[2]), base64ToBytes(parts[1]), key.naclKey);
+            if (!plain) throw new Error('Authentication failed');
+            return bytesToUtf8(plain);
+          }
+          if (!key.legacyKey || !hasSecureCrypto()) throw new Error('Missing legacy key');
+          const all = base64ToBytes(cipher);
+          const plain = await crypto.subtle.decrypt({name:'AES-GCM',iv:all.slice(0,12)}, key.legacyKey, all.slice(12));
+          return bytesToUtf8(new Uint8Array(plain));
+        } catch {
+          return JSON.stringify({type:'text', text:zh('[Decrypt failed]')});
+        }
+      }
     };
-    async function getKeyPair() { const k = `ecdh_private_jwk_${currentUser.id}`; const stored = localStorage.getItem(k); if (stored) { try { const privateKey = await Crypto.importPrivateKey(JSON.parse(stored)); return {privateKey, publicKey: await Crypto.exportPublicKey(privateKey)}; } catch {} } const pair = await Crypto.generateKeyPair(); localStorage.setItem(k, JSON.stringify(await crypto.subtle.exportKey('jwk', pair.privateKey))); return {privateKey: pair.privateKey, publicKey: await Crypto.exportPublicKey(pair.publicKey)}; }
-    async function friendKey(id) { const d = await api(`/user/${id}/public-key`); return Crypto.derive(keyPair.privateKey, d.public_key); }
-    async function wrapGroupKey(raw, user) { const k = await Crypto.derive(keyPair.privateKey, user.public_key); return Crypto.encryptText(raw, k); }
-    async function unwrapGroupKey(group) { if (groupKeys[group.id]) return groupKeys[group.id]; const k = await Crypto.derive(keyPair.privateKey, group.owner_public_key); const raw = await Crypto.decryptText(group.wrapped_key, k); const key = await Crypto.importAes(raw); groupKeys[group.id] = key; return key; }
+    async function getKeyPair() { return Crypto.loadIdentity(currentUser.id); }
+    async function friendKey(id) { const d = await api(`/user/${id}/public-key`); return Crypto.deriveSession(d.public_key); }
+    async function wrapGroupKey(raw, user) { const k = await Crypto.deriveSession(user.public_key); return Crypto.encryptText(raw, k); }
+    async function unwrapGroupKey(group) { if (groupKeys[group.id]) return groupKeys[group.id]; const k = await Crypto.deriveSession(group.owner_public_key); const raw = await Crypto.decryptText(group.wrapped_key, k); const key = await Crypto.importAes(raw); groupKeys[group.id] = key; return key; }
 
     function toggleAuth(){
       isLogin = !isLogin;
@@ -2408,7 +2583,6 @@
       if (!username || !password) return toast('Enter username and password');
       if (!isLogin && !confirm) return toast('Confirm your password');
       if (!isLogin && password !== confirm) return toast('Passwords do not match');
-      if (!ensureSecureCrypto()) return;
       try {
         let data;
         if (isLogin) {
@@ -2419,17 +2593,19 @@
           localStorage.setItem('securechat_token', token);
           localStorage.setItem('securechat_user', JSON.stringify(currentUser));
           keyPair = await getKeyPair();
-          await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})});
+          if (!keyPair.compatibilityOnly) await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})});
         } else {
-          currentUser = {id:'temp'}; const pair = await Crypto.generateKeyPair(); const publicKey = await Crypto.exportPublicKey(pair.publicKey);
-          data = await api('/register', {method:'POST', body:JSON.stringify({username,password,public_key:publicKey})});
-          currentUser = data.user; localStorage.setItem(`ecdh_private_jwk_${currentUser.id}`, JSON.stringify(await crypto.subtle.exportKey('jwk', pair.privateKey)));
-          keyPair = {privateKey: pair.privateKey, publicKey};
+          const identity = await Crypto.generateIdentity();
+          data = await api('/register', {method:'POST', body:JSON.stringify({username,password,public_key:identity.publicKey})});
+          currentUser = data.user;
+          keyPair = identity;
+          await Crypto.storeIdentity(currentUser.id, identity);
         }
         token = data.token; profile = data.user; localStorage.setItem('securechat_token', token); localStorage.setItem('securechat_user', JSON.stringify(currentUser)); await enter();
+        if (keyPair.compatibilityOnly) toast('Encrypted chat is unavailable in this browser');
       } catch(e) { toast(e.message); }
     }
-    async function enter(){ if(!ensureSecureCrypto()) { logout(); return; } closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); await connect(); await loadEverything(); showPage('chat'); }
+    async function enter(){ closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); await connect(); await loadEverything(); showPage('chat'); }
     function logout(){ clearTimeout(pollTimer); pollTimer=null; pollBaseline=null; if(ws) ws.close(); token=''; currentUser=null; serverAdminPassword=''; sessionStorage.removeItem('server_admin_password'); localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('privacy-lock')?.classList.add('hidden'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
     function renderMe(){ $('me-name').textContent = profile.nickname || currentUser.username; $('me-avatar').textContent = profile.avatar ? '' : initial(profile); $('me-avatar').style.cssText = avatarStyle(profile); }
     function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; localStorage.setItem('theme', next); refreshSettingsState(); }
@@ -2597,7 +2773,7 @@
       if(p === 'unsupported') return toast('Browser does not support notifications');
       toast(ok ? 'Notifications enabled' : 'Notifications blocked');
     }
-    async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); keyPair = await getKeyPair(); await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast('Device key updated'); }
+    async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); localStorage.removeItem(`nacl_private_${currentUser.id}`); groupKeys={}; keyPair = await getKeyPair(); if(!keyPair.compatibilityOnly) await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast(keyPair.compatibilityOnly?'Encrypted chat is unavailable in this browser':'Device key updated'); }
     function openFeedbackEmail(){
       const subject = encodeURIComponent('6nr bug feedback');
       const body = encodeURIComponent(`Please describe the issue here.\n\nUser: ${profile.nickname || currentUser?.username || ''}\nDevice fingerprint: ${shortFingerprint()}`);
@@ -2859,8 +3035,12 @@
       const base = publicKeySeed();
       if (!base || base === '{}') return '--';
       try {
-        const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', enc.encode(base)));
-        return formatFingerprint(hash.slice(0, 8));
+        if (hasSecureCrypto()) {
+          const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', utf8ToBytes(base)));
+          return formatFingerprint(hash.slice(0, 8));
+        }
+        if (window.nacl?.hash) return formatFingerprint(nacl.hash(utf8ToBytes(base)).slice(0, 8));
+        return shortFingerprint();
       } catch {
         return shortFingerprint();
       }
@@ -2881,7 +3061,7 @@
       $('settings-bio').textContent = profile.bio || zh('No bio');
       if($('settings-friend-count')) $('settings-friend-count').textContent = String(friends.length || 0);
       if($('settings-theme-state')) $('settings-theme-state').textContent = document.body.dataset.theme === 'dark' ? zh('Dark') : zh('Light');
-      if($('settings-key-state')) $('settings-key-state').textContent = keyPair ? zh('Ready') : '--';
+      if($('settings-key-state')) $('settings-key-state').textContent = keyPair ? zh(keyPair.compatibilityOnly ? 'Lobby compatibility' : 'Ready') : '--';
       if($('settings-key-fingerprint')) $('settings-key-fingerprint').textContent = shortFingerprint();
       refreshFingerprintViews();
       if($('theme-toggle')) $('theme-toggle').textContent = document.body.dataset.theme === 'dark' ? zh('Dark') : zh('Light');
