@@ -1,31 +1,39 @@
 const express = require('express');
 const cors = require('cors');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const sqlite3 = require('sqlite3').verbose();
-const { WebSocketServer } = require('ws');
+const { WebSocket, WebSocketServer } = require('ws');
 const http = require('http');
 const path = require('path');
+const { PostgresDatabase } = require('./postgres-db');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
 
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me-in-production-with-a-long-random-secret';
+const JWT_SECRET = process.env.JWT_SECRET || 'local-development-secret-change-before-deploying';
 const SALT_ROUNDS = 10;
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.SERVER_ADMIN_PASSWORD || '9178wde';
+
+if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
+  throw new Error('JWT_SECRET must contain at least 32 characters');
+}
+if (process.env.NODE_ENV === 'production' && !process.env.SERVER_ADMIN_PASSWORD) {
+  throw new Error('SERVER_ADMIN_PASSWORD is required');
+}
 
 app.use(cors());
 app.use(express.json({ limit: '12mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/api/health', (req, res) => res.json({ ok: true }));
 
-const db = new sqlite3.Database(path.join(__dirname, 'securechat.db'));
+const db = new PostgresDatabase();
 const clients = new Map();
 
 function addColumn(table, definition) {
-  db.run(`ALTER TABLE ${table} ADD COLUMN ${definition}`, () => {});
+  db.run(`ALTER TABLE ${table} ADD COLUMN IF NOT EXISTS ${definition}`, () => {});
 }
 
 db.serialize(() => {
@@ -183,7 +191,7 @@ function sendToUser(userId, payload) {
   if (!sockets) return;
   const data = JSON.stringify(payload);
   for (const ws of sockets) {
-    if (ws.readyState === ws.OPEN) ws.send(data);
+    if (ws.readyState === WebSocket.OPEN) ws.send(data);
   }
 }
 
@@ -293,7 +301,7 @@ app.post('/api/register', async (req, res) => {
     const hash = await bcrypt.hash(password, SALT_ROUNDS);
     db.run('INSERT INTO users (username, password_hash, public_key, nickname) VALUES (?, ?, ?, ?)', [username, hash, JSON.stringify(publicKey), username], function onInsert(err) {
       if (err) {
-        if (String(err.message).includes('UNIQUE')) return res.status(409).json({ error: 'Username already exists' });
+        if (err.code === '23505' || /unique|duplicate/i.test(String(err.message))) return res.status(409).json({ error: 'Username already exists' });
         return res.status(500).json({ error: 'Database error' });
       }
       const token = jwt.sign({ id: this.lastID, username }, JWT_SECRET, { expiresIn: '7d' });
@@ -408,7 +416,7 @@ app.get('/api/user/:id/profile', authenticateToken, (req, res) => {
 app.get('/api/search-users', authenticateToken, (req, res) => {
   const q = String(req.query.q || '').trim();
   if (!q) return res.json({ users: [] });
-  db.all('SELECT id, username, nickname, avatar, bio, public_key FROM users WHERE (username LIKE ? OR nickname LIKE ?) AND id != ? LIMIT 10', [`%${q}%`, `%${q}%`, req.user.id], (err, users) => {
+  db.all('SELECT id, username, nickname, avatar, bio, public_key FROM users WHERE (username ILIKE ? OR nickname ILIKE ?) AND id != ? LIMIT 10', [`%${q}%`, `%${q}%`, req.user.id], (err, users) => {
     if (err) return res.status(500).json({ error: 'Query failed' });
     res.json({ users: (users || []).map((user) => ({ ...user, public_key: safeParse(user.public_key) })) });
   });
@@ -464,8 +472,10 @@ app.post('/api/friend-request/:fromId', authenticateToken, (req, res) => {
 
 app.get('/api/friends', authenticateToken, (req, res) => {
   db.all(`SELECT u.id, u.username, u.nickname, u.avatar, u.bio, u.public_key,
-       (SELECT COUNT(*) FROM blocks WHERE user_id = ? AND blocked_user_id = u.id) AS is_blocked
-     FROM friends f JOIN users u ON f.friend_id = u.id
+       CASE WHEN b.id IS NULL THEN 0 ELSE 1 END AS is_blocked
+     FROM friends f
+     JOIN users u ON f.friend_id = u.id
+     LEFT JOIN blocks b ON b.user_id = ? AND b.blocked_user_id = u.id
      WHERE f.user_id = ?
      ORDER BY COALESCE(u.nickname, u.username) COLLATE NOCASE ASC`, [req.user.id, req.user.id], (err, friends) => {
     if (err) return res.status(500).json({ error: 'Query failed' });
@@ -776,12 +786,10 @@ app.get('/api/moments', authenticateToken, (req, res) => {
   db.all(`SELECT blocked_user_id FROM blocks WHERE user_id = ? UNION SELECT user_id AS blocked_user_id FROM blocks WHERE blocked_user_id = ?`, [req.user.id, req.user.id], (blockErr, blockRows) => {
     if (blockErr) return res.status(500).json({ error: 'Query failed' });
     const blockedUsers = new Set((blockRows || []).map((r) => Number(r.blocked_user_id)));
-    const params = [req.user.id];
+    const params = [];
     const userFilter = profileUserId ? 'AND m.user_id = ?' : '';
     if (profileUserId) params.push(profileUserId);
-    db.all(`SELECT m.*, u.username, u.nickname, u.avatar,
-           (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id) AS like_count,
-           (SELECT COUNT(*) FROM moment_likes WHERE moment_id = m.id AND user_id = ?) AS liked_by_me
+    db.all(`SELECT m.*, u.username, u.nickname, u.avatar
          FROM moments m JOIN users u ON m.user_id = u.id
          WHERE 1 = 1 ${userFilter}
          ORDER BY m.created_at DESC LIMIT 100`, params, (err, moments) => {
@@ -790,9 +798,14 @@ app.get('/api/moments', authenticateToken, (req, res) => {
       Promise.all(visible.map((moment) => new Promise((resolve) => {
         db.all('SELECT mc.*, u.username, u.nickname FROM moment_comments mc JOIN users u ON mc.user_id = u.id WHERE mc.moment_id = ? ORDER BY mc.created_at ASC', [moment.id], (commentErr, comments) => {
           moment.comments = commentErr ? [] : (comments || []);
-          moment.likes = moment.liked_by_me ? [req.user.id] : [];
-          moment.blocked = parseJsonArray(moment.blocked);
-          resolve(moment);
+          db.all('SELECT user_id FROM moment_likes WHERE moment_id = ?', [moment.id], (likeErr, likes) => {
+            const likeRows = likeErr ? [] : (likes || []);
+            moment.like_count = likeRows.length;
+            moment.liked_by_me = likeRows.some((like) => Number(like.user_id) === req.user.id) ? 1 : 0;
+            moment.likes = moment.liked_by_me ? [req.user.id] : [];
+            moment.blocked = parseJsonArray(moment.blocked);
+            resolve(moment);
+          });
         });
       }))).then((results) => res.json({ moments: results }));
     });
@@ -833,6 +846,49 @@ app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
   });
 });
 
-server.listen(PORT, () => {
-  console.log(`6nr server listening on port ${PORT}`);
+const heartbeat = setInterval(() => {
+  for (const sockets of clients.values()) {
+    for (const ws of sockets) {
+      if (ws.isAlive === false) {
+        ws.terminate();
+        continue;
+      }
+      ws.isAlive = false;
+      ws.ping();
+    }
+  }
+}, 30000);
+
+wss.on('connection', (ws) => {
+  ws.isAlive = true;
+  ws.on('pong', () => {
+    ws.isAlive = true;
+  });
 });
+
+async function shutdown() {
+  clearInterval(heartbeat);
+  for (const sockets of clients.values()) {
+    for (const ws of sockets) {
+      if (ws.readyState === WebSocket.OPEN) ws.close(1001, 'Server restarting');
+    }
+  }
+  server.close(async () => {
+    await db.close();
+    process.exit(0);
+  });
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
+
+db.ready()
+  .then(() => {
+    server.listen(PORT, '0.0.0.0', () => {
+      console.log(`6nr server listening on port ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.error('Database initialization failed:', error);
+    process.exit(1);
+  });

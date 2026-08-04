@@ -1,16 +1,26 @@
 {
   "name": "6nr",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
-  "description": "6nr encrypted chat on Cloudflare Workers",
-  "type": "module",
+  "description": "6nr encrypted chat server",
+  "main": "server.js",
   "scripts": {
-    "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
-    "check": "wrangler deploy --dry-run",
-    "db:migrate": "wrangler d1 migrations apply DB --remote"
+    "start": "node server.js",
+    "check": "node --check server.js && node --check postgres-db.js",
+    "test": "node tests/smoke.mjs"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.2",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "pg": "^8.16.3",
+    "ws": "^8.18.3"
   },
   "devDependencies": {
-    "wrangler": "^4.0.0"
+    "pg-mem": "^3.0.5"
   }
 }
