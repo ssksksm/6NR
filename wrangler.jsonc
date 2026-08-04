@@ -1,6 +1,6 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "sixnr-chat",
+  "name": "6nr",
   "main": "src/worker.js",
   "compatibility_date": "2026-08-03",
   "workers_dev": true,
@@ -11,12 +11,10 @@
   },
   "d1_databases": [
     {
-      "binding": "DB"
-    }
-  ],
-  "r2_buckets": [
-    {
-      "binding": "MEDIA"
+      "binding": "DB",
+      "database_name": "6nr-db",
+      "database_id": "b5fc4e4b-905b-46dd-86af-be3fc433f8db",
+      "migrations_dir": "migrations"
     }
   ],
   "durable_objects": {
