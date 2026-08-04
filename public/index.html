@@ -1420,6 +1420,10 @@
     let profile = {};
     let keyPair = null;
     let ws = null;
+    let realtimeMode = 'websocket';
+    let pollTimer = null;
+    let pollBusy = false;
+    let pollBaseline = null;
     let isLogin = true;
     let friends = [];
     let requests = [];
@@ -2425,16 +2429,26 @@
         token = data.token; profile = data.user; localStorage.setItem('securechat_token', token); localStorage.setItem('securechat_user', JSON.stringify(currentUser)); await enter();
       } catch(e) { toast(e.message); }
     }
-    async function enter(){ if(!ensureSecureCrypto()) { logout(); return; } closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); connect(); await loadEverything(); showPage('chat'); }
-    function logout(){ if(ws) ws.close(); token=''; currentUser=null; serverAdminPassword=''; sessionStorage.removeItem('server_admin_password'); localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('privacy-lock')?.classList.add('hidden'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
+    async function enter(){ if(!ensureSecureCrypto()) { logout(); return; } closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); await connect(); await loadEverything(); showPage('chat'); }
+    function logout(){ clearTimeout(pollTimer); pollTimer=null; pollBaseline=null; if(ws) ws.close(); token=''; currentUser=null; serverAdminPassword=''; sessionStorage.removeItem('server_admin_password'); localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('privacy-lock')?.classList.add('hidden'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
     function renderMe(){ $('me-name').textContent = profile.nickname || currentUser.username; $('me-avatar').textContent = profile.avatar ? '' : initial(profile); $('me-avatar').style.cssText = avatarStyle(profile); }
     function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; localStorage.setItem('theme', next); refreshSettingsState(); }
     function applyDisplayPrefs(){ document.body.dataset.font = localStorage.getItem('font_large') === '1' ? 'large' : ''; document.body.dataset.density = localStorage.getItem('density_compact') === '1' ? 'compact' : ''; }
     function toggleLargeText(){ localStorage.setItem('font_large', localStorage.getItem('font_large') === '1' ? '0' : '1'); applyDisplayPrefs(); refreshSettingsState(); }
     function toggleCompactMode(){ localStorage.setItem('density_compact', localStorage.getItem('density_compact') === '1' ? '0' : '1'); applyDisplayPrefs(); refreshSettingsState(); }
 
-    function connect(){
+    async function connect(){
+      clearTimeout(pollTimer);
+      pollTimer = null;
+      pollBaseline = null;
       if(ws) ws.close();
+      ws = null;
+      try { realtimeMode = (await api('/config')).realtime || 'websocket'; } catch { realtimeMode = 'websocket'; }
+      if(realtimeMode === 'poll') {
+        onlineIds.clear();
+        startPolling();
+        return;
+      }
       ws = new WebSocket(`${WS}?token=${encodeURIComponent(token)}`);
       ws.onmessage = async e => {
         const m = JSON.parse(e.data);
@@ -2457,6 +2471,65 @@
       ws.onclose = () => { if(token) setTimeout(connect, 3000); };
     }
     function sendWs(data){ if(ws && ws.readyState === WebSocket.OPEN) ws.send(JSON.stringify(data)); }
+
+    function pollSignature(rows){
+      return Object.fromEntries((rows || []).map(row => [Number(row.conversation_id), Number(row.message_id || 0)]));
+    }
+    function friendSignature(ids){ return (ids || []).map(Number).sort((a,b)=>a-b).join(','); }
+    function schedulePoll(delay){
+      clearTimeout(pollTimer);
+      if(token) pollTimer = setTimeout(pollUpdates, delay ?? (document.hidden ? 120000 : 15000));
+    }
+    function startPolling(){ schedulePoll(1500); }
+    async function pollUpdates(){
+      if(pollBusy || !token || realtimeMode !== 'poll') return schedulePoll();
+      pollBusy = true;
+      try {
+        const data = await api('/poll');
+        const next = {
+          direct: pollSignature(data.direct),
+          groups: pollSignature(data.groups),
+          publicId: Number(data.public_message?.message_id || 0),
+          announcementId: Number(data.announcement?.id || 0),
+          friends: friendSignature(data.friend_ids)
+        };
+        if(pollBaseline) {
+          let refreshChats = next.friends !== pollBaseline.friends;
+          let refreshGroups = false;
+          for(const row of data.direct || []) {
+            const id = Number(row.conversation_id), messageId = Number(row.message_id || 0);
+            if(messageId && messageId !== Number(pollBaseline.direct[id] || 0)) {
+              refreshChats = true;
+              if(Number(row.from_id) !== Number(currentUser.id)) notify('New direct message', keyOf('direct', id));
+              if(active?.type === 'direct' && Number(active.id) === id) { await loadDirectMessages(id); await markDirect(id); }
+            }
+          }
+          for(const row of data.groups || []) {
+            const id = Number(row.conversation_id), messageId = Number(row.message_id || 0);
+            if(messageId && messageId !== Number(pollBaseline.groups[id] || 0)) {
+              refreshGroups = true;
+              if(Number(row.from_id) !== Number(currentUser.id)) notify('New group message', keyOf('group', id));
+              if(active?.type === 'group' && Number(active.id) === id) { await loadGroupMessages(id); await markGroup(id); }
+            }
+          }
+          if(next.publicId && next.publicId !== pollBaseline.publicId) {
+            if(Number(data.public_message?.from_id) !== Number(currentUser.id)) notify('New public message', keyOf('public', 0));
+            if(active?.type === 'public') await loadPublicMessages();
+          }
+          if(next.announcementId && next.announcementId !== pollBaseline.announcementId) {
+            currentAnnouncement = data.announcement;
+            renderAnnouncementSettings();
+            notify('New announcement', keyOf('announcement', 0));
+            showAnnouncementModal(currentAnnouncement, true);
+          }
+          if(refreshChats) await loadChats();
+          if(refreshGroups || Object.keys(next.groups).join(',') !== Object.keys(pollBaseline.groups).join(',')) await loadGroups();
+          if(next.friends !== pollBaseline.friends) await loadFriends();
+        }
+        pollBaseline = next;
+      } catch {}
+      finally { pollBusy = false; schedulePoll(); }
+    }
     function notificationApi(){ return typeof window !== 'undefined' && 'Notification' in window ? window.Notification : null; }
     function resetTitleNotice(){ clearTimeout(titleNotifyTimer); document.title = originalTitle; }
     function setTitleNotice(text){
