@@ -213,7 +213,9 @@
     .auth-form {
       width: min(420px, 100%);
       max-height: calc(100vh - 48px);
-      overflow: auto;
+      overflow-x: hidden;
+      overflow-y: auto;
+      overscroll-behavior: contain;
       padding: 30px;
       display: grid;
       gap: 18px;
@@ -225,6 +227,7 @@
       backdrop-filter: blur(26px) saturate(150%);
       box-shadow: var(--shadow);
     }
+    .auth-form.liquid-glass::before, .auth-form.liquid-glass::after { inset: 0; }
     .auth-brand { width: 48px; height: 48px; border-radius: 14px; display: grid; place-items: center; background: var(--ink); color: var(--surface-solid); font-size: 22px; font-weight: 950; }
     .auth h1 { font-size: 34px; line-height: 1.08; margin: 0; letter-spacing: 0; }
     .auth p { color: var(--muted); margin: -8px 0 4px; }
@@ -961,20 +964,20 @@
     </filter>
   </svg>
   <section id="auth" class="auth">
-    <div class="auth-form">
+    <form id="auth-form" class="auth-form" novalidate>
       <div class="auth-brand">6</div>
       <h1 id="auth-title">Welcome back</h1>
       <p id="auth-subtitle">6nr</p>
       <div class="auth-stack">
-        <input id="auth-username" placeholder="Username" autocomplete="username">
-        <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password">
-        <input id="auth-confirm" class="hidden" type="password" placeholder="Confirm password" autocomplete="new-password">
+        <input id="auth-username" name="username" placeholder="Username" autocomplete="username" maxlength="32" autocapitalize="none" spellcheck="false">
+        <input id="auth-password" name="password" type="password" placeholder="Password" autocomplete="current-password" maxlength="128">
+        <input id="auth-confirm" name="confirm" class="hidden" type="password" placeholder="Confirm password" autocomplete="new-password" maxlength="128">
       </div>
       <div class="auth-actions">
-        <button id="auth-submit" class="btn primary" type="button">Sign in</button>
+        <button id="auth-submit" class="btn primary" type="submit">Sign in</button>
         <button id="auth-switch" class="btn ghost auth-link" type="button" onclick="toggleAuth()">Create account</button>
       </div>
-    </div>
+    </form>
     <div class="auth-visual"></div>
   </section>
 
@@ -1436,8 +1439,28 @@
       return btoa(raw);
     };
     const base64ToBytes = (value) => Uint8Array.from(atob(value), char => char.charCodeAt(0));
-    let token = localStorage.getItem('securechat_token') || '';
-    let currentUser = JSON.parse(localStorage.getItem('securechat_user') || 'null');
+    function safeStorage(name){
+      const backend = () => Reflect.get(window, name);
+      return {
+        get(key){ try { return backend()['getItem'](key); } catch { return null; } },
+        set(key, value){ try { backend()['setItem'](key, String(value)); return true; } catch { return false; } },
+        remove(key){ try { backend()['removeItem'](key); return true; } catch { return false; } },
+        keys(){
+          try {
+            const store = backend();
+            return Array.from({length:store.length}, (_, index) => store.key(index)).filter(Boolean);
+          } catch { return []; }
+        }
+      };
+    }
+    function storedJson(storage, key, fallback){
+      try { const value = storage.get(key); return value ? JSON.parse(value) : fallback; }
+      catch { return fallback; }
+    }
+    const persistentStorage = safeStorage('localStorage');
+    const temporaryStorage = safeStorage('sessionStorage');
+    let token = persistentStorage.get('securechat_token') || '';
+    let currentUser = storedJson(persistentStorage, 'securechat_user', null);
     let profile = {};
     let keyPair = null;
     let ws = null;
@@ -1446,6 +1469,7 @@
     let pollBusy = false;
     let pollBaseline = null;
     let isLogin = true;
+    let authBusy = false;
     let friends = [];
     let requests = [];
     let chats = [];
@@ -1459,18 +1483,18 @@
     let typingTimers = {};
     let onlineIds = new Set();
     let serverStats = null;
-    let serverAdminPassword = sessionStorage.getItem('server_admin_password') || '';
+    let serverAdminPassword = temporaryStorage.get('server_admin_password') || '';
     let currentAnnouncement = null;
     let replyDraft = null;
-    let unreadOnly = localStorage.getItem('unread_only') === '1';
-    let favorites = JSON.parse(localStorage.getItem('message_favorites') || '{}');
+    let unreadOnly = persistentStorage.get('unread_only') === '1';
+    let favorites = storedJson(persistentStorage, 'message_favorites', {});
     let favoriteOnly = false;
     let originalTitle = document.title;
     let titleNotifyTimer = null;
     let browserCompatInstalled = false;
     const SUPPORT_EMAIL = 'yljylj2026@outlook.com';
-    const pins = new Set(JSON.parse(localStorage.getItem('pins') || '[]'));
-    const mutes = new Set(JSON.parse(localStorage.getItem('mutes') || '[]'));
+    const pins = new Set(storedJson(persistentStorage, 'pins', []));
+    const mutes = new Set(storedJson(persistentStorage, 'mutes', []));
 
     function installIcons() {
       document.querySelectorAll('[data-i]').forEach(el => el.innerHTML = icons[el.dataset.i] || '');
@@ -1523,6 +1547,11 @@
       'Register': '\u6ce8\u518c',
       'Back to sign in': '\u8fd4\u56de\u767b\u5f55',
       'Enter username and password': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
+      'Enter a username': '\u8bf7\u8f93\u5165\u7528\u6237\u540d',
+      'Enter a password': '\u8bf7\u8f93\u5165\u5bc6\u7801',
+      'Username is too long': '\u7528\u6237\u540d\u4e0d\u80fd\u8d85\u8fc7 32 \u4e2a\u5b57\u7b26',
+      'Creating account...': '\u6b63\u5728\u521b\u5efa\u8d26\u53f7...',
+      'Signing in...': '\u6b63\u5728\u767b\u5f55...',
       'Confirm your password': '\u8bf7\u786e\u8ba4\u5bc6\u7801',
       'Passwords do not match': '\u4e24\u6b21\u5bc6\u7801\u4e0d\u4e00\u81f4',
       'Secure crypto requires HTTPS or a modern browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u4e0d\u652f\u6301\u5b89\u5168\u52a0\u5bc6\uff0c\u8bf7\u4f7f\u7528 HTTPS \u6216\u65b0\u7248\u6d4f\u89c8\u5668',
@@ -1533,8 +1562,15 @@
       'Failed to fetch': '\u7f51\u7edc\u8bf7\u6c42\u5931\u8d25\uff0c\u8bf7\u68c0\u67e5\u670d\u52a1\u5668\u6216\u7f51\u7edc',
       'Missing token': '\u767b\u5f55\u72b6\u6001\u5931\u6548\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55',
       'Invalid or expired token': '\u767b\u5f55\u5df2\u8fc7\u671f\uff0c\u8bf7\u91cd\u65b0\u767b\u5f55',
-      'Username, password and public key are required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
+      'Username, password and public key are required': '\u6ce8\u518c\u4fe1\u606f\u4e0d\u5b8c\u6574\uff0c\u8bf7\u91cd\u8bd5',
       'Username and password are required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d\u548c\u5bc6\u7801',
+      'Username is required': '\u8bf7\u8f93\u5165\u7528\u6237\u540d',
+      'Password is required': '\u8bf7\u8f93\u5165\u5bc6\u7801',
+      'Public key generation failed': '\u52a0\u5bc6\u8eab\u4efd\u751f\u6210\u5931\u8d25\uff0c\u8bf7\u5237\u65b0\u9875\u9762\u540e\u91cd\u8bd5',
+      'Public key data is invalid': '\u52a0\u5bc6\u8eab\u4efd\u6570\u636e\u65e0\u6548\uff0c\u8bf7\u5237\u65b0\u9875\u9762\u540e\u91cd\u8bd5',
+      'Encryption key could not be saved on this browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u65e0\u6cd5\u6301\u4e45\u4fdd\u5b58\u52a0\u5bc6\u5bc6\u94a5\uff0c\u672c\u6b21\u4f1a\u8bdd\u53ef\u7ee7\u7eed\u4f7f\u7528',
+      'Login session could not be saved on this browser': '\u5f53\u524d\u6d4f\u89c8\u5668\u65e0\u6cd5\u4fdd\u5b58\u767b\u5f55\u72b6\u6001\uff0c\u5237\u65b0\u540e\u9700\u8981\u91cd\u65b0\u767b\u5f55',
+      'Some content could not be loaded': '\u90e8\u5206\u5185\u5bb9\u52a0\u8f7d\u5931\u8d25\uff0c\u5df2\u4fdd\u7559\u53ef\u7528\u529f\u80fd',
       'Incorrect username or password': '\u7528\u6237\u540d\u6216\u5bc6\u7801\u9519\u8bef',
       'Password must be at least 4 characters': '\u5bc6\u7801\u81f3\u5c11 4 \u4f4d',
       'Username already exists': '\u7528\u6237\u540d\u5df2\u5b58\u5728',
@@ -1660,6 +1696,7 @@
       'Mode': '\u6a21\u5f0f',
       'Key scope': '\u5bc6\u94a5\u8303\u56f4',
       'Local device': '\u672c\u673a\u8bbe\u5907',
+      'Public chat': '\u516c\u5171\u804a\u5929',
       'Direct E2EE': '\u79c1\u804a\u7aef\u5230\u7aef',
       'Group E2EE': '\u7fa4\u804a\u7aef\u5230\u7aef',
       'Per chat key': '\u5355\u4e2a\u4f1a\u8bdd\u5bc6\u94a5',
@@ -1936,7 +1973,8 @@
     }
 
     function keyOf(type, id) { return `${type}:${id}`; }
-    function saveSet(name, set) { localStorage.setItem(name, JSON.stringify([...set])); }
+    function saveSet(name, set) { persistentStorage.set(name, JSON.stringify([...set])); }
+    function clearToast(){ clearTimeout(window.toastTimer); $('toast').classList.remove('show'); }
     function toast(text) { $('toast').textContent = zh(text); $('toast').classList.add('show'); clearTimeout(window.toastTimer); window.toastTimer = setTimeout(() => $('toast').classList.remove('show'), 2400); }
     async function copyText(text, message = 'Copied') {
       try {
@@ -1992,7 +2030,7 @@
       return `${activeChatKey()}:${message.id || message.created_at || messagePlainText(message.payload)}`;
     }
     function saveFavorites() {
-      localStorage.setItem('message_favorites', JSON.stringify(favorites));
+      persistentStorage.set('message_favorites', JSON.stringify(favorites));
       renderFavoritesPanel();
     }
     function favoriteMeta(message, key) {
@@ -2102,7 +2140,7 @@
     function clearCurrentDraft() {
       if (!active) return toast('No active chat');
       $('message-input').value = '';
-      localStorage.removeItem(`draft:${activeChatKey()}`);
+      persistentStorage.remove(`draft:${activeChatKey()}`);
       updateMessageCounter();
       toast('Draft cleared');
     }
@@ -2174,7 +2212,7 @@
     function showAnnouncementModal(announcement, force=false){
       if(!announcement?.id || !announcement.content) return;
       const seenKey = `announcement_seen_${announcement.id}`;
-      if(!force && localStorage.getItem(seenKey) === '1') return;
+      if(!force && persistentStorage.get(seenKey) === '1') return;
       $('announcement-modal-title').textContent = announcement.title || zh('Announcement');
       $('announcement-modal-content').textContent = announcement.content;
       $('announcement-modal').dataset.announcementId = String(announcement.id);
@@ -2182,7 +2220,7 @@
     }
     function closeAnnouncementModal(){
       const id = $('announcement-modal')?.dataset.announcementId;
-      if(id) localStorage.setItem(`announcement_seen_${id}`, '1');
+      if(id) persistentStorage.set(`announcement_seen_${id}`, '1');
       $('announcement-modal').classList.add('hidden');
     }
     async function loadAnnouncement(showToast=false, showPopup=false){
@@ -2205,7 +2243,7 @@
       if(!content) return toast('Announcement cannot be empty');
       const data = await api('/server/announcement', { method:'POST', headers:{'X-Admin-Password':serverAdminPassword}, body:JSON.stringify({title, content, active:true}) });
       currentAnnouncement = data.announcement || null;
-      if(currentAnnouncement) localStorage.removeItem(`announcement_seen_${currentAnnouncement.id}`);
+      if(currentAnnouncement) persistentStorage.remove(`announcement_seen_${currentAnnouncement.id}`);
       renderAnnouncementSettings();
       showAnnouncementModal(currentAnnouncement, true);
       toast('Announcement published');
@@ -2222,7 +2260,7 @@
     }
     function toggleUnreadOnly() {
       unreadOnly = !unreadOnly;
-      localStorage.setItem('unread_only', unreadOnly ? '1' : '0');
+      persistentStorage.set('unread_only', unreadOnly ? '1' : '0');
       updateUnreadFilter();
       renderConversations();
     }
@@ -2247,11 +2285,11 @@
         const data = await api('/login', { method:'POST', body:JSON.stringify({ username: currentUser.username, password }) });
         token = data.token;
         currentUser = data.user;
-        localStorage.setItem('securechat_token', token);
-        localStorage.setItem('securechat_user', JSON.stringify(currentUser));
+        const sessionSaved = persistentStorage.set('securechat_token', token)
+          && persistentStorage.set('securechat_user', JSON.stringify(currentUser));
         $('privacy-lock').classList.add('hidden');
         $('privacy-password').value = '';
-        toast('App unlocked');
+        toast(sessionSaved ? 'App unlocked' : 'Login session could not be saved on this browser');
       } catch {
         toast('Unlock failed');
       }
@@ -2266,7 +2304,7 @@
       const password = $('server-password').value.trim();
       if (!password) return toast('Enter admin password');
       serverAdminPassword = password;
-      sessionStorage.setItem('server_admin_password', password);
+      temporaryStorage.set('server_admin_password', password);
       const ok = await loadServerStatus(true);
       if (ok) {
         await loadAnnouncement(false, false);
@@ -2450,18 +2488,22 @@
         };
       },
       async storeIdentity(userId, identity){
-        if (identity.p256Private && hasSecureCrypto()) {
-          const jwk = await crypto.subtle.exportKey('jwk', identity.p256Private);
-          localStorage.setItem(`ecdh_private_jwk_${userId}`, JSON.stringify(jwk));
-        }
-        if (identity.naclSecret) localStorage.setItem(`nacl_private_${userId}`, bytesToBase64(identity.naclSecret));
+        let saved = true;
+        try {
+          if (identity.p256Private && hasSecureCrypto()) {
+            const jwk = await crypto.subtle.exportKey('jwk', identity.p256Private);
+            saved = persistentStorage.set(`ecdh_private_jwk_${userId}`, JSON.stringify(jwk)) && saved;
+          }
+          if (identity.naclSecret) saved = persistentStorage.set(`nacl_private_${userId}`, bytesToBase64(identity.naclSecret)) && saved;
+        } catch { saved = false; }
+        return saved;
       },
       async loadIdentity(userId){
         let p256Private = null;
         let p256Public = null;
         let naclSecret = null;
         let x25519 = null;
-        const storedNacl = localStorage.getItem(`nacl_private_${userId}`);
+        const storedNacl = persistentStorage.get(`nacl_private_${userId}`);
         if (storedNacl && window.nacl?.box) {
           try {
             naclSecret = base64ToBytes(storedNacl);
@@ -2476,7 +2518,7 @@
             x25519 = bytesToBase64(pair.publicKey);
           } catch {}
         }
-        const storedP256 = localStorage.getItem(`ecdh_private_jwk_${userId}`);
+        const storedP256 = persistentStorage.get(`ecdh_private_jwk_${userId}`);
         if (storedP256 && hasSecureCrypto()) {
           try {
             p256Private = await this.importP256Private(JSON.parse(storedP256));
@@ -2496,7 +2538,7 @@
           publicKey:this.buildPublicKey(p256Public, x25519),
           compatibilityOnly:!p256Private && !naclSecret
         };
-        await this.storeIdentity(userId, identity);
+        identity.storageReady = await this.storeIdentity(userId, identity);
         return identity;
       },
       async deriveSession(peerPublicKey){
@@ -2570,49 +2612,88 @@
     async function wrapGroupKey(raw, user) { const k = await Crypto.deriveSession(user.public_key); return Crypto.encryptText(raw, k); }
     async function unwrapGroupKey(group) { if (groupKeys[group.id]) return groupKeys[group.id]; const k = await Crypto.deriveSession(group.owner_public_key); const raw = await Crypto.decryptText(group.wrapped_key, k); const key = await Crypto.importAes(raw); groupKeys[group.id] = key; return key; }
 
-    function toggleAuth(){
-      isLogin = !isLogin;
+    function setAuthMode(login){
+      isLogin = Boolean(login);
       $('auth-title').textContent = isLogin ? zh('Welcome back') : zh('Create account');
       $('auth-subtitle').textContent = isLogin ? '6nr' : zh('Start with a secure account');
       $('auth-confirm').classList.toggle('hidden', isLogin);
+      $('auth-confirm').required = !isLogin;
       $('auth-password').autocomplete = isLogin ? 'current-password' : 'new-password';
-      $('auth-submit').textContent = isLogin ? zh('Sign in') : zh('Register');
+      if(!authBusy) $('auth-submit').textContent = isLogin ? zh('Sign in') : zh('Register');
       $('auth-switch').textContent = isLogin ? zh('Create account') : zh('Back to sign in');
     }
-    async function handleAuth(){
-      const username = $('auth-username').value.trim(), password = $('auth-password').value, confirm = $('auth-confirm').value;
-      if (!username || !password) return toast('Enter username and password');
-      if (!isLogin && !confirm) return toast('Confirm your password');
-      if (!isLogin && password !== confirm) return toast('Passwords do not match');
+    function toggleAuth(){ if(!authBusy) setAuthMode(!isLogin); }
+    function setAuthBusy(busy){
+      authBusy = Boolean(busy);
+      $('auth-submit').disabled = authBusy;
+      $('auth-switch').disabled = authBusy;
+      $('auth-submit').textContent = authBusy ? zh(isLogin ? 'Signing in...' : 'Creating account...') : zh(isLogin ? 'Sign in' : 'Register');
+    }
+    function readAuthFields(){
+      const values = new FormData($('auth-form'));
+      return {
+        username:String(values.get('username') ?? $('auth-username').value ?? '').trim(),
+        password:String(values.get('password') ?? $('auth-password').value ?? ''),
+        confirm:String(values.get('confirm') ?? $('auth-confirm').value ?? '')
+      };
+    }
+    async function handleAuth(event){
+      event?.preventDefault();
+      if(authBusy) return false;
+      const {username, password, confirm} = readAuthFields();
+      if (!username) { $('auth-username').focus(); toast('Enter a username'); return false; }
+      if (!password) { $('auth-password').focus(); toast('Enter a password'); return false; }
+      if (username.length > 32) { $('auth-username').focus(); toast('Username is too long'); return false; }
+      if (!isLogin && password.length < 4) { $('auth-password').focus(); toast('Password must be at least 4 characters'); return false; }
+      if (!isLogin && !confirm) { $('auth-confirm').focus(); toast('Confirm your password'); return false; }
+      if (!isLogin && password !== confirm) { $('auth-confirm').focus(); toast('Passwords do not match'); return false; }
+      clearToast();
+      setAuthBusy(true);
       try {
         let data;
+        let storageReady = true;
         if (isLogin) {
           data = await api('/login', {method:'POST', body:JSON.stringify({username,password})});
           token = data.token;
           currentUser = data.user;
           profile = data.user;
-          localStorage.setItem('securechat_token', token);
-          localStorage.setItem('securechat_user', JSON.stringify(currentUser));
           keyPair = await getKeyPair();
-          if (!keyPair.compatibilityOnly) await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})});
+          storageReady = keyPair.storageReady !== false;
+          if (!keyPair.compatibilityOnly) {
+            try { await api('/user/public-key', {method:'PUT', body:JSON.stringify({public_key:keyPair.publicKey})}); }
+            catch {}
+          }
         } else {
           const identity = await Crypto.generateIdentity();
+          if (!identity?.publicKey) throw new Error(zh('Public key generation failed'));
           data = await api('/register', {method:'POST', body:JSON.stringify({username,password,public_key:identity.publicKey})});
+          token = data.token;
           currentUser = data.user;
+          profile = data.user;
           keyPair = identity;
-          await Crypto.storeIdentity(currentUser.id, identity);
+          storageReady = await Crypto.storeIdentity(currentUser.id, identity);
         }
-        token = data.token; profile = data.user; localStorage.setItem('securechat_token', token); localStorage.setItem('securechat_user', JSON.stringify(currentUser)); await enter();
+        token = data.token;
+        profile = data.user;
+        const sessionSaved = persistentStorage.set('securechat_token', token)
+          && persistentStorage.set('securechat_user', JSON.stringify(currentUser));
+        $('auth-password').value = '';
+        $('auth-confirm').value = '';
+        try { await enter(); } catch(e) { toast(e.message || 'Request failed'); }
         if (keyPair.compatibilityOnly) toast('Encrypted chat is unavailable in this browser');
-      } catch(e) { toast(e.message); }
+        else if (!storageReady) toast('Encryption key could not be saved on this browser');
+        if (!sessionSaved) toast('Login session could not be saved on this browser');
+      } catch(e) { toast(e.message || 'Request failed'); }
+      finally { setAuthBusy(false); }
+      return false;
     }
-    async function enter(){ closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = localStorage.getItem('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); await connect(); await loadEverything(); showPage('chat'); }
-    function logout(){ clearTimeout(pollTimer); pollTimer=null; pollBaseline=null; if(ws) ws.close(); token=''; currentUser=null; serverAdminPassword=''; sessionStorage.removeItem('server_admin_password'); localStorage.removeItem('securechat_token'); localStorage.removeItem('securechat_user'); $('privacy-lock')?.classList.add('hidden'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
+    async function enter(){ closeBlockingModals(); $('auth').classList.add('hidden'); $('app').classList.remove('hidden'); document.body.dataset.theme = persistentStorage.get('theme') || ''; applyDisplayPrefs(); if (!keyPair) keyPair = await getKeyPair(); try { profile = (await api('/user/profile')).user; } catch { profile = currentUser; } renderMe(); updateUnreadFilter(); await connect(); await loadEverything(); showPage('chat'); }
+    function logout(){ clearTimeout(pollTimer); pollTimer=null; pollBaseline=null; if(ws) ws.close(); token=''; currentUser=null; profile={}; keyPair=null; friends=[]; requests=[]; chats=[]; groups=[]; moments=[]; groupKeys={}; active=null; loadedMessages=[]; onlineIds.clear(); replyDraft=null; serverAdminPassword=''; temporaryStorage.remove('server_admin_password'); persistentStorage.remove('securechat_token'); persistentStorage.remove('securechat_user'); $('auth-password').value=''; $('auth-confirm').value=''; authBusy=false; $('auth-submit').disabled=false; $('auth-switch').disabled=false; setAuthMode(true); $('privacy-lock')?.classList.add('hidden'); $('app').classList.add('hidden'); $('auth').classList.remove('hidden'); }
     function renderMe(){ $('me-name').textContent = profile.nickname || currentUser.username; $('me-avatar').textContent = profile.avatar ? '' : initial(profile); $('me-avatar').style.cssText = avatarStyle(profile); }
-    function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; localStorage.setItem('theme', next); refreshSettingsState(); }
-    function applyDisplayPrefs(){ document.body.dataset.font = localStorage.getItem('font_large') === '1' ? 'large' : ''; document.body.dataset.density = localStorage.getItem('density_compact') === '1' ? 'compact' : ''; }
-    function toggleLargeText(){ localStorage.setItem('font_large', localStorage.getItem('font_large') === '1' ? '0' : '1'); applyDisplayPrefs(); refreshSettingsState(); }
-    function toggleCompactMode(){ localStorage.setItem('density_compact', localStorage.getItem('density_compact') === '1' ? '0' : '1'); applyDisplayPrefs(); refreshSettingsState(); }
+    function toggleTheme(){ const next = document.body.dataset.theme === 'dark' ? '' : 'dark'; document.body.dataset.theme = next; persistentStorage.set('theme', next); refreshSettingsState(); }
+    function applyDisplayPrefs(){ document.body.dataset.font = persistentStorage.get('font_large') === '1' ? 'large' : ''; document.body.dataset.density = persistentStorage.get('density_compact') === '1' ? 'compact' : ''; }
+    function toggleLargeText(){ persistentStorage.set('font_large', persistentStorage.get('font_large') === '1' ? '0' : '1'); applyDisplayPrefs(); refreshSettingsState(); }
+    function toggleCompactMode(){ persistentStorage.set('density_compact', persistentStorage.get('density_compact') === '1' ? '0' : '1'); applyDisplayPrefs(); refreshSettingsState(); }
 
     async function connect(){
       clearTimeout(pollTimer);
@@ -2761,7 +2842,7 @@
       const body = zh(title);
       if(document.hidden) {
         setTitleNotice(body);
-        if(localStorage.getItem('notify') === '1') showBrowserNotification('6nr', body);
+        if(persistentStorage.get('notify') === '1') showBrowserNotification('6nr', body);
       }
     }
     function sendTyping(isTyping=true){ if(!active || active.type==='announcement') return; if(active.type==='direct') sendWs({type:'typing', target_type:'direct', to_id:active.id, is_typing:isTyping}); else if(active.type==='group') sendWs({type:'typing', target_type:'group', group_id:active.id, is_typing:isTyping}); else sendWs({type:'typing', target_type:'public', is_typing:isTyping}); }
@@ -2769,12 +2850,12 @@
     async function enableNotifications(){
       const p = await requestNotificationPermission();
       const ok = p === 'granted';
-      localStorage.setItem('notify', ok ? '1' : '0');
+      persistentStorage.set('notify', ok ? '1' : '0');
       refreshSettingsState();
       if(p === 'unsupported') return toast('Browser does not support notifications');
       toast(ok ? 'Notifications enabled' : 'Notifications blocked');
     }
-    async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; localStorage.removeItem(`ecdh_private_jwk_${currentUser.id}`); localStorage.removeItem(`nacl_private_${currentUser.id}`); groupKeys={}; keyPair = await getKeyPair(); if(!keyPair.compatibilityOnly) await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast(keyPair.compatibilityOnly?'Encrypted chat is unavailable in this browser':'Device key updated'); }
+    async function rotateDeviceKey(){ if(!confirm(zh('Rotate this device key? Old messages may be unreadable on this device.'))) return; persistentStorage.remove(`ecdh_private_jwk_${currentUser.id}`); persistentStorage.remove(`nacl_private_${currentUser.id}`); groupKeys={}; keyPair = await getKeyPair(); if(!keyPair.compatibilityOnly) await api('/user/public-key',{method:'PUT',body:JSON.stringify({public_key:keyPair.publicKey})}); toast(keyPair.compatibilityOnly?'Encrypted chat is unavailable in this browser':'Device key updated'); }
     function openFeedbackEmail(){
       const subject = encodeURIComponent('6nr bug feedback');
       const body = encodeURIComponent(`Please describe the issue here.\n\nUser: ${profile.nickname || currentUser?.username || ''}\nDevice fingerprint: ${shortFingerprint()}`);
@@ -2784,23 +2865,26 @@
     async function copyDeviceFingerprint(){ copyText(await deviceFingerprint(), 'Device fingerprint copied'); }
     function clearAllDrafts(){
       if(!confirm(zh('Clear all drafts?'))) return;
-      const keys = [];
-      for(let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if(key && key.startsWith('draft:')) keys.push(key);
-      }
-      keys.forEach(key => localStorage.removeItem(key));
+      const keys = persistentStorage.keys().filter(key => key.startsWith('draft:'));
+      keys.forEach(key => persistentStorage.remove(key));
       if(active && $('message-input')) $('message-input').value = '';
       renderInspector();
       toast('Drafts cleared');
     }
 
-    async function loadEverything(){ await Promise.all([loadFriends(), loadChats(), loadGroups(), loadSquare()]); if(!active) await openInitialConversation(); renderInspector(); }
+    async function loadEverything(){
+      const results = await Promise.allSettled([loadFriends(), loadChats(), loadGroups(), loadSquare()]);
+      const failures = results.filter(result => result.status === 'rejected');
+      if(failures.length === results.length) throw failures[0].reason;
+      if(failures.length) toast('Some content could not be loaded');
+      if(!active) await openInitialConversation();
+      renderInspector();
+    }
     async function loadFriends(){ const d = await api('/friends'); friends = d.friends || []; requests = d.requests || []; renderFriends(); renderGroupFriends(); renderMomentOptions(); }
     async function loadChats(){ chats = (await api('/chat-list')).chats || []; renderConversations(); }
     async function loadGroups(){ groups = (await api('/groups')).groups || []; renderConversations(); }
     async function openInitialConversation(){
-      const last = JSON.parse(localStorage.getItem('last_active_chat') || 'null');
+      const last = storedJson(persistentStorage, 'last_active_chat', null);
       if(last?.type === 'announcement') return openAnnouncementConversation();
       if(last?.type === 'direct' && chats.some(c => Number(c.friend_id) === Number(last.id))) return openConversation('direct', Number(last.id));
       if(last?.type === 'group' && groups.some(g => Number(g.id) === Number(last.id))) return openConversation('group', Number(last.id));
@@ -2817,8 +2901,8 @@
     function togglePinActive(){ if(active) togglePin(keyOf(active.type, active.id)); }
     function toggleMuteActive(){ if(active) toggleMute(keyOf(active.type, active.id)); }
     function updateHeaderButtons(){ if(!active) return; const k=keyOf(active.type, active.id); $('pin-btn').classList.toggle('pin', pins.has(k)); $('mute-btn').classList.toggle('pin', mutes.has(k)); }
-    async function openAnnouncementConversation(){ toggleMobileSidebar(false); active = {type:'announcement', id:0, name:zh('Site announcement')}; localStorage.setItem('last_active_chat', JSON.stringify({type:'announcement',id:0})); $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Latest message from the server'); $('chat-avatar').textContent = '!'; $('chat-avatar').style.cssText = 'background:linear-gradient(135deg,var(--amber),var(--rose))'; $('chat-avatar').classList.remove('online'); $('message-search').value=''; $('typing-line').textContent=''; clearReply(); setComposerEnabled(false, 'Announcement is read only'); updateHeaderButtons(); renderConversations(); renderInspector(); await loadAnnouncement(false, false); renderAnnouncementConversation(); }
-    async function openConversation(type,id){ toggleMobileSidebar(false); setComposerEnabled(true); localStorage.setItem('last_active_chat', JSON.stringify({type,id})); if(type==='public'){ active = {type:'public', id:0, name:zh('Public room')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Everyone can send messages'); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.remove('online'); $('message-input').value = localStorage.getItem(`draft:${keyOf('public',0)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); await loadPublicMessages(); return; } const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = localStorage.getItem(`draft:${keyOf(type,id)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
+    async function openAnnouncementConversation(){ toggleMobileSidebar(false); active = {type:'announcement', id:0, name:zh('Site announcement')}; persistentStorage.set('last_active_chat', JSON.stringify({type:'announcement',id:0})); $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Latest message from the server'); $('chat-avatar').textContent = '!'; $('chat-avatar').style.cssText = 'background:linear-gradient(135deg,var(--amber),var(--rose))'; $('chat-avatar').classList.remove('online'); $('message-search').value=''; $('typing-line').textContent=''; clearReply(); setComposerEnabled(false, 'Announcement is read only'); updateHeaderButtons(); renderConversations(); renderInspector(); await loadAnnouncement(false, false); renderAnnouncementConversation(); }
+    async function openConversation(type,id){ toggleMobileSidebar(false); setComposerEnabled(true); persistentStorage.set('last_active_chat', JSON.stringify({type,id})); if(type==='public'){ active = {type:'public', id:0, name:zh('Public room')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = zh('Everyone can send messages'); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.remove('online'); $('message-input').value = persistentStorage.get(`draft:${keyOf('public',0)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); await loadPublicMessages(); return; } const data = type==='direct' ? chats.find(c=>c.friend_id===id) : groups.find(g=>g.id===id); active = type==='direct' ? {type,id, name:data?.friend_nickname || data?.friend_name || zh('Direct')} : {type,id, name:data?.name || zh('Groups')}; $('chat-title').textContent = active.name; $('chat-sub').textContent = type==='direct' ? (onlineIds.has(id) ? zh('Online') : zh('Offline')) : memberText(data?.member_count || 0); $('chat-avatar').textContent = initial(active); $('chat-avatar').style.cssText = avatarStyle(active); $('chat-avatar').classList.toggle('online', type==='direct' && onlineIds.has(id)); $('message-input').value = persistentStorage.get(`draft:${keyOf(type,id)}`) || ''; clearReply(); updateMessageCounter(); $('message-search').value=''; $('typing-line').textContent=''; updateHeaderButtons(); renderConversations(); renderInspector(); if(type==='direct'){ await loadDirectMessages(id); await markDirect(id); } else { await loadGroupMessages(id); await markGroup(id); } }
     function renderInspector(){
       const body=$('inspector-body');
       if(!active){ body.innerHTML=`<div class="info-card sub">${zh('No conversation selected')}</div>`; return; }
@@ -2836,7 +2920,7 @@
       const encSummary=isPublic?zh('Public messages are visible to everyone'):zh('Message body encrypted');
       const encMode=isPublic?zh('Public chat'):encryptionModeLabel();
       const encScope=isPublic?zh('Not encrypted'):encryptionScopeLabel();
-      const encStatus=isPublic?zh('Public'):'E2EE';
+      const encStatus=isPublic?zh('Public'):zh('E2EE');
       body.innerHTML = `
         <div class="info-card"><div class="me-line"><div class="avatar ${friend&&onlineIds.has(friend.id)?'online':''}" style="${avatarStyle(entity)}">${initial(entity)}</div><div><div class="title">${html(active.name)}</div><div class="sub">${statusText}</div></div></div></div>
         <div class="info-card">
@@ -2845,14 +2929,14 @@
           <div class="kv"><span>${zh('Key scope')}</span><strong>${encScope}</strong></div>
           <div class="kv"><span>${zh('Local device')}</span><code data-device-fingerprint class="security-value">${shortFingerprint()}</code></div>
         </div>
-        <div class="info-card"><div class="kv"><span>${zh('Pinned')}</span><strong>${pins.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Muted')}</span><strong>${mutes.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Draft')}</span><strong>${localStorage.getItem('draft:'+k)?zh('Saved'):zh('None')}</strong></div></div>
+        <div class="info-card"><div class="kv"><span>${zh('Pinned')}</span><strong>${pins.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Muted')}</span><strong>${mutes.has(k)?zh('On'):zh('Off')}</strong></div><div class="kv"><span>${zh('Draft')}</span><strong>${persistentStorage.get('draft:'+k)?zh('Saved'):zh('None')}</strong></div></div>
         <div class="info-card"><button class="btn" onclick="togglePinActive()">${zh('Toggle pin')}</button><button class="btn" onclick="toggleMuteActive()">${zh('Toggle mute')}</button></div>`;
       refreshFingerprintViews();
     }
 
     function payloadText(text){ return JSON.stringify({type:'text', text, reply: replyDraft}); }
-    function handleDraftInput(){ updateMessageCounter(); if(!active) return; const k=keyOf(active.type, active.id), value=$('message-input').value; value.trim()?localStorage.setItem(`draft:${k}`, value):localStorage.removeItem(`draft:${k}`); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
-    async function sendMessage(){ if(active?.type === 'announcement') return toast('Announcement is read only'); const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; const k=keyOf(active.type, active.id); input.value=''; updateMessageCounter(); sendTyping(false); const ok = await sendPayload(payloadText(text)); if(ok) { localStorage.removeItem(`draft:${k}`); clearReply(); } else { input.value = text; localStorage.setItem(`draft:${k}`, text); updateMessageCounter(); } renderInspector(); }
+    function handleDraftInput(){ updateMessageCounter(); if(!active) return; const k=keyOf(active.type, active.id), value=$('message-input').value; value.trim()?persistentStorage.set(`draft:${k}`, value):persistentStorage.remove(`draft:${k}`); sendTyping(true); clearTimeout(window.typingStopTimer); window.typingStopTimer=setTimeout(()=>sendTyping(false),900); }
+    async function sendMessage(){ if(active?.type === 'announcement') return toast('Announcement is read only'); const input=$('message-input'); const text=input.value.trim(); if(!active || !text) return; const k=keyOf(active.type, active.id); input.value=''; updateMessageCounter(); sendTyping(false); const ok = await sendPayload(payloadText(text)); if(ok) { persistentStorage.remove(`draft:${k}`); clearReply(); } else { input.value = text; persistentStorage.set(`draft:${k}`, text); updateMessageCounter(); } renderInspector(); }
     async function sendAttachment(e){
       const file=e.target.files[0];
       e.target.value='';
@@ -3012,7 +3096,7 @@
         return true;
       } catch {
         serverAdminPassword = '';
-        sessionStorage.removeItem('server_admin_password');
+        temporaryStorage.remove('server_admin_password');
         renderServerLock();
         if(showToast) toast('Server status unavailable');
         return false;
@@ -3067,17 +3151,17 @@
       refreshFingerprintViews();
       if($('theme-toggle')) $('theme-toggle').textContent = document.body.dataset.theme === 'dark' ? zh('Dark') : zh('Light');
       if($('notify-toggle')) {
-        const on = localStorage.getItem('notify') === '1';
+        const on = persistentStorage.get('notify') === '1';
         $('notify-toggle').textContent = on ? zh('Enabled') : zh('Enable');
         $('notify-toggle').classList.toggle('good', !on);
       }
       if($('large-text-toggle')) {
-        const on = localStorage.getItem('font_large') === '1';
+        const on = persistentStorage.get('font_large') === '1';
         $('large-text-toggle').textContent = on ? zh('On') : zh('Off');
         $('large-text-toggle').classList.toggle('primary', on);
       }
       if($('compact-toggle')) {
-        const on = localStorage.getItem('density_compact') === '1';
+        const on = persistentStorage.get('density_compact') === '1';
         $('compact-toggle').textContent = on ? zh('On') : zh('Off');
         $('compact-toggle').classList.toggle('primary', on);
       }
@@ -3105,8 +3189,7 @@
     async function saveProfile(){ const nickname=$('nickname-input').value.trim(), bio=$('bio-input').value.trim(); if(!nickname)return toast('Enter a nickname'); await api('/user/profile',{method:'PUT',body:JSON.stringify({nickname,bio,avatar:draftAvatar})}); profile=(await api('/user/profile')).user; renderMe(); loadSettings(); toast('Saved'); }
     async function changePassword(){ const oldPassword=$('old-password').value,newPassword=$('new-password').value; if(!oldPassword||!newPassword)return toast('Enter both passwords'); await api('/user/password',{method:'PUT',body:JSON.stringify({oldPassword,newPassword})}); $('old-password').value=''; $('new-password').value=''; toast('Password changed'); }
 
-    $('auth-submit').addEventListener('click', handleAuth);
-    ['auth-username','auth-password','auth-confirm'].forEach(id=>$(id).addEventListener('keydown', e=>{ if(e.key==='Enter') handleAuth(); }));
+    $('auth-form').addEventListener('submit', handleAuth);
     document.addEventListener('click', e => { if(!e.target.closest('.bubble')) closeMessageActionBars(); });
     window.addEventListener('focus', resetTitleNotice);
     document.addEventListener('visibilitychange', () => { if(!document.hidden) resetTitleNotice(); });
