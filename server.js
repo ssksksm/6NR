@@ -10,11 +10,13 @@ const { PostgresDatabase } = require('./postgres-db');
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocketServer({ server });
+const IS_SERVERLESS = process.env.VERCEL === '1';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'local-development-secret-change-before-deploying';
 const SALT_ROUNDS = 10;
 const PORT = process.env.PORT || 3000;
 const ADMIN_PASSWORD = process.env.SERVER_ADMIN_PASSWORD || '9178wde';
+const REALTIME_MODE = process.env.REALTIME_MODE === 'poll' ? 'poll' : 'websocket';
 
 if (process.env.NODE_ENV === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32)) {
   throw new Error('JWT_SECRET must contain at least 32 characters');
@@ -28,6 +30,8 @@ app.use(express.json({ limit: '12mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
 app.get('/api/health', (req, res) => res.json({ ok: true }));
+app.get('/kaithhealth', (req, res) => res.json({ ok: true }));
+app.get('/api/config', (req, res) => res.json({ realtime: REALTIME_MODE }));
 
 const db = new PostgresDatabase();
 const clients = new Map();
@@ -160,6 +164,18 @@ function requireAdminPassword(req, res, next) {
     return res.status(403).json({ error: 'Admin password required' });
   }
   next();
+}
+
+function queryAll(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows || [])));
+  });
+}
+
+function queryGet(sql, params = []) {
+  return new Promise((resolve, reject) => {
+    db.get(sql, params, (err, row) => (err ? reject(err) : resolve(row || null)));
+  });
 }
 
 function publicAnnouncement(row) {
@@ -565,6 +581,48 @@ app.get('/api/chat-list', authenticateToken, (req, res) => {
   });
 });
 
+app.get('/api/poll', authenticateToken, async (req, res) => {
+  try {
+    const [friendRows, groupRows, publicMessage, announcement] = await Promise.all([
+      queryAll('SELECT friend_id FROM friends WHERE user_id = ? ORDER BY friend_id', [req.user.id]),
+      queryAll('SELECT group_id FROM group_members WHERE user_id = ? ORDER BY group_id', [req.user.id]),
+      queryGet('SELECT id AS message_id, from_id, created_at FROM public_messages ORDER BY created_at DESC, id DESC LIMIT 1'),
+      queryGet('SELECT id, title, content, created_at, active FROM server_announcements WHERE active = 1 ORDER BY created_at DESC, id DESC LIMIT 1')
+    ]);
+    const [direct, groups] = await Promise.all([
+      Promise.all(friendRows.map(async (friend) => {
+        const friendId = Number(friend.friend_id);
+        const latest = await queryGet(
+          `SELECT id AS message_id, from_id, created_at FROM messages
+           WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)
+           ORDER BY created_at DESC, id DESC LIMIT 1`,
+          [req.user.id, friendId, friendId, req.user.id]
+        );
+        return { conversation_id: friendId, ...(latest || {}) };
+      })),
+      Promise.all(groupRows.map(async (group) => {
+        const groupId = Number(group.group_id);
+        const latest = await queryGet(
+          'SELECT id AS message_id, from_id, created_at FROM group_messages WHERE group_id = ? ORDER BY created_at DESC, id DESC LIMIT 1',
+          [groupId]
+        );
+        return { conversation_id: groupId, ...(latest || {}) };
+      }))
+    ]);
+
+    res.json({
+      direct,
+      groups,
+      public_message: publicMessage,
+      announcement: publicAnnouncement(announcement),
+      friend_ids: friendRows.map((row) => Number(row.friend_id))
+    });
+  } catch (err) {
+    console.error('Poll failed:', err);
+    res.status(500).json({ error: 'Poll failed' });
+  }
+});
+
 app.post('/api/mark-read/:friendId', authenticateToken, (req, res) => {
   const friendId = intParam(req.params.friendId);
   if (!friendId) return res.status(400).json({ error: 'Invalid friend id' });
@@ -846,7 +904,7 @@ app.post('/api/moments/:id/comment', authenticateToken, (req, res) => {
   });
 });
 
-const heartbeat = setInterval(() => {
+const heartbeat = IS_SERVERLESS ? null : setInterval(() => {
   for (const sockets of clients.values()) {
     for (const ws of sockets) {
       if (ws.isAlive === false) {
@@ -879,16 +937,20 @@ async function shutdown() {
   });
 }
 
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
+if (!IS_SERVERLESS) {
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
 
-db.ready()
-  .then(() => {
-    server.listen(PORT, '0.0.0.0', () => {
-      console.log(`6nr server listening on port ${PORT}`);
+  db.ready()
+    .then(() => {
+      server.listen(PORT, '0.0.0.0', () => {
+        console.log(`6nr server listening on port ${PORT}`);
+      });
+    })
+    .catch((error) => {
+      console.error('Database initialization failed:', error);
+      process.exit(1);
     });
-  })
-  .catch((error) => {
-    console.error('Database initialization failed:', error);
-    process.exit(1);
-  });
+}
+
+module.exports = app;
