@@ -1,9 +1,10 @@
 const MAX_BODY_BYTES = 12 * 1024 * 1024;
 const MAX_CONTENT_LENGTH = 10 * 1024 * 1024;
-const R2_CONTENT_THRESHOLD = 480 * 1024;
+const CHUNK_CONTENT_THRESHOLD = 480 * 1024;
+const CHUNK_BYTES = 128 * 1024;
 const PBKDF2_ITERATIONS = 120000;
 const TOKEN_TTL_SECONDS = 7 * 24 * 60 * 60;
-const R2_MARKER = '@r2:';
+const CHUNK_MARKER = '@d1:';
 
 const SCHEMA_SQL = `
 CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT NOT NULL);
@@ -104,6 +105,14 @@ CREATE TABLE IF NOT EXISTS server_announcements (
   created_by INTEGER,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
 );
+CREATE TABLE IF NOT EXISTS content_chunks (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  content_id TEXT NOT NULL,
+  chunk_index INTEGER NOT NULL,
+  data TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
+  UNIQUE(content_id, chunk_index)
+);
 CREATE INDEX IF NOT EXISTS idx_friends_user ON friends(user_id);
 CREATE INDEX IF NOT EXISTS idx_requests_to_status ON friend_requests(to_id, status);
 CREATE INDEX IF NOT EXISTS idx_messages_pair_time ON messages(from_id, to_id, created_at);
@@ -112,6 +121,7 @@ CREATE INDEX IF NOT EXISTS idx_group_messages_time ON group_messages(group_id, c
 CREATE INDEX IF NOT EXISTS idx_public_messages_time ON public_messages(created_at);
 CREATE INDEX IF NOT EXISTS idx_moments_time ON moments(created_at);
 CREATE INDEX IF NOT EXISTS idx_comments_moment ON moment_comments(moment_id, created_at);
+CREATE INDEX IF NOT EXISTS idx_content_chunks_id ON content_chunks(content_id, chunk_index);
 INSERT OR IGNORE INTO app_meta (key, value) VALUES ('created_at', strftime('%Y-%m-%dT%H:%M:%fZ', 'now'));
 INSERT OR REPLACE INTO app_meta (key, value) VALUES ('schema_version', '1');
 `;
@@ -306,25 +316,48 @@ function requireAdmin(env, request) {
   }
 }
 
-function makeR2Key(kind) {
-  const date = new Date().toISOString().slice(0, 10);
-  return `${kind}/${date}/${crypto.randomUUID()}.txt`;
-}
-
 async function storeLargeContent(env, kind, content) {
-  if (new TextEncoder().encode(content).byteLength <= R2_CONTENT_THRESHOLD) return content;
-  const key = makeR2Key(kind);
-  await env.MEDIA.put(key, content, {
-    httpMetadata: { contentType: 'text/plain; charset=utf-8' }
-  });
-  return `${R2_MARKER}${key}`;
+  const encoded = new TextEncoder().encode(content);
+  if (encoded.byteLength <= CHUNK_CONTENT_THRESHOLD) return content;
+  const contentId = `${kind}:${crypto.randomUUID()}`;
+  const statements = [];
+  for (let offset = 0, index = 0; offset < encoded.length; offset += CHUNK_BYTES, index += 1) {
+    statements.push(
+      env.DB.prepare('INSERT INTO content_chunks (content_id, chunk_index, data) VALUES (?, ?, ?)')
+        .bind(contentId, index, bytesToBase64(encoded.subarray(offset, offset + CHUNK_BYTES)))
+    );
+  }
+  try {
+    for (let index = 0; index < statements.length; index += 10) {
+      await env.DB.batch(statements.slice(index, index + 10));
+    }
+  } catch (error) {
+    await run(env, 'DELETE FROM content_chunks WHERE content_id = ?', contentId);
+    throw error;
+  }
+  return `${CHUNK_MARKER}${contentId}`;
 }
 
 async function hydrateContent(env, value) {
-  if (typeof value !== 'string' || !value.startsWith(R2_MARKER)) return value;
-  const object = await env.MEDIA.get(value.slice(R2_MARKER.length));
-  if (!object) return '';
-  return object.text();
+  if (typeof value !== 'string' || !value.startsWith(CHUNK_MARKER)) return value;
+  const contentId = value.slice(CHUNK_MARKER.length);
+  const chunks = await many(env, 'SELECT data FROM content_chunks WHERE content_id = ? ORDER BY chunk_index ASC', contentId);
+  if (!chunks.length) return '';
+  const decoded = chunks.map((chunk) => base64ToBytes(chunk.data));
+  const length = decoded.reduce((total, chunk) => total + chunk.length, 0);
+  const merged = new Uint8Array(length);
+  let offset = 0;
+  for (const chunk of decoded) {
+    merged.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return new TextDecoder().decode(merged);
+}
+
+async function deleteStoredContent(env, value) {
+  if (typeof value === 'string' && value.startsWith(CHUNK_MARKER)) {
+    await run(env, 'DELETE FROM content_chunks WHERE content_id = ?', value.slice(CHUNK_MARKER.length));
+  }
 }
 
 async function hydrateRows(env, rows, field = 'content') {
@@ -699,7 +732,7 @@ async function sendDirectMessage(env, user, body) {
   try {
     result = await run(env, 'INSERT INTO messages (from_id, to_id, content) VALUES (?, ?, ?)', user.id, toId, storedContent);
   } catch (error) {
-    if (storedContent.startsWith(R2_MARKER)) await env.MEDIA.delete(storedContent.slice(R2_MARKER.length));
+    await deleteStoredContent(env, storedContent);
     throw error;
   }
   const message = {
@@ -863,7 +896,7 @@ async function sendGroupMessage(env, user, groupId, body) {
       JSON.stringify([user.id])
     );
   } catch (error) {
-    if (storedContent.startsWith(R2_MARKER)) await env.MEDIA.delete(storedContent.slice(R2_MARKER.length));
+    await deleteStoredContent(env, storedContent);
     throw error;
   }
   const message = {
@@ -926,7 +959,7 @@ async function sendPublicMessage(env, user, body) {
   try {
     result = await run(env, 'INSERT INTO public_messages (from_id, content) VALUES (?, ?)', user.id, storedContent);
   } catch (error) {
-    if (storedContent.startsWith(R2_MARKER)) await env.MEDIA.delete(storedContent.slice(R2_MARKER.length));
+    await deleteStoredContent(env, storedContent);
     throw error;
   }
   const profile = await one(env, 'SELECT username, nickname, avatar FROM users WHERE id = ?', user.id);
