@@ -193,6 +193,16 @@ function intParam(value) {
   return Number.isSafeInteger(n) && n > 0 ? n : null;
 }
 
+function isValidPublicKey(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value) || Object.keys(value).length === 0) return false;
+  try {
+    const encoded = JSON.stringify(value);
+    return encoded.length > 2 && encoded.length <= 8192;
+  } catch {
+    return false;
+  }
+}
+
 function parseJsonArray(value) {
   try {
     const parsed = JSON.parse(value || '[]');
@@ -307,10 +317,14 @@ wss.on('connection', (ws, req) => {
 });
 
 app.post('/api/register', async (req, res) => {
-  const username = String(req.body.username || '').trim();
-  const password = String(req.body.password || '');
-  const publicKey = req.body.public_key;
-  if (!username || !password || !publicKey) return res.status(400).json({ error: 'Username, password and public key are required' });
+  const body = req.body || {};
+  const username = String(body.username || '').trim();
+  const password = String(body.password || '');
+  const publicKey = body.public_key;
+  if (!username) return res.status(400).json({ error: 'Username is required' });
+  if (!password) return res.status(400).json({ error: 'Password is required' });
+  if (!publicKey) return res.status(400).json({ error: 'Public key generation failed' });
+  if (!isValidPublicKey(publicKey)) return res.status(400).json({ error: 'Public key data is invalid' });
   if (username.length > 32) return res.status(400).json({ error: 'Username is too long' });
   if (password.length < 4) return res.status(400).json({ error: 'Password must be at least 4 characters' });
   try {
@@ -329,9 +343,11 @@ app.post('/api/register', async (req, res) => {
 });
 
 app.post('/api/login', (req, res) => {
-  const username = String(req.body.username || '').trim();
-  const password = String(req.body.password || '');
-  if (!username || !password) return res.status(400).json({ error: 'Username and password are required' });
+  const body = req.body || {};
+  const username = String(body.username || '').trim();
+  const password = String(body.password || '');
+  if (!username) return res.status(400).json({ error: 'Username is required' });
+  if (!password) return res.status(400).json({ error: 'Password is required' });
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
     if (err || !user) return res.status(400).json({ error: 'Incorrect username or password' });
     const ok = await bcrypt.compare(password, user.password_hash);
@@ -396,8 +412,10 @@ app.put('/api/user/password', authenticateToken, (req, res) => {
 });
 
 app.put('/api/user/public-key', authenticateToken, (req, res) => {
-  if (!req.body.public_key) return res.status(400).json({ error: 'Public key is required' });
-  db.run('UPDATE users SET public_key = ? WHERE id = ?', [JSON.stringify(req.body.public_key), req.user.id], (err) => {
+  const publicKey = req.body?.public_key;
+  if (!publicKey) return res.status(400).json({ error: 'Public key generation failed' });
+  if (!isValidPublicKey(publicKey)) return res.status(400).json({ error: 'Public key data is invalid' });
+  db.run('UPDATE users SET public_key = ? WHERE id = ?', [JSON.stringify(publicKey), req.user.id], (err) => {
     if (err) return res.status(500).json({ error: 'Public key update failed' });
     res.json({ success: true });
   });
@@ -565,20 +583,41 @@ app.get('/api/messages/:friendId', authenticateToken, (req, res) => {
   });
 });
 
-app.get('/api/chat-list', authenticateToken, (req, res) => {
-  db.all(`SELECT u.id AS friend_id, u.username AS friend_name, u.nickname AS friend_nickname, u.avatar AS friend_avatar,
-       lm.content AS last_preview, lm.created_at AS last_time,
-       (SELECT COUNT(*) FROM messages unread WHERE unread.from_id = u.id AND unread.to_id = ? AND unread.read_at IS NULL) AS unread_count
-     FROM friends f JOIN users u ON u.id = f.friend_id
-     LEFT JOIN messages lm ON lm.id = (
-       SELECT id FROM messages WHERE (from_id = ? AND to_id = u.id) OR (from_id = u.id AND to_id = ?)
-       ORDER BY created_at DESC, id DESC LIMIT 1
-     )
-     WHERE f.user_id = ?
-     ORDER BY COALESCE(lm.created_at, f.created_at) DESC`, [req.user.id, req.user.id, req.user.id, req.user.id], (err, rows) => {
-    if (err) return res.status(500).json({ error: 'Query failed' });
-    res.json({ chats: rows || [] });
-  });
+app.get('/api/chat-list', authenticateToken, async (req, res) => {
+  try {
+    const friends = await queryAll(
+      `SELECT u.id AS friend_id, u.username AS friend_name, u.nickname AS friend_nickname,
+       u.avatar AS friend_avatar, f.created_at AS friend_since
+       FROM friends f JOIN users u ON u.id = f.friend_id
+       WHERE f.user_id = ?`,
+      [req.user.id]
+    );
+    const chats = await Promise.all(friends.map(async (friend) => {
+      const [latest, unread] = await Promise.all([
+        queryGet(
+          `SELECT content AS last_preview, created_at AS last_time FROM messages
+           WHERE (from_id = ? AND to_id = ?) OR (from_id = ? AND to_id = ?)
+           ORDER BY created_at DESC, id DESC LIMIT 1`,
+          [req.user.id, friend.friend_id, friend.friend_id, req.user.id]
+        ),
+        queryGet(
+          `SELECT COUNT(*) AS unread_count FROM messages
+           WHERE from_id = ? AND to_id = ? AND read_at IS NULL`,
+          [friend.friend_id, req.user.id]
+        )
+      ]);
+      return {
+        ...friend,
+        last_preview: latest?.last_preview || '',
+        last_time: latest?.last_time || null,
+        unread_count: Number(unread?.unread_count || 0)
+      };
+    }));
+    chats.sort((a, b) => new Date(b.last_time || b.friend_since).getTime() - new Date(a.last_time || a.friend_since).getTime());
+    res.json({ chats });
+  } catch {
+    res.status(500).json({ error: 'Query failed' });
+  }
 });
 
 app.get('/api/poll', authenticateToken, async (req, res) => {
@@ -662,20 +701,39 @@ app.post('/api/groups', authenticateToken, (req, res) => {
   });
 });
 
-app.get('/api/groups', authenticateToken, (req, res) => {
-  db.all(`SELECT g.id, g.name, g.owner_id, g.created_at, gm.wrapped_key,
-       owner.username AS owner_username, owner.nickname AS owner_nickname, owner.public_key AS owner_public_key,
-       (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS member_count,
-       (SELECT created_at FROM group_messages WHERE group_id = g.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_time,
-       (SELECT content FROM group_messages WHERE group_id = g.id ORDER BY created_at DESC, id DESC LIMIT 1) AS last_preview
-     FROM group_members gm
-     JOIN groups g ON g.id = gm.group_id
-     JOIN users owner ON owner.id = g.owner_id
-     WHERE gm.user_id = ?
-     ORDER BY COALESCE(last_time, g.created_at) DESC`, [req.user.id], (err, groups) => {
-    if (err) return res.status(500).json({ error: 'Query failed' });
-    res.json({ groups: (groups || []).map((g) => ({ ...g, owner_public_key: safeParse(g.owner_public_key) })) });
-  });
+app.get('/api/groups', authenticateToken, async (req, res) => {
+  try {
+    const memberships = await queryAll(
+      `SELECT g.id, g.name, g.owner_id, g.created_at, gm.wrapped_key,
+       owner.username AS owner_username, owner.nickname AS owner_nickname, owner.public_key AS owner_public_key
+       FROM group_members gm
+       JOIN groups g ON g.id = gm.group_id
+       JOIN users owner ON owner.id = g.owner_id
+       WHERE gm.user_id = ?`,
+      [req.user.id]
+    );
+    const groups = await Promise.all(memberships.map(async (group) => {
+      const [members, latest] = await Promise.all([
+        queryGet('SELECT COUNT(*) AS member_count FROM group_members WHERE group_id = ?', [group.id]),
+        queryGet(
+          `SELECT content AS last_preview, created_at AS last_time FROM group_messages
+           WHERE group_id = ? ORDER BY created_at DESC, id DESC LIMIT 1`,
+          [group.id]
+        )
+      ]);
+      return {
+        ...group,
+        owner_public_key: safeParse(group.owner_public_key),
+        member_count: Number(members?.member_count || 0),
+        last_time: latest?.last_time || null,
+        last_preview: latest?.last_preview || ''
+      };
+    }));
+    groups.sort((a, b) => new Date(b.last_time || b.created_at).getTime() - new Date(a.last_time || a.created_at).getTime());
+    res.json({ groups });
+  } catch {
+    res.status(500).json({ error: 'Query failed' });
+  }
 });
 
 app.get('/api/groups/:groupId/members', authenticateToken, (req, res) => {
